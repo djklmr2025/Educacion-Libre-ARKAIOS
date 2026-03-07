@@ -193,7 +193,8 @@
     function ensureScript(src, scriptName) {
       const re = new RegExp(`src=["']${scriptName.replace('.', '\\.')}["']`, 'i');
       if (re.test(src)) return src;
-      return src.replace(/<\/body>/i, `  <script src="${scriptName}"></script>\n</body>`);
+      const scriptTag = `  <script src="${scriptName}"><\\/script>`;
+      return src.replace(/<\/body>/i, `${scriptTag}\n</body>`);
     }
 
     function convertHtmlContent(filename, content) {
