@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ARKAIOS Orquestador HTML+</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --brand: #0f766e;
+      --brand-dark: #115e59;
+      --warn: #b45309;
+      --danger: #b91c1c;
+      --ok: #166534;
+      --soft: #f1f5f9;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 24px;
+    }
+    .wrap { max-width: 1080px; margin: 0 auto; }
+    h1 { margin: 0 0 6px; font-size: 30px; }
+    .sub { color: var(--muted); margin: 0 0 18px; }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 12px;
+    }
+    .cmd {
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 8px;
+      padding: 10px 12px;
+      white-space: pre-wrap;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+    .btn {
+      border: 0;
+      background: var(--brand);
+      color: #fff;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .btn:hover { background: var(--brand-dark); }
+    .btn.secondary { background: #1d4ed8; }
+    .btn.secondary:hover { background: #1e40af; }
+    .btn.warn { background: #b45309; }
+    .btn.warn:hover { background: #92400e; }
+    .btn.ghost { background: #334155; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    input[type="file"], input[type="text"] {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 10px;
+      background: #fff;
+      color: var(--text);
+    }
+    .hint { color: var(--muted); font-size: 12px; margin-top: 6px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; border-bottom: 1px solid var(--line); padding: 8px 6px; font-size: 13px; }
+    th { color: var(--muted); font-weight: 600; }
+    .pill {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      background: var(--soft);
+      color: #334155;
+    }
+    .status {
+      margin-top: 10px;
+      border-radius: 8px;
+      padding: 9px 10px;
+      font-size: 13px;
+      background: #e2e8f0;
+      color: #0f172a;
+      min-height: 36px;
+    }
+    .status.ok { background: #dcfce7; color: var(--ok); }
+    .status.warn { background: #fef3c7; color: var(--warn); }
+    .status.err { background: #fee2e2; color: var(--danger); }
+    .actions-cell { display: flex; gap: 6px; flex-wrap: wrap; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Orquestador HTML+</h1>
+    <p class="sub">Ahora sí: adjunta archivos `.html`, conviértelos a plantilla inteligente y descárgalos o súbelos al repo.</p>
+
+    <div class="card grid">
+      <div>
+        <h3>1) Adjuntar y Convertir</h3>
+        <input id="htmlFiles" type="file" accept=".html,text/html" multiple>
+        <div class="hint">Puedes seleccionar uno o varios archivos HTML.</div>
+
+        <div class="row">
+          <button class="btn" id="btnConvert">Convertir</button>
+          <button class="btn secondary" id="btnDownloadZip" disabled>Descargar ZIP</button>
+          <button class="btn warn" id="btnPushAll" disabled>Subir todos al repo</button>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <input id="repoPathPrefix" type="text" value="converted" placeholder="Carpeta destino en repo (ej. converted)">
+        </div>
+      </div>
+
+      <div>
+        <h3>2) Conversión por CLI (opcional)</h3>
+        <div class="cmd">npm run convert:html-plus -- plantilla-real.html --with-library --template-id=mi-plantilla-inteligente</div>
+        <button class="btn ghost" id="btnReload">Actualizar registro local</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Resultado de conversión</h3>
+      <table>
+        <thead>
+          <tr><th>Archivo</th><th>Template ID</th><th>Estado</th><th>Acciones</th></tr>
+        </thead>
+        <tbody id="convertedRows"></tbody>
+      </table>
+      <div id="convertStatus" class="status">Esperando archivos...</div>
+    </div>
+
+    <div class="card">
+      <h3>Plantillas registradas</h3>
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Título</th><th>Módulos</th><th>Fecha</th></tr>
+        </thead>
+        <tbody id="registryRows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script>
+    const KEY = 'arkaios_template_registry';
+    const converted = [];
+
+    const elFiles = document.getElementById('htmlFiles');
+    const elRows = document.getElementById('convertedRows');
+    const elStatus = document.getElementById('convertStatus');
+    const btnConvert = document.getElementById('btnConvert');
+    const btnZip = document.getElementById('btnDownloadZip');
+    const btnPushAll = document.getElementById('btnPushAll');
+    const inputPathPrefix = document.getElementById('repoPathPrefix');
+
+    function setStatus(msg, type) {
+      elStatus.textContent = msg;
+      elStatus.className = 'status';
+      if (type) elStatus.classList.add(type);
+    }
+
+    function sanitizeId(text) {
+      return String(text || 'template-inteligente')
+        .replace(/\.html$/i, '')
+        .replace(/[^a-zA-Z0-9_.-]+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '')
+        .toLowerCase();
+    }
+
+    function ensureBodyTemplateId(src, templateId) {
+      if (/data-arkaios-template=/i.test(src)) return src;
+      return src.replace(/<body([^>]*)>/i, `<body$1 data-arkaios-template="${templateId}">`);
+    }
+
+    function ensureScript(src, scriptName) {
+      const re = new RegExp(`src=["']${scriptName.replace('.', '\\.')}["']`, 'i');
+      if (re.test(src)) return src;
+      return src.replace(/<\/body>/i, `  <script src="${scriptName}"></script>\n</body>`);
+    }
+
+    function convertHtmlContent(filename, content) {
+      const templateId = sanitizeId(filename);
+      let out = content;
+      out = ensureBodyTemplateId(out, templateId);
+      out = ensureScript(out, 'arkaios-biblioteca.js');
+      out = ensureScript(out, 'arkaios-orquestador.js');
+      return { templateId, output: out };
+    }
+
+    function fileToText(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = reject;
+        reader.readAsText(file, 'utf-8');
+      });
+    }
+
+    function downloadTextFile(filename, content) {
+      const blob = new Blob([content], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function downloadZip() {
+      if (!converted.length) return;
+      const zip = new JSZip();
+      converted.forEach((item) => zip.file(item.filename, item.output));
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `arkaios-convertidos-${Date.now()}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setStatus('ZIP generado y descargado.', 'ok');
+    }
+
+    async function pushOne(item) {
+      const prefix = (inputPathPrefix.value || 'converted').trim().replace(/^\/+|\/+$/g, '');
+      const path = prefix ? `${prefix}/${item.filename}` : item.filename;
+      const resp = await fetch('/api/publish-template', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: item.filename, path, content: item.output })
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'No se pudo publicar');
+      item.repoStatus = 'subido';
+      item.repoInfo = data;
+      renderConvertedRows();
+      return data;
+    }
+
+    async function pushAll() {
+      if (!converted.length) return;
+      setStatus('Subiendo archivos al repo...', 'warn');
+      let ok = 0;
+      let fail = 0;
+      for (const item of converted) {
+        try {
+          await pushOne(item);
+          ok += 1;
+        } catch (err) {
+          item.repoStatus = `error: ${err.message}`;
+          fail += 1;
+          renderConvertedRows();
+        }
+      }
+      if (fail) setStatus(`Subida parcial: ${ok} OK, ${fail} con error.`, 'warn');
+      else setStatus(`Subida completa: ${ok} archivos en repo.`, 'ok');
+    }
+
+    function renderConvertedRows() {
+      if (!converted.length) {
+        elRows.innerHTML = '<tr><td colspan="4">No hay archivos convertidos todavía.</td></tr>';
+        btnZip.disabled = true;
+        btnPushAll.disabled = true;
+        return;
+      }
+
+      elRows.innerHTML = converted.map((item, idx) => `
+        <tr>
+          <td>${item.filename}</td>
+          <td><code>${item.templateId}</code></td>
+          <td><span class="pill">${item.repoStatus || 'listo'}</span></td>
+          <td class="actions-cell">
+            <button class="btn secondary" data-download="${idx}">Descargar</button>
+            <button class="btn warn" data-push="${idx}">Subir repo</button>
+          </td>
+        </tr>
+      `).join('');
+
+      elRows.querySelectorAll('[data-download]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const item = converted[Number(btn.dataset.download)];
+          downloadTextFile(item.filename, item.output);
+        });
+      });
+
+      elRows.querySelectorAll('[data-push]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const item = converted[Number(btn.dataset.push)];
+          try {
+            setStatus(`Subiendo ${item.filename}...`, 'warn');
+            await pushOne(item);
+            setStatus(`${item.filename} subido al repo.`, 'ok');
+          } catch (err) {
+            item.repoStatus = `error: ${err.message}`;
+            renderConvertedRows();
+            setStatus(`Error al subir ${item.filename}: ${err.message}`, 'err');
+          }
+        });
+      });
+
+      btnZip.disabled = false;
+      btnPushAll.disabled = false;
+    }
+
+    async function convertSelectedFiles() {
+      const files = Array.from(elFiles.files || []);
+      if (!files.length) {
+        setStatus('Selecciona al menos un archivo .html', 'warn');
+        return;
+      }
+
+      converted.length = 0;
+      setStatus('Convirtiendo archivos...', 'warn');
+
+      for (const f of files) {
+        try {
+          const content = await fileToText(f);
+          if (!/<\/body>/i.test(content)) throw new Error('No contiene </body>');
+          const { templateId, output } = convertHtmlContent(f.name, content);
+          converted.push({ filename: f.name, templateId, output, repoStatus: 'listo' });
+        } catch (err) {
+          converted.push({
+            filename: f.name,
+            templateId: '-',
+            output: '',
+            repoStatus: `error: ${err.message}`
+          });
+        }
+      }
+
+      renderConvertedRows();
+      const ok = converted.filter((x) => x.output).length;
+      const bad = converted.length - ok;
+      if (bad) setStatus(`Conversión parcial: ${ok} OK, ${bad} con error.`, 'warn');
+      else setStatus(`Conversión completa: ${ok} archivo(s).`, 'ok');
+    }
+
+    function loadRegistry() {
+      let list = [];
+      try { list = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { list = []; }
+      if (!Array.isArray(list)) list = [];
+      const rows = document.getElementById('registryRows');
+      if (!list.length) {
+        rows.innerHTML = '<tr><td colspan="4">Sin plantillas registradas aún.</td></tr>';
+        return;
+      }
+      rows.innerHTML = list.map((x) => `
+        <tr>
+          <td>${x.id || '-'}</td>
+          <td>${x.title || '-'}</td>
+          <td>${Array.isArray(x.modules) ? x.modules.length : 0}</td>
+          <td>${x.discoveredAt ? new Date(x.discoveredAt).toLocaleString('es-MX') : '-'}</td>
+        </tr>
+      `).join('');
+    }
+
+    btnConvert.addEventListener('click', convertSelectedFiles);
+    btnZip.addEventListener('click', downloadZip);
+    btnPushAll.addEventListener('click', pushAll);
+    document.getElementById('btnReload').addEventListener('click', loadRegistry);
+
+    renderConvertedRows();
+    loadRegistry();
+  </script>
+</body>
+</html>

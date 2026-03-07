@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixabay Descargador Lote - ARKAIOS</title>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ========== VARIABLES CYBERPUNK ========== */
+        :root {
+            --neon-cyan: #00f3ff;
+            --neon-magenta: #ff00e6;
+            --neon-purple: #6a00ff;
+            --neon-green: #00ff9d;
+            --bg-primary: #0a0a12;
+            --bg-secondary: #11101f;
+            --bg-tertiary: #1c1b2e;
+            --text-primary: #e0e0ff;
+            --text-secondary: #a0a0d0;
+            --text-muted: #606090;
+            --border-cyber: 1px solid rgba(0, 243, 255, 0.3);
+            --glow-cyan: 0 0 15px rgba(0, 243, 255, 0.8);
+            --glow-magenta: 0 0 15px rgba(255, 0, 230, 0.8);
+            --shadow-deep: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Rajdhani', 'Segoe UI', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            padding: 40px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 42px;
+            background: linear-gradient(135deg, var(--neon-cyan) 0%, var(--neon-purple) 50%, var(--neon-magenta) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            margin-bottom: 40px;
+            text-shadow: var(--glow-cyan);
+        }
+
+        .section {
+            background: rgba(28, 27, 46, 0.5);
+            border: var(--border-cyber);
+            border-radius: 18px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow-deep);
+        }
+
+        .section-title {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--neon-cyan);
+            font-size: 18px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .api-key-input {
+            width: 100%;
+            padding: 16px;
+            background: rgba(17, 16, 31, 0.8);
+            border: var(--border-cyber);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: monospace;
+            margin-bottom: 20px;
+        }
+
+        .api-key-input:focus {
+            outline: none;
+            border-color: var(--neon-magenta);
+            box-shadow: var(--glow-magenta);
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 250px;
+            padding: 16px;
+            background: rgba(17, 16, 31, 0.8);
+            border: var(--border-cyber);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--neon-magenta);
+            box-shadow: var(--glow-magenta);
+        }
+
+        .btn {
+            padding: 16px 32px;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: rgba(0, 243, 255, 0.1);
+            color: var(--neon-cyan);
+            border: 2px solid var(--neon-cyan);
+            box-shadow: var(--glow-cyan);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--neon-cyan);
+            color: var(--bg-primary);
+            transform: translateY(-3px);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 0, 230, 0.1);
+            color: var(--neon-magenta);
+            border: 2px solid var(--neon-magenta);
+            box-shadow: var(--glow-magenta);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: var(--neon-magenta);
+            color: var(--bg-primary);
+            transform: translateY(-3px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .progress-container {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .progress-container.active {
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: rgba(17, 16, 31, 0.8);
+            border: var(--border-cyber);
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta));
+            width: 0%;
+            transition: width 0.3s;
+            box-shadow: var(--glow-cyan);
+        }
+
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .gallery-item {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 12px;
+            overflow: hidden;
+            border: var(--border-cyber);
+            background: rgba(17, 16, 31, 0.8);
+            transition: all 0.3s;
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--glow-cyan);
+            border-color: var(--neon-magenta);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .gallery-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 8px;
+            font-size: 12px;
+            text-align: center;
+            color: var(--neon-cyan);
+        }
+
+        .alert {
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 2px solid;
+        }
+
+        .alert-info {
+            background: rgba(0, 243, 255, 0.1);
+            border-color: var(--neon-cyan);
+            color: var(--neon-cyan);
+        }
+
+        .alert-warning {
+            background: rgba(255, 238, 0, 0.1);
+            border-color: #ffee00;
+            color: #ffee00;
+        }
+
+        .actions {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .help-text {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 10px;
+        }
+
+        code {
+            background: rgba(0, 243, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--neon-cyan);
+            font-family: monospace;
+        }
+
+        .template-btn {
+            padding: 8px 16px;
+            background: rgba(106, 0, 255, 0.1);
+            border: 1px solid var(--neon-purple);
+            border-radius: 8px;
+            color: var(--neon-purple);
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+            font-family: 'Orbitron', sans-serif;
+            margin-bottom: 15px;
+        }
+
+        .template-btn:hover {
+            background: var(--neon-purple);
+            color: var(--bg-primary);
+        }
+
+        .log-container {
+            max-height: 200px;
+            overflow-y: auto;
+            background: rgba(17, 16, 31, 0.8);
+            border: var(--border-cyber);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 12px;
+            display: none;
+        }
+
+        .log-container.active {
+            display: block;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            color: var(--text-secondary);
+        }
+
+        .log-entry.success {
+            color: var(--neon-green);
+        }
+
+        .log-entry.error {
+            color: var(--neon-magenta);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖼️ Descargador de Imágenes en Lote</h1>
+
+        <!-- API KEY Section -->
+        <div class="section">
+            <div class="section-title">🔑 Configuración API</div>
+            <div class="alert alert-info">
+                <strong>Tu API Key de Pixabay:</strong> <code>***REMOVIDA***</code><br>
+                Esta clave ya está configurada por defecto. Puedes cambiarla si tienes otra.
+            </div>
+            <input type="text" 
+                   class="api-key-input" 
+                   id="apiKey" 
+                   placeholder="Tu API Key de Pixabay"
+                   value="***REMOVIDA***">
+            <p class="help-text">
+                💡 Límite: 100 peticiones cada 60 segundos | Las imágenes se descargan en formato JPG de alta calidad
+            </p>
+        </div>
+
+        <!-- Temas Section -->
+        <div class="section">
+            <div class="section-title">📝 Lista de Temas (uno por línea)</div>
+            
+            <button class="template-btn" onclick="loadDerechosTemplate()">
+                📋 Cargar plantilla: Derechos de Niñas y Niños (14 temas)
+            </button>
+            
+            <textarea id="temas" placeholder="Escribe un tema por línea. Ejemplo:&#10;niños paz vida desarrollo&#10;familia feliz&#10;educación escuela"></textarea>
+            
+            <p class="help-text">
+                💡 Tip: Usa términos descriptivos en español e inglés para mejores resultados. La herramienta buscará automáticamente 1 imagen por cada tema.
+            </p>
+        </div>
+
+        <!-- Actions -->
+        <div class="section">
+            <div class="actions">
+                <button class="btn btn-primary" onclick="iniciarDescarga()" id="btnDescargar">
+                    🚀 Descargar Imágenes
+                </button>
+                <button class="btn btn-secondary" onclick="limpiarGaleria()" id="btnLimpiar">
+                    🗑️ Limpiar
+                </button>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                    <div class="progress-text" id="progressText">0%</div>
+                </div>
+            </div>
+
+            <!-- Log Container -->
+            <div class="log-container" id="logContainer"></div>
+        </div>
+
+        <!-- Gallery -->
+        <div class="section">
+            <div class="section-title">🖼️ Vista Previa de Imágenes</div>
+            <div class="gallery" id="gallery"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY_DEFAULT = '***REMOVIDA***';
+
+        // Plantilla de derechos de niñas y niños
+        function loadDerechosTemplate() {
+            const derechosTexto = `niños paz vida desarrollo
+niño prioridad protección
+acta nacimiento identidad niño
+familia feliz niños hogar
+niños diversidad igualdad
+inclusión niños no discriminación
+niños sanos jugando bienestar
+niño protegido libre violencia
+niño doctor salud pediatra
+niños discapacidad inclusión silla ruedas
+niños escuela educación
+niños jugando parque descanso
+niños diferentes culturas religión
+niño expresión hablando`;
+            
+            document.getElementById('temas').value = derechosTexto;
+            addLog('✅ Plantilla cargada: 14 derechos de niñas y niños', 'success');
+        }
+
+        let imagenesDatos = [];
+
+        function addLog(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            logContainer.classList.add('active');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        async function iniciarDescarga() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const temasText = document.getElementById('temas').value.trim();
+            
+            if (!apiKey) {
+                alert('⚠️ Por favor ingresa tu API Key de Pixabay');
+                return;
+            }
+            
+            if (!temasText) {
+                alert('⚠️ Por favor ingresa al menos un tema');
+                return;
+            }
+
+            const temas = temasText.split('\n').filter(t => t.trim());
+            
+            if (temas.length === 0) {
+                alert('⚠️ No se encontraron temas válidos');
+                return;
+            }
+
+            // Limpiar datos anteriores
+            imagenesDatos = [];
+            document.getElementById('gallery').innerHTML = '';
+            document.getElementById('logContainer').innerHTML = '';
+            
+            // Mostrar progreso
+            const progressContainer = document.getElementById('progressContainer');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            progressContainer.classList.add('active');
+            
+            // Deshabilitar botón
+            const btnDescargar = document.getElementById('btnDescargar');
+            btnDescargar.disabled = true;
+
+            addLog(`🚀 Iniciando descarga de ${temas.length} imágenes...`, 'info');
+
+            let completadas = 0;
+            
+            for (let i = 0; i < temas.length; i++) {
+                const tema = temas[i].trim();
+                const numero = i + 1;
+                
+                try {
+                    addLog(`🔍 Buscando: "${tema}"...`, 'info');
+                    
+                    const url = `https://pixabay.com/api/?key=${apiKey}&q=${encodeURIComponent(tema)}&image_type=photo&lang=es&per_page=3`;
+                    const response = await fetch(url);
+                    const data = await response.json();
+                    
+                    if (data.hits && data.hits.length > 0) {
+                        const imagen = data.hits[0];
+                        const imageUrl = imagen.largeImageURL;
+                        
+                        // Descargar la imagen
+                        const imgResponse = await fetch(imageUrl);
+                        const blob = await imgResponse.blob();
+                        
+                        // Guardar datos
+                        imagenesDatos.push({
+                            numero: numero,
+                            tema: tema,
+                            blob: blob,
+                            url: imageUrl
+                        });
+                        
+                        // Mostrar en galería
+                        agregarImagenGaleria(numero, tema, URL.createObjectURL(blob));
+                        
+                        addLog(`✅ ${numero}. "${tema}" - Descargada`, 'success');
+                    } else {
+                        addLog(`⚠️ ${numero}. "${tema}" - Sin resultados`, 'error');
+                    }
+                    
+                } catch (error) {
+                    addLog(`❌ ${numero}. "${tema}" - Error: ${error.message}`, 'error');
+                }
+                
+                completadas++;
+                const porcentaje = Math.round((completadas / temas.length) * 100);
+                progressFill.style.width = porcentaje + '%';
+                progressText.textContent = porcentaje + '%';
+                
+                // Pequeña pausa para no saturar la API
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+            
+            // Habilitar botón
+            btnDescargar.disabled = false;
+            
+            addLog(`✅ Proceso completado: ${imagenesDatos.length}/${temas.length} imágenes descargadas`, 'success');
+            
+            // Si hay imágenes, ofrecer descargar ZIP
+            if (imagenesDatos.length > 0) {
+                setTimeout(() => {
+                    if (confirm(`✅ Se descargaron ${imagenesDatos.length} imágenes.\n\n¿Deseas descargarlas todas en un archivo ZIP?`)) {
+                        generarZIP();
+                    }
+                }, 500);
+            }
+        }
+
+        function agregarImagenGaleria(numero, tema, url) {
+            const gallery = document.getElementById('gallery');
+            const item = document.createElement('div');
+            item.className = 'gallery-item';
+            item.innerHTML = `
+                <img src="${url}" alt="${tema}">
+                <div class="gallery-label">${numero}. ${tema.substring(0, 30)}...</div>
+            `;
+            gallery.appendChild(item);
+        }
+
+        async function generarZIP() {
+            if (imagenesDatos.length === 0) {
+                alert('⚠️ No hay imágenes para descargar');
+                return;
+            }
+
+            addLog('📦 Generando archivo ZIP...', 'info');
+
+            const zip = new JSZip();
+            const carpeta = zip.folder('derechos_ninas_ninos');
+
+            for (const img of imagenesDatos) {
+                const filename = `${img.numero}_${img.tema.substring(0, 30).replace(/\s/g, '_')}.jpg`;
+                carpeta.file(filename, img.blob);
+            }
+
+            try {
+                const content = await zip.generateAsync({ type: 'blob' });
+                saveAs(content, `imagenes_pixabay_${Date.now()}.zip`);
+                addLog('✅ ZIP descargado exitosamente', 'success');
+            } catch (error) {
+                addLog(`❌ Error al generar ZIP: ${error.message}`, 'error');
+            }
+        }
+
+        function limpiarGaleria() {
+            imagenesDatos = [];
+            document.getElementById('gallery').innerHTML = '';
+            document.getElementById('logContainer').innerHTML = '';
+            document.getElementById('logContainer').classList.remove('active');
+            document.getElementById('progressContainer').classList.remove('active');
+            document.getElementById('progressFill').style.width = '0%';
+            document.getElementById('progressText').textContent = '0%';
+            addLog('🗑️ Galería limpiada', 'info');
+        }
+    </script>
+</body>
+</html>

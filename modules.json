@@ -1,0 +1,39 @@
+{
+  "sections": [
+    {
+      "title": "Módulos de Texto",
+      "icon": "📝",
+      "makeFirstActive": true,
+      "items": [
+        { "label": "Carta MX - Índice + Texto", "icon": "📄", "target": "plantilla_escolar_carta_mx_autoajuste_y_areas_editables.html" },
+        { "label": "Hoja Milimétrica", "icon": "📐", "target": "hoja_milimetrica_interactiva.html" },
+        { "label": "Biografía Profesional", "icon": "👤", "target": "biografia_profesional.html" }
+      ]
+    },
+    {
+      "title": "Módulos de Imagen",
+      "icon": "📸",
+      "items": [
+        { "label": "Fotos Infantiles 2.5×3 cm", "icon": "👶", "target": "generador-fotos-infantiles.html" },
+        { "label": "Pixabay Descarga Lote", "icon": "🌐", "target": "pixabay-descargador-lote.html" },
+        { "label": "Círculos Jack Skellington", "icon": "⭕", "target": "plantilla_circulos_jack.html" },
+        { "label": "Cuadros Imágenes v2", "icon": "🖼️", "target": "plantilla-cuadros-imagenes-v2.html" },
+        { "label": "Plantilla Imágenes v2", "icon": "🎨", "target": "plantilla-imagenes-v2.html" }
+      ]
+    },
+    {
+      "title": "Biblioteca",
+      "icon": "📚",
+      "items": [
+        { "label": "Material Reutilizable", "icon": "📖", "target": "material-educativo-reutilizable.html" }
+      ]
+    },
+    {
+      "title": "Automatización IA",
+      "icon": "🤖",
+      "items": [
+        { "label": "Orquestador HTML+", "icon": "🧠", "target": "orquestador-html-plus.html" }
+      ]
+    }
+  ]
+}

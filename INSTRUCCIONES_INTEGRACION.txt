@@ -1,0 +1,126 @@
+═══════════════════════════════════════════════════════════════
+📋 INSTRUCCIONES DE INTEGRACIÓN - PIXABAY DESCARGADOR LOTE
+═══════════════════════════════════════════════════════════════
+
+PASO 1: Ubicar la sección "Modulos Imagen" en tu index.html
+────────────────────────────────────────────────────────────────
+
+Busca esta sección en tu archivo index.html (aproximadamente línea 580):
+
+            <div class="nav-section">
+                <div class="nav-title">
+                    <span>📸</span>
+                    <span>Modulos Imagen</span>
+                </div>
+
+
+PASO 2: Agregar el nuevo botón
+────────────────────────────────────────────────────────────────
+
+Justo DESPUÉS del botón "Fotos Infantiles 2.5×3 cm" y ANTES de "Círculos Jack Skellington",
+agrega esta línea:
+
+                <button class="btn" data-target="pixabay-descargador-lote.html">
+                    <span class="btn-icon">🌐</span>
+                    <span>Pixabay Descarga Lote</span>
+                </button>
+
+
+PASO 3: Resultado final - Tu sección debe quedar así:
+────────────────────────────────────────────────────────────────
+
+            <div class="nav-section">
+                <div class="nav-title">
+                    <span>📸</span>
+                    <span>Modulos Imagen</span>
+                </div>
+                <button class="btn" data-target="generador-fotos-infantiles.html">
+                    <span class="btn-icon">👶</span>
+                    <span>Fotos Infantiles 2.5×3 cm</span>
+                </button>
+                <button class="btn" data-target="pixabay-descargador-lote.html">
+                    <span class="btn-icon">🌐</span>
+                    <span>Pixabay Descarga Lote</span>
+                </button>
+                <button class="btn" data-target="plantilla_circulos_jack.html">
+                    <span class="btn-icon">⭕</span>
+                    <span>Círculos Jack Skellington</span>
+                </button>
+                <button class="btn" data-target="plantilla-cuadros-imagenes-v2.html">
+                    <span class="btn-icon">🖼️</span>
+                    <span>Cuadros Imágenes v2</span>
+                </button>
+                <button class="btn" data-target="plantilla-imagenes-v2.html">
+                    <span class="btn-icon">🎨</span>
+                    <span>Plantilla Imágenes v2</span>
+                </button>
+            </div>
+
+
+PASO 4: Guardar y probar
+────────────────────────────────────────────────────────────────
+
+1. Guarda el archivo index.html
+2. Asegúrate de que pixabay-descargador-lote.html esté en la MISMA carpeta que index.html
+3. Abre index.html en tu navegador
+4. El nuevo botón "Pixabay Descarga Lote" debería aparecer en el menú lateral
+5. Al hacer clic, se cargará la herramienta de descarga de imágenes
+
+
+═══════════════════════════════════════════════════════════════
+✅ VERIFICACIÓN RÁPIDA
+═══════════════════════════════════════════════════════════════
+
+Archivos que debes tener en tu carpeta:
+  ✓ index.html (modificado)
+  ✓ pixabay-descargador-lote.html (nuevo)
+  ✓ Todas tus otras plantillas (.html)
+
+El botón nuevo debe tener:
+  ✓ Icono: 🌐
+  ✓ Texto: "Pixabay Descarga Lote"
+  ✓ Clase: btn
+  ✓ Atributo: data-target="pixabay-descargador-lote.html"
+
+
+═══════════════════════════════════════════════════════════════
+🎯 FUNCIONALIDADES DE LA HERRAMIENTA
+═══════════════════════════════════════════════════════════════
+
+Una vez integrada, la herramienta permite:
+
+✅ Descargar múltiples imágenes de Pixabay automáticamente
+✅ API Key ya preconfigurada (***REMOVIDA***)
+✅ Plantilla predefinida con los 14 Derechos de Niñas y Niños
+✅ Vista previa en tiempo real de las imágenes descargadas
+✅ Descarga todas las imágenes en un archivo ZIP
+✅ Barra de progreso visual
+✅ Registro de actividad (log)
+✅ Diseño cyberpunk integrado con ARKAIOS
+
+
+═══════════════════════════════════════════════════════════════
+📌 NOTAS IMPORTANTES
+═══════════════════════════════════════════════════════════════
+
+• La API de Pixabay tiene un límite de 100 peticiones por hora
+• Se recomienda usar términos descriptivos para mejores resultados
+• Las imágenes se descargan en alta calidad (largeImageURL)
+• El sistema espera 300ms entre cada descarga para no saturar la API
+• Puedes modificar el API Key en cualquier momento desde la interfaz
+
+
+═══════════════════════════════════════════════════════════════
+🔧 PERSONALIZACIÓN OPCIONAL
+═══════════════════════════════════════════════════════════════
+
+Si quieres cambiar el icono del botón, puedes usar otros emojis:
+  🖼️ - Imagen enmarcada
+  📷 - Cámara
+  🎨 - Paleta de arte
+  ☁️ - Nube (descarga en la nube)
+  🌐 - Globo con meridianos
+  📦 - Paquete
+
+
+═══════════════════════════════════════════════════════════════

@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Fotos Infantiles 2.5x3cm</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .main-container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #667eea;
+            margin-bottom: 5px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #999;
+            font-size: 14px;
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .sidebar {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            height: fit-content;
+            max-height: calc(100vh - 180px);
+            overflow-y: auto;
+            position: sticky;
+            top: 20px;
+        }
+
+        .sidebar-title {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-banner {
+            background: #e3f2fd;
+            padding: 12px;
+            border-radius: 8px;
+            color: #1565c0;
+            font-size: 12px;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .row-selector {
+            background: #f5f7fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 12px;
+            transition: all 0.3s;
+        }
+
+        .row-selector:hover {
+            border-color: #667eea;
+            box-shadow: 0 3px 10px rgba(102, 126, 234, 0.2);
+        }
+
+        .row-selector.active {
+            border-color: #48c774;
+            background: #f0fff4;
+        }
+
+        .row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .row-label {
+            font-weight: bold;
+            color: #333;
+            font-size: 13px;
+        }
+
+        .row-range {
+            font-size: 10px;
+            color: #999;
+            margin-left: 5px;
+        }
+
+        .row-clear {
+            background: #ff4757;
+            color: white;
+            border: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 0;
+        }
+
+        .row-preview {
+            width: 100%;
+            height: 100px;
+            background: linear-gradient(135deg, #fff 0%, #f5f7fa 100%);
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-bottom: 8px;
+            overflow: hidden;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .row-preview:hover {
+            border-color: #667eea;
+            transform: scale(1.02);
+        }
+
+        .row-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .row-preview-placeholder {
+            color: #ccc;
+            font-size: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-gen-row {
+            background: #8e44ad;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .row-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .row-qty-input {
+            flex: 1;
+            padding: 6px 8px;
+            border: 2px solid #667eea;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .row-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .btn-fill {
+            background: #48c774;
+            color: white;
+            flex: 1;
+        }
+
+        .btn-fill:hover {
+            background: #3db864;
+        }
+
+        .action-buttons {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        .btn-main {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 8px;
+        }
+
+        .btn-print {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-print:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .btn-clear-all {
+            background: #ff4757;
+            color: white;
+        }
+
+        .btn-clear-all:hover {
+            background: #ee2f3d;
+        }
+
+        .templates-area {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .templates-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .templates-title {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 18px;
+        }
+
+        .stats-inline {
+            display: flex;
+            gap: 20px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-number {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .templates-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .template-wrapper {
+            position: relative;
+        }
+
+        .template-label {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 10px 10px 0 0;
+            font-weight: bold;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .page-container {
+            width: 21.59cm;
+            height: 27.94cm;
+            background: white;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            position: relative;
+            border-radius: 0 0 5px 5px;
+            overflow: hidden;
+        }
+
+        .grid-container {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(8, 2.5cm);
+            grid-template-rows: repeat(9, 3cm);
+            gap: 0;
+            justify-content: center;
+            align-content: start;
+            padding: 0.5cm;
+        }
+
+        .photo-cell {
+            width: 2.5cm;
+            height: 3cm;
+            border: 1px solid #e0e0e0;
+            overflow: hidden;
+            position: relative;
+            background: #f9f9f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: move;
+            transition: all 0.2s;
+        }
+
+        .photo-cell:hover {
+            border-color: #667eea;
+            z-index: 10;
+        }
+
+        .photo-cell.dragging {
+            opacity: 0.5;
+            border: 2px solid #f5576c;
+        }
+
+        .photo-cell.drag-over {
+            background: #fff9c4;
+            border: 2px solid #ffd54f;
+        }
+
+        .photo-cell.filled {
+            background: white;
+        }
+
+        .photo-cell img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+        }
+
+        .photo-cell-number {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            background: rgba(102, 126, 234, 0.8);
+            color: white;
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 8px;
+            font-weight: bold;
+            z-index: 5;
+        }
+
+        .cell-empty {
+            color: #ddd;
+            font-size: 20px;
+            pointer-events: none;
+        }
+
+        .cell-delete {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: #ff4757;
+            color: white;
+            border: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 12px;
+            z-index: 10;
+            display: none;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .photo-cell.filled:hover .cell-delete {
+            display: block;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        @page {
+            size: letter;
+            margin: 0;
+        }
+
+        @media print {
+            body {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+            }
+
+            .header,
+            .sidebar,
+            .templates-header,
+            .template-label,
+            .btn-gen-row {
+                display: none !important;
+            }
+
+            .main-container {
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .templates-area {
+                padding: 0 !important;
+                margin: 0 !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                background: white !important;
+            }
+
+            .templates-container {
+                display: block !important;
+                gap: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .template-wrapper {
+                page-break-after: always;
+                page-break-inside: avoid;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .template-wrapper:last-child {
+                page-break-after: auto;
+            }
+
+            .page-container {
+                width: 21.59cm !important;
+                height: 27.94cm !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: visible !important;
+                background: white !important;
+                display: block !important;
+            }
+
+            .grid-container {
+                width: 100% !important;
+                height: 100% !important;
+                display: grid !important;
+                grid-template-columns: repeat(8, 2.5cm) !important;
+                grid-template-rows: repeat(9, 3cm) !important;
+                gap: 0 !important;
+                justify-content: center !important;
+                align-content: start !important;
+                padding: 0.5cm !important;
+            }
+
+            .photo-cell {
+                width: 2.5cm !important;
+                height: 3cm !important;
+                border: 1px solid #ddd !important;
+                background: white !important;
+                overflow: hidden !important;
+                position: relative !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
+
+            .photo-cell img {
+                width: 100% !important;
+                height: 100% !important;
+                object-fit: cover !important;
+                display: block !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            .photo-cell-number,
+            .cell-empty,
+            .cell-delete {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body data-arkaios-template="fotos-infantiles-inteligente">
+    <div class="main-container">
+        <div class="header">
+            <h1>📸 Generador de Fotos Infantiles - Control por Renglón</h1>
+            <p class="subtitle">Tamaño: 2.5cm × 3cm | 8 columnas × 9 renglones = 72 fotos por hoja | Cada renglón en su
+                posición exacta</p>
+        </div>
+
+        <div class="workspace">
+            <div class="sidebar">
+                <div class="sidebar-title">
+                    <span>🎯</span>
+                    <span>9 Renglones Posicionales</span>
+                </div>
+
+                <div class="info-banner">
+                    <strong>💡 Control Posicional:</strong><br>
+                    • Cada renglón llena SU fila específica<br>
+                    • Renglón 1 = Espacios 1-8<br>
+                    • Renglón 9 = Espacios 65-72<br>
+                    • Arrastra fotos para reorganizar
+                </div>
+
+                <div id="rowSelectors"></div>
+
+                <div class="action-buttons">
+                    <button class="btn-main btn-print" onclick="printTemplates()">🖨️ Imprimir Plantillas</button>
+                    <button class="btn-main btn-clear-all" onclick="clearAll()">🗑️ Limpiar Todo</button>
+                    <!-- Botonera de APIs -->
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 10px;">
+                        <button class="btn-main" onclick="searchPexels()"
+                            style="background: #05a081; padding: 10px; font-size: 0.85rem;">📸 Buscar en Pexels</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="templates-area">
+                <div class="templates-header">
+                    <div class="templates-title">📄 Plantilla de Impresión</div>
+                    <div class="stats-inline">
+                        <div class="stat-item">
+                            <span class="stat-number" id="totalPhotos">0</span>
+                            <span>fotos</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="totalSheets">1</span>
+                            <span>hojas</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="templates-container" id="templatesContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE IA REMOVIDO -->
+
+    <input type="file" id="fileInputHidden" accept="image/*" style="display:none">
+
+    <script>
+        const PHOTOS_PER_SHEET = 72;
+        const PHOTOS_PER_ROW = 8;
+        const TOTAL_ROWS = 9;
+        let rowToGenerate = -1;
+
+        // Helper para convertir imagen a Base64
+        function toDataURL(url, callback) {
+            var xhr = new XMLHttpRequest();
+            xhr.onload = function () {
+                var reader = new FileReader();
+                reader.onloadend = function () {
+                    callback(reader.result);
+                }
+                reader.readAsDataURL(xhr.response);
+            };
+            xhr.onerror = function () {
+                callback(url);
+            };
+            xhr.open('GET', url);
+            xhr.responseType = 'blob';
+            xhr.send();
+        }
+
+        // ===== API KEYS =====
+        const PEXELS_API_KEY = '***REMOVIDA***';
+        const FREEPIK_API_KEY = '***REMOVIDA***';
+        const PIXABAY_API_KEY = '***REMOVIDA***';
+
+        // ===== FUNCIONES DE BÚSQUEDA =====
+        async function searchPixabay() {
+            const query = prompt("¿Qué imágenes buscas en Pixabay?");
+            if (!query) return;
+            const countStr = prompt("¿Cuántas imágenes quieres?", "1");
+            const count = parseInt(countStr) || 1;
+
+            try {
+                const response = await fetch(`https://pixabay.com/api/?key=${PIXABAY_API_KEY}&q=${encodeURIComponent(query)}&image_type=photo&per_page=${count}`);
+                const data = await response.json();
+                if (data.hits && data.hits.length > 0) {
+                    const urls = data.hits.map(hit => hit.largeImageURL);
+                    assignImagesToRows(urls);
+                } else {
+                    alert('No se encontraron imágenes');
+                }
+            } catch (e) { console.error(e); alert('Error en Pixabay'); }
+        }
+
+        async function searchPexels() {
+            const query = prompt("¿Qué imágenes buscas en Pexels?");
+            if (!query) return;
+            const countStr = prompt("¿Cuántas imágenes quieres?", "1");
+            const count = parseInt(countStr) || 1;
+
+            try {
+                const response = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=${count}`, {
+                    headers: { Authorization: PEXELS_API_KEY }
+                });
+                const data = await response.json();
+                if (data.photos && data.photos.length > 0) {
+                    const urls = data.photos.map(photo => photo.src.large);
+                    assignImagesToRows(urls);
+                } else {
+                    alert('No se encontraron imágenes');
+                }
+            } catch (e) { console.error(e); alert('Error en Pexels'); }
+        }
+
+        async function searchFreepik() {
+            const query = prompt("¿Qué imágenes buscas en Freepik?");
+            if (!query) return;
+            const countStr = prompt("¿Cuántas imágenes quieres?", "1");
+            const count = parseInt(countStr) || 1;
+
+            try {
+                const response = await fetch(`https://api.freepik.com/v1/resources?locale=es-ES&q=${encodeURIComponent(query)}&limit=${count}`, {
+                    headers: { 'X-Freepik-API-Key': FREEPIK_API_KEY }
+                });
+                const data = await response.json();
+                if (data.data && data.data.length > 0) {
+                    const urls = data.data.map(item => item.image.source.url);
+                    assignImagesToRows(urls);
+                } else {
+                    alert('No se encontraron imágenes');
+                }
+            } catch (e) { console.error(e); alert('Error en Freepik'); }
+        }
+
+        function assignImagesToRows(urls) {
+            let currentUrlIndex = 0;
+            for (let i = 1; i <= TOTAL_ROWS; i++) {
+                if (!rowImages[i].image && currentUrlIndex < urls.length) {
+                    setRowImage(i, urls[currentUrlIndex]);
+                    currentUrlIndex++;
+                }
+            }
+            if (currentUrlIndex < urls.length) {
+                alert(`Se asignaron ${currentUrlIndex} imágenes. No hay más filas disponibles.`);
+            }
+        }
+
+        function assignImageToNextRow(imageUrl) {
+            assignImagesToRows([imageUrl]);
+        }
+
+        function setRowImage(row, url) {
+            rowImages[row].image = url;
+            createRowSelectors();
+            renderTemplate();
+            updateStats();
+        }
+
+        let rowImages = {};
+        for (let i = 1; i <= TOTAL_ROWS; i++) {
+            rowImages[i] = { image: null, quantity: 1 };
+        }
+
+        let draggedCell = null;
+
+        function initApp() {
+            createRowSelectors();
+            renderTemplate();
+            updateStats();
+        }
+
+        function createRowSelectors() {
+            const container = document.getElementById('rowSelectors');
+            container.innerHTML = '';
+
+            for (let row = 1; row <= TOTAL_ROWS; row++) {
+                const startPos = (row - 1) * PHOTOS_PER_ROW + 1;
+                const endPos = row * PHOTOS_PER_ROW;
+
+                const selector = document.createElement('div');
+                selector.className = 'row-selector';
+                selector.id = `row-selector-${row}`;
+
+                const header = document.createElement('div');
+                header.className = 'row-header';
+
+                const label = document.createElement('div');
+                label.className = 'row-label';
+                label.innerHTML = `Renglón ${row} <span class="row-range">(${startPos}-${endPos})</span>`;
+
+                const clearBtn = document.createElement('button');
+                clearBtn.className = 'row-clear';
+                clearBtn.textContent = '×';
+                clearBtn.onclick = () => clearRow(row);
+
+                header.appendChild(label);
+                header.appendChild(clearBtn);
+
+                const preview = document.createElement('div');
+                preview.className = 'row-preview';
+                preview.onclick = () => selectImageForRow(row);
+
+                if (rowImages[row].image) {
+                    const img = document.createElement('img');
+                    img.src = rowImages[row].image;
+                    preview.appendChild(img);
+                    selector.classList.add('active');
+                } else {
+                    const placeholder = document.createElement('div');
+                    placeholder.className = 'row-preview-placeholder';
+                    placeholder.textContent = '📷';
+
+                    preview.appendChild(placeholder);
+                }
+
+                const controls = document.createElement('div');
+                controls.className = 'row-controls';
+
+                const qtyInput = document.createElement('input');
+                qtyInput.type = 'number';
+                qtyInput.min = 1;
+                qtyInput.max = PHOTOS_PER_ROW;
+                qtyInput.value = rowImages[row].quantity;
+                qtyInput.className = 'row-qty-input';
+                qtyInput.onchange = (e) => {
+                    let val = parseInt(e.target.value);
+                    if (val < 1) val = 1;
+                    if (val > PHOTOS_PER_ROW) val = PHOTOS_PER_ROW;
+                    rowImages[row].quantity = val;
+                    e.target.value = val;
+                    renderTemplate();
+                    updateStats();
+                };
+
+                const fillBtn = document.createElement('button');
+                fillBtn.className = 'row-btn btn-fill';
+                fillBtn.textContent = '✓ Llenar';
+                fillBtn.onclick = () => fillRow(row);
+
+                controls.appendChild(qtyInput);
+                controls.appendChild(fillBtn);
+
+                selector.appendChild(header);
+                selector.appendChild(preview);
+                selector.appendChild(controls);
+
+                container.appendChild(selector);
+            }
+        }
+
+        function selectImageForRow(row) {
+            const input = document.getElementById('fileInputHidden');
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    rowImages[row].image = ev.target.result;
+                    createRowSelectors();
+                    renderTemplate();
+                    updateStats();
+                };
+                reader.readAsDataURL(file);
+            };
+            input.click();
+        }
+
+        function fillRow(row) {
+            if (!rowImages[row].image) {
+                alert(`Primero selecciona una imagen para el Renglón ${row}`);
+                return;
+            }
+            rowImages[row].quantity = PHOTOS_PER_ROW;
+            createRowSelectors();
+            renderTemplate();
+            updateStats();
+        }
+
+        function clearRow(row) {
+            rowImages[row] = { image: null, quantity: 1 };
+            createRowSelectors();
+            renderTemplate();
+            updateStats();
+        }
+
+        function clearAll() {
+            if (!confirm('¿Limpiar todas las imágenes?')) return;
+            for (let i = 1; i <= TOTAL_ROWS; i++) {
+                rowImages[i] = { image: null, quantity: 1 };
+            }
+            createRowSelectors();
+            renderTemplate();
+            updateStats();
+        }
+
+        function renderTemplate() {
+            const container = document.getElementById('templatesContainer');
+            container.innerHTML = '';
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'template-wrapper';
+
+            const label = document.createElement('div');
+            label.className = 'template-label';
+            label.textContent = 'Hoja 1';
+
+            const page = document.createElement('div');
+            page.className = 'page-container';
+
+            const grid = document.createElement('div');
+            grid.className = 'grid-container';
+
+            for (let cellIndex = 0; cellIndex < PHOTOS_PER_SHEET; cellIndex++) {
+                const row = Math.floor(cellIndex / PHOTOS_PER_ROW) + 1;
+                const posInRow = cellIndex % PHOTOS_PER_ROW;
+
+                const cell = document.createElement('div');
+                cell.className = 'photo-cell';
+                cell.dataset.index = cellIndex;
+                cell.draggable = false;
+
+                const rowData = rowImages[row];
+                if (rowData.image && posInRow < rowData.quantity) {
+                    cell.classList.add('filled');
+                    cell.draggable = true;
+
+                    const img = document.createElement('img');
+                    img.src = rowData.image;
+                    cell.appendChild(img);
+
+                    const number = document.createElement('div');
+                    number.className = 'photo-cell-number';
+                    number.textContent = cellIndex + 1;
+                    cell.appendChild(number);
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'cell-delete';
+                    deleteBtn.textContent = '×';
+                    deleteBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        removeCellImage(row);
+                    };
+                    cell.appendChild(deleteBtn);
+                } else {
+                    const empty = document.createElement('div');
+                    empty.className = 'cell-empty';
+                    empty.textContent = '📷';
+                    cell.appendChild(empty);
+                }
+
+                cell.addEventListener('dragstart', handleDragStart);
+                cell.addEventListener('dragover', handleDragOver);
+                cell.addEventListener('drop', handleDrop);
+                cell.addEventListener('dragend', handleDragEnd);
+
+                grid.appendChild(cell);
+            }
+
+            page.appendChild(grid);
+            wrapper.appendChild(label);
+            wrapper.appendChild(page);
+            container.appendChild(wrapper);
+        }
+
+        function removeCellImage(row) {
+            rowImages[row].image = null;
+            rowImages[row].quantity = 1;
+            createRowSelectors();
+            renderTemplate();
+            updateStats();
+        }
+
+        function handleDragStart(e) {
+            if (!this.classList.contains('filled')) return;
+            draggedCell = parseInt(this.dataset.index);
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            if (draggedCell !== null) {
+                this.classList.add('drag-over');
+            }
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
+
+            if (draggedCell === null) return;
+
+            const targetIndex = parseInt(this.dataset.index);
+            if (draggedCell === targetIndex) return;
+
+            const draggedRow = Math.floor(draggedCell / PHOTOS_PER_ROW) + 1;
+            const targetRow = Math.floor(targetIndex / PHOTOS_PER_ROW) + 1;
+
+            const tempImage = rowImages[draggedRow].image;
+            rowImages[draggedRow].image = rowImages[targetRow].image;
+            rowImages[targetRow].image = tempImage;
+
+            createRowSelectors();
+            renderTemplate();
+            updateStats();
+        }
+
+        function handleDragEnd() {
+            this.classList.remove('dragging');
+            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+            draggedCell = null;
+        }
+
+        function updateStats() {
+            let total = 0;
+            for (let i = 1; i <= TOTAL_ROWS; i++) {
+                if (rowImages[i].image) {
+                    total += rowImages[i].quantity;
+                }
+            }
+            document.getElementById('totalPhotos').textContent = total;
+            document.getElementById('totalSheets').textContent = 1;
+        }
+
+        function printTemplates() {
+            window.print();
+        }
+
+
+        // Las funciones de generación con IA local han sido removidas.
+        // Ahora el sistema se comunica globalmente a través de ARKAIOS Principal.
+
+        initApp();
+    </script>
+    <script src="arkaios-biblioteca.js"></script>
+    <script src="arkaios-orquestador.js"></script>
+</body>
+
+</html>

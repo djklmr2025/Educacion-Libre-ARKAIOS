@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Plantilla Educativa - Círculos Jack Skellington</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      margin-bottom: 25px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 1.8rem;
+      color: #2d3748;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      color: #718096;
+      font-size: 0.95rem;
+    }
+
+    .toolbar {
+      background: #2d3748;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      margin-bottom: 25px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .toolbar button {
+      background: #4299e1;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .toolbar button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(66, 153, 225, 0.4);
+    }
+
+    .toolbar button.success {
+      background: #48bb78;
+    }
+
+    .toolbar button.danger {
+      background: #f56565;
+    }
+
+    .toolbar button.pixabay {
+      background: #2e7d32;
+    }
+
+    .toolbar button.pexels {
+      background: #05a081;
+    }
+
+    .toolbar button.freepik {
+      background: #336aea;
+    }
+
+    .toolbar button.ai {
+      background: #9f7aea;
+    }
+
+    .pages-container {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+    }
+
+    .page-wrapper {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+    }
+
+    .page-header {
+      background: #4a5568;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .page-header h2 {
+      color: white;
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+
+    .page-header button {
+      background: #fc8181;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.3s;
+    }
+
+    .page-header button:hover:not(:disabled) {
+      background: #f56565;
+    }
+
+    .page-header button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .page {
+      width: 21.59cm;
+      height: 27.94cm;
+      margin: 20px auto;
+      background: white;
+      position: relative;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .page-inner {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .circle {
+      position: absolute;
+      border-radius: 50%;
+      border: 3px solid #e2e8f0;
+      background: #f7fafc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      overflow: hidden;
+    }
+
+    .circle:hover {
+      border-color: #4299e1;
+      box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
+    }
+
+    .circle.has-image {
+      border-color: #48bb78;
+    }
+
+    .circle.locked {
+      border-color: #ed8936;
+      cursor: default;
+    }
+
+    .circle-grande {
+      width: 12cm;
+      height: 12cm;
+    }
+
+    .circle-pequeno {
+      width: 5cm;
+      height: 5cm;
+    }
+
+    .circle-label {
+      text-align: center;
+      color: #a0aec0;
+      font-size: 0.85rem;
+      font-weight: 600;
+      white-space: pre-line;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .circle-image-wrapper {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      overflow: hidden;
+    }
+
+    .circle-image-wrapper img {
+      position: absolute;
+      object-fit: cover;
+      user-select: none;
+      cursor: move;
+    }
+
+    .circle-image-wrapper img.dragging {
+      cursor: grabbing;
+      opacity: 0.8;
+    }
+
+    .circle-controls {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 6px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 10;
+    }
+
+    .circle:hover .circle-controls {
+      opacity: 1;
+    }
+
+    .chip {
+      background: rgba(66, 153, 225, 0.95);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      white-space: nowrap;
+    }
+
+    .chip:hover {
+      background: #2c5282;
+      transform: scale(1.05);
+    }
+
+    .chip-danger {
+      background: rgba(245, 101, 101, 0.95);
+    }
+
+    .chip-danger:hover {
+      background: #c53030;
+    }
+
+    .locked-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(237, 137, 54, 0.95);
+      color: white;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      z-index: 10;
+    }
+
+    .page-note {
+      position: absolute;
+      bottom: 10px;
+      right: 15px;
+      color: #cbd5e0;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .edit-panel {
+      position: fixed;
+      right: -350px;
+      top: 20px;
+      width: 320px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      padding: 25px;
+      transition: right 0.4s ease;
+      z-index: 1000;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .edit-panel.active {
+      right: 20px;
+    }
+
+    .edit-panel h3 {
+      font-size: 1.3rem;
+      color: #2d3748;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .edit-section {
+      margin-bottom: 20px;
+    }
+
+    .edit-section label {
+      display: block;
+      font-weight: 600;
+      color: #4a5568;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+    }
+
+    .edit-section input[type="range"] {
+      width: 100%;
+      height: 8px;
+      border-radius: 4px;
+      background: #e2e8f0;
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    .edit-section input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #4299e1;
+      cursor: pointer;
+    }
+
+    .edit-section input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #4299e1;
+      cursor: pointer;
+      border: none;
+    }
+
+    .slider-value {
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #2d3748;
+      margin-top: 8px;
+    }
+
+    .edit-tip {
+      background: #ebf8ff;
+      border-left: 4px solid #4299e1;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      color: #2c5282;
+      line-height: 1.5;
+    }
+
+    .edit-btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-top: 12px;
+    }
+
+    .edit-btn-lock {
+      background: #ed8936;
+      color: white;
+    }
+
+    .edit-btn-lock:hover {
+      background: #dd6b20;
+    }
+
+    .edit-btn-unlock {
+      background: #48bb78;
+      color: white;
+    }
+
+    .edit-btn-unlock:hover {
+      background: #38a169;
+    }
+
+    .edit-btn-delete {
+      background: #fc8181;
+      color: white;
+    }
+
+    .edit-btn-delete:hover {
+      background: #f56565;
+    }
+
+    /* Modal de IA */
+    .ai-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .ai-modal-content {
+      background: #1a202c;
+      padding: 30px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 500px;
+      border: 2px solid #9f7aea;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .ai-modal h3 {
+      color: #9f7aea;
+      margin-bottom: 20px;
+      font-size: 1.5rem;
+    }
+
+    .ai-modal label {
+      display: block;
+      color: #e2e8f0;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .ai-modal input,
+    .ai-modal textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #4a5568;
+      border-radius: 6px;
+      background: #2d3748;
+      color: #f7fafc;
+      font-size: 1rem;
+      margin-bottom: 15px;
+    }
+
+    .ai-modal input:focus,
+    .ai-modal textarea:focus {
+      outline: none;
+      border-color: #9f7aea;
+    }
+
+    .ai-modal textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .ai-modal-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .ai-modal button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 1rem;
+      transition: all 0.3s;
+    }
+
+    .ai-modal button.generate {
+      background: #9f7aea;
+      color: white;
+    }
+
+    .ai-modal button.generate:hover {
+      background: #805ad5;
+    }
+
+    .ai-modal button.cancel {
+      background: #4a5568;
+      color: white;
+    }
+
+    .ai-modal button.cancel:hover {
+      background: #718096;
+    }
+
+    #aiStatus {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 6px;
+      text-align: center;
+      color: #e2e8f0;
+      font-size: 0.9rem;
+    }
+
+    /* Crédito de fuente */
+    .source-credit {
+      background: #ebf8ff;
+      border: 2px solid #90cdf4;
+      padding: 15px;
+      border-radius: 12px;
+      text-align: center;
+      color: #2c5282;
+      font-weight: 600;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(66, 153, 225, 0.2);
+    }
+
+    .btn-gen-circle {
+      background: #9f7aea;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      margin-top: 5px;
+    }
+
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+
+      .toolbar,
+      .header,
+      .page-header,
+      .edit-panel,
+      .ai-modal,
+      .source-credit,
+      .no-print,
+      .btn-gen-circle {
+        display: none !important;
+      }
+
+      .page-wrapper {
+        box-shadow: none;
+        margin: 0;
+        page-break-after: always;
+      }
+
+      .page {
+        box-shadow: none;
+        margin: 0;
+      }
+
+      .circle-controls,
+      .locked-badge,
+      .page-note {
+        display: none !important;
+      }
+
+      .circle {
+        border: 2px solid #000;
+      }
+    }
+  </style>
+</head>
+
+<body data-arkaios-template="circulos-jack-inteligente">
+  <div class="container">
+    <!-- Encabezado -->
+    <div class="header">
+      <h1>🎃 Plantilla Educativa - Círculos Jack Skellington</h1>
+      <p>Sube imágenes, edita y genera el PDF para imprimir</p>
+    </div>
+
+    <!-- Crédito de fuente (oculto por defecto) -->
+    <div id="sourceCredit" class="source-credit no-print" style="display: none;"></div>
+
+    <!-- Barra de herramientas -->
+    <div class="toolbar">
+      <button class="success" id="btnAddPage">➕ Agregar Hoja</button>
+      <button onclick="window.print()">🖨️ Imprimir PDF</button>
+      <button class="danger" id="btnClearAll">🗑️ Limpiar Todo</button>
+      <button id="btnBulkLarge">📂 Cargar Lote (Grandes)</button>
+      <button id="btnBulkSmall">📂 Cargar Lote (Pequeños)</button>
+      <button class="pexels" onclick="searchPexels()">📸 Buscar en Pexels</button>
+      <!-- Botón IA Removido -->
+    </div>
+
+    <!-- Contenedor de páginas -->
+    <div class="pages-container" id="pagesContainer"></div>
+  </div>
+
+  <!-- Panel de edición lateral -->
+  <div class="edit-panel" id="editPanel">
+    <h3>✏️ Editor de Círculo</h3>
+
+    <div class="edit-tip">
+      <strong>Tip:</strong><br>
+      Arrastra la imagen con el mouse para moverla libremente dentro del círculo
+    </div>
+
+    <div class="edit-section">
+      <label>Tamaño:</label>
+      <input type="range" id="scaleSlider" min="50" max="200" value="100" step="5">
+      <div class="slider-value" id="scaleValue">100%</div>
+    </div>
+
+    <button class="edit-btn edit-btn-lock" id="btnLock">🔒 Fijar Imagen</button>
+    <button class="edit-btn edit-btn-delete" id="btnDeleteImage">🗑️ Eliminar Imagen</button>
+  </div>
+
+  <!-- MODAL DE IA REMOVIDO -->
+  <!-- Inputs ocultos -->
+  <input type="file" id="fileInputHidden" accept="image/*" style="display:none">
+  <input type="file" id="fileInputBulkLarge" multiple accept="image/*" style="display:none">
+  <input type="file" id="fileInputBulkSmall" multiple accept="image/*" style="display:none">
+
+  <script>
+    // ===== CONFIGURACIÓN DE API KEYS =====
+    const PEXELS_API_KEY = '***REMOVIDA***';
+
+    // ===== VARIABLES GLOBALES =====
+    let pages = [];
+    let pageIdCounter = 0;
+    let circleIdCounter = 0;
+    let editingCircle = null;
+    let circleToFill = null;
+    let draggedImage = null;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let imageStartX = 50;
+    let imageStartY = 50;
+    let circleToGenerate = null; // { pageId, circleId }
+
+    // ===== ELEMENTOS DOM =====
+    const pagesContainer = document.getElementById('pagesContainer');
+    const btnAddPage = document.getElementById('btnAddPage');
+    const btnClearAll = document.getElementById('btnClearAll');
+    const btnBulkLarge = document.getElementById('btnBulkLarge');
+    const btnBulkSmall = document.getElementById('btnBulkSmall');
+    const fileInputHidden = document.getElementById('fileInputHidden');
+    const fileInputBulkLarge = document.getElementById('fileInputBulkLarge');
+    const fileInputBulkSmall = document.getElementById('fileInputBulkSmall');
+    const editPanel = document.getElementById('editPanel');
+    const scaleSlider = document.getElementById('scaleSlider');
+    const scaleValue = document.getElementById('scaleValue');
+    const btnLock = document.getElementById('btnLock');
+    const btnDeleteImage = document.getElementById('btnDeleteImage');
+
+    // ===== CONSTANTES =====
+    const CIRCULO_GRANDE = 12 * 37.795; // 12cm en píxeles
+    const CIRCULO_PEQUENO = 5 * 37.795; // 5cm en píxeles
+
+    // Helper para convertir imagen a Base64 (evita problemas de CORS al imprimir/guardar)
+    function toDataURL(url, callback) {
+      var xhr = new XMLHttpRequest();
+      xhr.onload = function () {
+        var reader = new FileReader();
+        reader.onloadend = function () {
+          callback(reader.result);
+        }
+        reader.readAsDataURL(xhr.response);
+      };
+      xhr.onerror = function () {
+        // Fallback si falla CORS
+        callback(url);
+      };
+      xhr.open('GET', url);
+      xhr.responseType = 'blob';
+      xhr.send();
+    }
+
+    // ===== FUNCIONES DE PÁGINA =====
+    function createInitialPageData(id) {
+      return {
+        id: id,
+        circles: [
+          // 2 círculos grandes
+          {
+            id: ++circleIdCounter,
+            size: 'grande',
+            imageData: null,
+            scale: 100,
+            posX: 50,
+            posY: 50,
+            locked: false
+          },
+          {
+            id: ++circleIdCounter,
+            size: 'grande',
+            imageData: null,
+            scale: 100,
+            posX: 50,
+            posY: 50,
+            locked: false
+          },
+          // 4 círculos pequeños
+          {
+            id: ++circleIdCounter,
+            size: 'pequeno',
+            imageData: null,
+            scale: 100,
+            posX: 50,
+            posY: 50,
+            locked: false
+          },
+          {
+            id: ++circleIdCounter,
+            size: 'pequeno',
+            imageData: null,
+            scale: 100,
+            posX: 50,
+            posY: 50,
+            locked: false
+          },
+          {
+            id: ++circleIdCounter,
+            size: 'pequeno',
+            imageData: null,
+            scale: 100,
+            posX: 50,
+            posY: 50,
+            locked: false
+          },
+          {
+            id: ++circleIdCounter,
+            size: 'pequeno',
+            imageData: null,
+            scale: 100,
+            posX: 50,
+            posY: 50,
+            locked: false
+          }
+        ]
+      };
+    }
+
+    function addPage() {
+      const newPage = createInitialPageData(++pageIdCounter);
+      pages.push(newPage);
+      renderPages();
+    }
+
+    function removePage(id) {
+      if (pages.length <= 1) return;
+      if (!confirm('¿Eliminar esta hoja completa?')) return;
+      pages = pages.filter(p => p.id !== id).map((p, idx) => ({ ...p, id: idx + 1 }));
+      renderPages();
+      closeEditPanel();
+    }
+
+    function clearAll() {
+      if (!confirm('¿Limpiar todas las hojas e imágenes?')) return;
+      pages = [];
+      pageIdCounter = 0;
+      circleIdCounter = 0;
+      addPage();
+      closeEditPanel();
+      hideSourceCredit();
+    }
+
+    // ===== RENDERIZAR =====
+    function renderPages() {
+      pagesContainer.innerHTML = '';
+
+      pages.forEach((page, index) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'page-wrapper';
+
+        const header = document.createElement('div');
+        header.className = 'page-header';
+
+        const title = document.createElement('h2');
+        title.textContent = `📄 Hoja ${index + 1}`;
+
+        const btnDelete = document.createElement('button');
+        btnDelete.textContent = '🗑️ Eliminar Hoja';
+        btnDelete.onclick = () => removePage(page.id);
+        if (pages.length <= 1) {
+          btnDelete.disabled = true;
+        }
+
+        header.appendChild(title);
+        header.appendChild(btnDelete);
+
+        const pageEl = document.createElement('div');
+        pageEl.className = 'page';
+
+        const inner = document.createElement('div');
+        inner.className = 'page-inner';
+
+        // Posiciones fijas para los círculos
+        const positions = {
+          grande: [
+            { left: '1.2cm', top: '2cm' },
+            { left: '1.2cm', bottom: '2cm' }
+          ],
+          pequeno: [
+            { right: '1.8cm', top: '2cm' },
+            { right: '1.8cm', top: '8cm' },
+            { right: '1.8cm', top: '14cm' },
+            { right: '1.8cm', top: '20cm' }
+          ]
+        };
+
+        let gIndex = 0;
+        let pIndex = 0;
+
+        page.circles.forEach(circle => {
+          const circleDiv = document.createElement('div');
+          circleDiv.className = 'circle ' +
+            (circle.size === 'grande' ? 'circle-grande' : 'circle-pequeno') +
+            ' arkaios-image-slot';
+
+          if (circle.locked) circleDiv.classList.add('locked');
+
+          const pos = circle.size === 'grande' ?
+            positions.grande[gIndex++] :
+            positions.pequeno[pIndex++];
+
+          Object.assign(circleDiv.style, pos);
+          circleDiv.onclick = (e) => {
+            if (e.target.tagName !== 'BUTTON') {
+              handleCircleClick(page.id, circle.id);
+            }
+          };
+
+          if (circle.imageData) {
+            circleDiv.classList.add('has-image');
+
+            const imgWrapper = document.createElement('div');
+            imgWrapper.className = 'circle-image-wrapper';
+
+            const img = document.createElement('img');
+            img.src = circle.imageData;
+            img.alt = 'Imagen círculo';
+
+            const scale = circle.scale / 100;
+            const size = Math.max(
+              circle.size === 'grande' ? 12 : 5,
+              (circle.size === 'grande' ? 12 : 5) * scale
+            );
+
+            img.style.width = size + 'cm';
+            img.style.height = size + 'cm';
+            img.style.left = circle.posX + '%';
+            img.style.top = circle.posY + '%';
+            img.style.transform = 'translate(-50%, -50%)';
+
+            if (!circle.locked) {
+              setupImageDrag(img, page.id, circle.id);
+            }
+
+            imgWrapper.appendChild(img);
+            circleDiv.appendChild(imgWrapper);
+
+            if (circle.locked) {
+              const badge = document.createElement('div');
+              badge.className = 'locked-badge';
+              badge.textContent = 'FIJADA ✓';
+              circleDiv.appendChild(badge);
+            }
+
+            if (!circle.locked) {
+              const controls = document.createElement('div');
+              controls.className = 'circle-controls';
+
+              const chipEdit = document.createElement('div');
+              chipEdit.className = 'chip';
+              chipEdit.textContent = '✏️ Editar';
+              chipEdit.onclick = (ev) => {
+                ev.stopPropagation();
+                openEditPanel(page.id, circle.id);
+              };
+
+              const chipChange = document.createElement('div');
+              chipChange.className = 'chip';
+              chipChange.textContent = '📷 Cambiar';
+              chipChange.onclick = (ev) => {
+                ev.stopPropagation();
+                changeImage(page.id, circle.id);
+              };
+
+              const chipRemove = document.createElement('div');
+              chipRemove.className = 'chip chip-danger';
+              chipRemove.textContent = '✕';
+              chipRemove.onclick = (ev) => {
+                ev.stopPropagation();
+                removeImage(page.id, circle.id);
+              };
+
+              controls.appendChild(chipEdit);
+              controls.appendChild(chipChange);
+              controls.appendChild(chipRemove);
+              circleDiv.appendChild(controls);
+            }
+          } else {
+            const label = document.createElement('div');
+            label.className = 'circle-label';
+            label.innerHTML = circle.size === 'grande' ?
+              '📷\nClic para subir\n12 cm' :
+              '📷\nClic para subir\n5 cm';
+
+            <!-- Botón Generar IA Removido -->
+            circleDiv.appendChild(label);
+          }
+
+          inner.appendChild(circleDiv);
+        });
+
+        const note = document.createElement('div');
+        note.className = 'page-note';
+        note.textContent = `Página ${index + 1}`;
+        inner.appendChild(note);
+
+        pageEl.appendChild(inner);
+        wrapper.appendChild(header);
+        wrapper.appendChild(pageEl);
+        pagesContainer.appendChild(wrapper);
+      });
+    }
+
+    function removeImage(pageId, circleId) {
+      if (confirm('¿Eliminar esta imagen?')) {
+        updateCircle(pageId, circleId, {
+          imageData: null,
+          scale: 100,
+          posX: 50,
+          posY: 50,
+          locked: false
+        });
+      }
+    }
+
+    // ===== CARGA DE IMÁGENES =====
+    function handleCircleClick(pageId, circleId) {
+      const circle = findCircle(pageId, circleId);
+      if (circle && circle.imageData && !circle.locked) {
+        openEditPanel(pageId, circleId);
+      } else if (!circle.imageData) {
+        circleToFill = { pageId, circleId };
+        fileInputHidden.value = '';
+        fileInputHidden.click();
+      }
+    }
+
+    fileInputHidden.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file || !circleToFill) return;
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        updateCircle(circleToFill.pageId, circleToFill.circleId, {
+          imageData: ev.target.result,
+          scale: 100,
+          posX: 50,
+          posY: 50,
+          locked: false
+        });
+        circleToFill = null;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function changeImage(pageId, circleId) {
+      circleToFill = { pageId, circleId };
+      fileInputHidden.value = '';
+      fileInputHidden.click();
+    }
+
+    function removeImage(pageId, circleId) {
+      if (confirm('¿Eliminar esta imagen?')) {
+        updateCircle(pageId, circleId, {
+          imageData: null,
+          scale: 100,
+          posX: 50,
+          posY: 50,
+          locked: false
+        });
+      }
+    }
+
+    // ===== CARGA EN LOTE =====
+    btnBulkLarge.addEventListener('click', () => fileInputBulkLarge.click());
+    btnBulkSmall.addEventListener('click', () => fileInputBulkSmall.click());
+
+    fileInputBulkLarge.addEventListener('change', (e) => {
+      handleBulkUpload(e.target.files, 'grande');
+      e.target.value = '';
+    });
+
+    fileInputBulkSmall.addEventListener('change', (e) => {
+      handleBulkUpload(e.target.files, 'pequeno');
+      e.target.value = '';
+    });
+
+    function handleBulkUpload(files, size) {
+      if (!files || files.length === 0) return;
+
+      const filesArray = Array.from(files);
+      const circlesPerPage = size === 'grande' ? 2 : 4;
+      const pagesNeeded = Math.ceil(filesArray.length / circlesPerPage);
+
+      while (pages.length < pagesNeeded) {
+        addPage();
+      }
+
+      filesArray.forEach((file, index) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const pageIndex = Math.floor(index / circlesPerPage);
+          const circleIndex = index % circlesPerPage;
+
+          if (pages[pageIndex]) {
+            const circles = pages[pageIndex].circles;
+            const targetCircle = size === 'grande' ?
+              circles.filter(c => c.size === 'grande')[circleIndex] :
+              circles.filter(c => c.size === 'pequeno')[circleIndex];
+
+            if (targetCircle) {
+              targetCircle.imageData = ev.target.result;
+              targetCircle.scale = 100;
+              targetCircle.posX = 50;
+              targetCircle.posY = 50;
+              targetCircle.locked = false;
+            }
+          }
+
+          if (index === filesArray.length - 1) {
+            renderPages();
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // ===== UTILIDADES =====
+    function findCircle(pageId, circleId) {
+      const page = pages.find(p => p.id === pageId);
+      return page ? page.circles.find(c => c.id === circleId) : null;
+    }
+
+    function updateCircle(pageId, circleId, updates) {
+      pages = pages.map(page => {
+        if (page.id === pageId) {
+          return {
+            ...page,
+            circles: page.circles.map(c =>
+              c.id === circleId ? { ...c, ...updates } : c
+            )
+          };
+        }
+        return page;
+      });
+      renderPages();
+    }
+
+    // ===== PANEL DE EDICIÓN =====
+    function openEditPanel(pageId, circleId) {
+      const circle = findCircle(pageId, circleId);
+      if (!circle || !circle.imageData) return;
+
+      editingCircle = { pageId, circleId };
+      scaleSlider.value = circle.scale;
+      updateSliderValues();
+      scaleSlider.disabled = circle.locked;
+      btnLock.textContent = circle.locked ? '🔓 Desbloquear' : '🔒 Fijar Imagen';
+      btnLock.className = circle.locked ? 'edit-btn edit-btn-unlock' : 'edit-btn edit-btn-lock';
+      editPanel.classList.add('active');
+    }
+
+    function closeEditPanel() {
+      editPanel.classList.remove('active');
+      editingCircle = null;
+    }
+
+    function updateSliderValues() {
+      scaleValue.textContent = scaleSlider.value + '%';
+    }
+
+    scaleSlider.addEventListener('input', () => {
+      if (!editingCircle) return;
+      updateSliderValues();
+      updateCircle(editingCircle.pageId, editingCircle.circleId, {
+        scale: parseInt(scaleSlider.value)
+      });
+    });
+
+    btnLock.addEventListener('click', () => {
+      if (!editingCircle) return;
+      const circle = findCircle(editingCircle.pageId, editingCircle.circleId);
+      updateCircle(editingCircle.pageId, editingCircle.circleId, {
+        locked: !circle.locked
+      });
+      if (!circle.locked) {
+        closeEditPanel();
+      } else {
+        openEditPanel(editingCircle.pageId, editingCircle.circleId);
+      }
+    });
+
+    btnDeleteImage.addEventListener('click', () => {
+      if (!editingCircle) return;
+      if (confirm('¿Eliminar esta imagen?')) {
+        updateCircle(editingCircle.pageId, editingCircle.circleId, {
+          imageData: null,
+          scale: 100,
+          posX: 50,
+          posY: 50,
+          locked: false
+        });
+        closeEditPanel();
+      }
+    });
+
+    // ===== ARRASTRAR IMAGEN =====
+    function setupImageDrag(img, pageId, circleId) {
+      img.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        draggedImage = { img, pageId, circleId };
+        dragStartX = e.clientX;
+        dragStartY = e.clientY;
+        img.classList.add('dragging');
+
+        const currentLeft = parseFloat(img.style.left) || 50;
+        const currentTop = parseFloat(img.style.top) || 50;
+        imageStartX = currentLeft;
+        imageStartY = currentTop;
+      });
+    }
+
+    document.addEventListener('mousemove', (e) => {
+      if (!draggedImage) return;
+      e.preventDefault();
+
+      const deltaX = e.clientX - dragStartX;
+      const deltaY = e.clientY - dragStartY;
+
+      const circle = findCircle(draggedImage.pageId, draggedImage.circleId);
+      const circleSize = circle.size === 'grande' ? CIRCULO_GRANDE : CIRCULO_PEQUENO;
+
+      const percentX = (deltaX / circleSize) * 100;
+      const percentY = (deltaY / circleSize) * 100;
+
+      const newX = Math.max(0, Math.min(100, imageStartX + percentX));
+      const newY = Math.max(0, Math.min(100, imageStartY + percentY));
+
+      draggedImage.img.style.left = newX + '%';
+      draggedImage.img.style.top = newY + '%';
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (!draggedImage) return;
+
+      const img = draggedImage.img;
+      const pageId = draggedImage.pageId;
+      const circleId = draggedImage.circleId;
+
+      img.classList.remove('dragging');
+
+      const finalX = parseFloat(img.style.left) || 50;
+      const finalY = parseFloat(img.style.top) || 50;
+
+      updateCircle(pageId, circleId, {
+        posX: finalX,
+        posY: finalY
+      });
+
+      draggedImage = null;
+    });
+
+    // ===== FUNCIONES DE APIs EXTERNAS =====
+    function showSourceCredit(sourceName, count) {
+      const credit = document.getElementById('sourceCredit');
+      credit.textContent = `Imágenes de ${sourceName} (${count})`;
+      credit.style.display = 'block';
+    }
+
+    function hideSourceCredit() {
+      const credit = document.getElementById('sourceCredit');
+      credit.style.display = 'none';
+    }
+
+    function applyExternalImages(urls, sourceName) {
+      if (!Array.isArray(urls) || urls.length === 0) return;
+
+      let idx = 0;
+
+      // Intentar llenar huecos vacíos primero
+      for (let pIdx = 0; pIdx < pages.length; pIdx++) {
+        for (let cIdx = 0; cIdx < pages[pIdx].circles.length; cIdx++) {
+          let circle = pages[pIdx].circles[cIdx];
+          if (!circle.imageData && idx < urls.length) {
+            circle.imageData = urls[idx];
+            circle.scale = 100;
+            circle.posX = 50;
+            circle.posY = 50;
+            circle.locked = false;
+            idx++;
+          }
+        }
+      }
+
+      // Si sobran imágenes, crear nuevas páginas
+      while (idx < urls.length) {
+        addPage(); // Esto añade una página al final
+        let lastPage = pages[pages.length - 1];
+        for (let cIdx = 0; cIdx < lastPage.circles.length; cIdx++) {
+          if (idx < urls.length) {
+            let circle = lastPage.circles[cIdx];
+            circle.imageData = urls[idx];
+            circle.scale = 100;
+            circle.posX = 50;
+            circle.posY = 50;
+            circle.locked = false;
+            idx++;
+          }
+        }
+      }
+
+      renderPages();
+      showSourceCredit(sourceName, urls.length);
+    }
+
+
+    // ===== PEXELS API =====
+    async function searchPexels() {
+      const query = prompt("¿Qué imágenes buscas en Pexels?");
+      if (!query) return;
+
+      const countStr = prompt("¿Cuántas imágenes quieres?", "1");
+      const count = parseInt(countStr) || 1;
+
+      try {
+        const response = await fetch(
+          `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=${count}`,
+          {
+            headers: { Authorization: PEXELS_API_KEY }
+          }
+        );
+        const data = await response.json();
+
+        if (!data.photos || data.photos.length === 0) {
+          alert('No se encontraron imágenes en Pexels');
+          return;
+        }
+
+        const images = data.photos.map(photo => photo.src.large);
+        applyExternalImages(images, `Pexels: ${query}`);
+      } catch (error) {
+        console.error(error);
+        alert('Error al buscar en Pexels');
+      }
+    }
+
+
+    // ===== GENERACIÓN CON IA (GROK/ARKAIOS) =====
+
+    // Las funciones de generación con IA local han sido removidas.
+    // Ahora el sistema se comunica globalmente a través de ARKAIOS Principal.
+
+    // ===== EVENTOS ADICIONALES =====
+    btnAddPage.addEventListener('click', addPage);
+    btnClearAll.addEventListener('click', clearAll);
+
+    document.addEventListener('click', (e) => {
+      if (editPanel.classList.contains('active') &&
+        !editPanel.contains(e.target) &&
+        !e.target.closest('.circle')) {
+        closeEditPanel();
+      }
+    });
+
+
+    // ===== INICIALIZACIÓN =====
+    addPage();
+  </script>
+  <script src="arkaios-biblioteca.js"></script>
+  <script src="arkaios-orquestador.js"></script>
+</body>
+
+</html>

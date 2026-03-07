@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Material Educativo Reutilizable - ARKAIOS</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    <style>
+        :root {
+            --primary-blue: #2563eb;
+            --primary-blue-dark: #1e40af;
+            --bg-white: #ffffff;
+            --bg-light: #f8fafc;
+            --bg-lighter: #f1f5f9;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-purple: #8b5cf6;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+            --shadow-xl: 0 20px 40px rgba(0,0,0,0.18);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-light);
+            color: var(--text-primary);
+            padding: 32px;
+            min-height: 100vh;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; }
+
+        h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+
+        .subtitle { color: var(--text-secondary); font-size: 16px; margin-bottom: 32px; }
+
+        /* UPLOAD ZONE */
+        .upload-section {
+            background: var(--bg-white);
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 32px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-section:hover { border-color: var(--primary-blue); background: #eff6ff; }
+        .upload-section.dragover { border-color: var(--primary-blue); background: #dbeafe; transform: scale(1.02); }
+        .upload-icon { font-size: 48px; margin-bottom: 16px; }
+        .upload-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+        .upload-hint { color: var(--text-muted); font-size: 14px; }
+
+        /* FILTERS */
+        .filters {
+            background: var(--bg-white);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            box-shadow: var(--shadow-sm);
+        }
+        .filter-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-lighter);
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .filter-btn:hover, .filter-btn.active {
+            background: var(--primary-blue);
+            color: white;
+            border-color: var(--primary-blue);
+        }
+
+        /* LIBRARY GRID */
+        .library-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+            gap: 24px;
+        }
+
+        .material-card {
+            background: var(--bg-white);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s;
+            box-shadow: var(--shadow-sm);
+        }
+        .material-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary-blue);
+        }
+
+        /* CARD PREVIEW — clickeable */
+        .card-preview {
+            width: 100%;
+            height: 200px;
+            background: var(--bg-lighter);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            cursor: zoom-in;
+        }
+        .card-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .card-preview canvas { max-width: 100%; max-height: 100%; }
+        .card-preview .placeholder { font-size: 64px; opacity: 0.3; }
+
+        /* Overlay hover sobre preview */
+        .preview-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(37,99,235,0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.25s;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .card-preview:hover .preview-overlay { opacity: 1; }
+        .preview-overlay span {
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .preview-overlay .eye-icon { font-size: 32px; }
+
+        .card-type-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: var(--primary-blue);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            z-index: 2;
+        }
+
+        .card-content { padding: 16px; }
+        .card-title { font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+        .card-description { font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.5; }
+        .card-meta { display: flex; gap: 12px; margin-bottom: 16px; font-size: 12px; color: var(--text-muted); }
+
+        .card-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+        .btn {
+            flex: 1;
+            padding: 9px 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+
+        .btn-download {
+            background: var(--bg-lighter);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+        .btn-download:hover { background: var(--accent-green); color: white; border-color: var(--accent-green); }
+
+        .btn-reuse {
+            background: var(--primary-blue);
+            color: white;
+        }
+        .btn-reuse:hover { background: var(--primary-blue-dark); }
+
+        .btn-share {
+            background: var(--accent-purple);
+            color: white;
+        }
+        .btn-share:hover { background: #7c3aed; }
+
+        .btn-delete {
+            padding: 9px 10px;
+            flex: 0;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+        }
+        .btn-delete:hover { background: #fee2e2; border-color: #ef4444; color: #ef4444; }
+
+        /* ==========================================
+           MODAL BASE
+        ========================================== */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.active { display: flex; }
+
+        /* MODAL CATALOGAR */
+        .modal-content {
+            background: var(--bg-white);
+            border-radius: 16px;
+            padding: 32px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: var(--shadow-xl);
+        }
+        .modal-title { font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 24px; }
+
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+        .form-input, .form-textarea, .form-select {
+            width: 100%; padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .form-textarea { min-height: 100px; resize: vertical; }
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+        }
+        .modal-actions { display: flex; gap: 12px; margin-top: 24px; }
+        .btn-cancel { flex: 1; background: var(--bg-lighter); color: var(--text-secondary); border: 1px solid var(--border-color); }
+        .btn-save { flex: 1; background: var(--primary-blue); color: white; }
+
+        /* ==========================================
+           MODAL PDF PREVIEW (VISOR COMPLETO)
+        ========================================== */
+        #pdfViewerModal {
+            z-index: 1100;
+            align-items: flex-start;
+        }
+        .pdf-viewer-wrapper {
+            background: #1e293b;
+            width: 96vw;
+            max-width: 980px;
+            height: 92vh;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: var(--shadow-xl);
+            margin: auto;
+        }
+        .pdf-viewer-header {
+            background: #0f172a;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .pdf-viewer-title {
+            color: white;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            font-size: 15px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 60%;
+        }
+        .pdf-viewer-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .pdf-nav-btn {
+            background: rgba(255,255,255,0.12);
+            border: none;
+            color: white;
+            padding: 7px 14px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .pdf-nav-btn:hover { background: rgba(255,255,255,0.25); }
+        .pdf-nav-btn:disabled { opacity: 0.35; cursor: default; }
+        .pdf-page-info { color: #94a3b8; font-size: 13px; font-weight: 500; min-width: 70px; text-align: center; }
+        .pdf-close-btn {
+            background: #ef4444;
+            border: none;
+            color: white;
+            padding: 7px 14px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 700;
+            transition: background 0.2s;
+        }
+        .pdf-close-btn:hover { background: #dc2626; }
+        .pdf-viewer-body {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px 16px;
+            gap: 16px;
+            background: #334155;
+        }
+        .pdf-viewer-body canvas {
+            max-width: 100%;
+            border-radius: 4px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            background: white;
+        }
+        .pdf-loading {
+            color: #94a3b8;
+            font-size: 14px;
+            margin-top: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+        .pdf-spinner {
+            width: 36px; height: 36px;
+            border: 3px solid rgba(255,255,255,0.15);
+            border-top-color: #60a5fa;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ==========================================
+           MODAL COMPARTIR
+        ========================================== */
+        #shareModal .modal-content { max-width: 480px; }
+        .share-title { font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+        .share-subtitle { color: var(--text-secondary); font-size: 13px; margin-bottom: 24px; }
+
+        .share-option {
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .share-option:hover { border-color: var(--primary-blue); background: #eff6ff; }
+        .share-option-icon { font-size: 28px; flex-shrink: 0; }
+        .share-option-info strong { display: block; font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+        .share-option-info span { font-size: 12px; color: var(--text-muted); }
+
+        .share-link-box {
+            display: flex;
+            gap: 8px;
+            margin-top: 6px;
+        }
+        .share-link-input {
+            flex: 1;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 12px;
+            background: var(--bg-lighter);
+            color: var(--text-secondary);
+            font-family: monospace;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .btn-copy-link {
+            padding: 10px 16px;
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn-copy-link:hover { background: var(--primary-blue-dark); }
+        .btn-copy-link.copied { background: var(--accent-green); }
+
+        .embed-code-area {
+            background: #0f172a;
+            border-radius: 8px;
+            padding: 14px;
+            font-family: monospace;
+            font-size: 11px;
+            color: #7dd3fc;
+            line-height: 1.6;
+            max-height: 100px;
+            overflow-y: auto;
+            margin-top: 8px;
+            word-break: break-all;
+        }
+        .share-close-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        /* MODAL REUTILIZAR */
+        #reuseModal .modal-content { max-width: 460px; }
+        .reuse-template-list { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+        .reuse-template-item {
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: inherit;
+        }
+        .reuse-template-item:hover { border-color: var(--primary-blue); background: #eff6ff; }
+        .reuse-template-item.active-template { border-color: var(--accent-green); background: #f0fdf4; }
+        .reuse-icon { font-size: 26px; flex-shrink: 0; }
+        .reuse-info strong { display: block; font-size: 14px; font-weight: 600; }
+        .reuse-info span { font-size: 12px; color: var(--text-muted); }
+        .reuse-badge {
+            margin-left: auto;
+            background: var(--accent-green);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* EMPTY STATE */
+        .empty-state { text-align: center; padding: 80px 20px; color: var(--text-muted); }
+        .empty-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
+        .empty-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+
+        /* NOTIFICATION */
+        .notification {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--accent-green);
+            color: white;
+            padding: 14px 22px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            font-weight: 600;
+            font-size: 14px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s;
+            z-index: 3000;
+        }
+        .notification.show { opacity: 1; transform: translateY(0); }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📚 Material Educativo Reutilizable</h1>
+    <p class="subtitle">Sube, organiza y reutiliza tus plantillas y documentos educativos</p>
+
+    <!-- UPLOAD ZONE -->
+    <div class="upload-section" id="uploadZone">
+        <div class="upload-icon">📤</div>
+        <div class="upload-title">Subir Material Educativo</div>
+        <p class="upload-hint">Arrastra archivos PDF aquí o haz clic para seleccionar</p>
+        <input type="file" id="fileInput" accept=".pdf" multiple style="display: none;">
+    </div>
+
+    <!-- FILTERS -->
+    <div class="filters">
+        <span style="font-weight: 600; margin-right: 8px;">Filtrar:</span>
+        <button class="filter-btn active" data-filter="all">📋 Todos</button>
+        <button class="filter-btn" data-filter="circular">⭕ Circulares</button>
+        <button class="filter-btn" data-filter="images">🖼️ Imágenes</button>
+        <button class="filter-btn" data-filter="text">📝 Texto</button>
+        <button class="filter-btn" data-filter="photos">📸 Fotos</button>
+        <button class="filter-btn" data-filter="other">📄 Otros</button>
+    </div>
+
+    <!-- LIBRARY GRID -->
+    <div class="library-grid" id="libraryGrid"></div>
+
+    <!-- EMPTY STATE -->
+    <div class="empty-state" id="emptyState">
+        <div class="empty-icon">📚</div>
+        <div class="empty-title">No hay material guardado</div>
+        <p>Sube tus primeros documentos educativos para comenzar</p>
+    </div>
+</div>
+
+<!-- ============================================================
+     MODAL: CATALOGAR
+============================================================ -->
+<div class="modal" id="catalogModal">
+    <div class="modal-content">
+        <h2 class="modal-title">📝 Catalogar Material</h2>
+        <form id="catalogForm">
+            <div class="form-group">
+                <label class="form-label">Título del Material</label>
+                <input type="text" class="form-input" id="materialTitle" placeholder="Ej: Diploma de Honor 2024">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Descripción</label>
+                <textarea class="form-textarea" id="materialDescription" placeholder="Describe brevemente el contenido..."></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Tipo de Plantilla</label>
+                <select class="form-select" id="materialType">
+                    <option value="other">📄 Otro</option>
+                    <option value="circular">⭕ Circular / Jack</option>
+                    <option value="images">🖼️ Cuadros de Imágenes</option>
+                    <option value="text">📝 Carta / Texto</option>
+                    <option value="photos">📸 Fotos Infantiles</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-cancel" onclick="closeCatalogModal()">Cancelar</button>
+                <button type="submit" class="btn btn-save">💾 Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ============================================================
+     MODAL: VISOR PDF COMPLETO
+============================================================ -->
+<div class="modal" id="pdfViewerModal">
+    <div class="pdf-viewer-wrapper">
+        <div class="pdf-viewer-header">
+            <div class="pdf-viewer-title" id="pdfViewerTitle">Vista previa</div>
+            <div class="pdf-viewer-controls">
+                <button class="pdf-nav-btn" id="pdfPrevBtn" onclick="changePdfPage(-1)" disabled>◀ Anterior</button>
+                <span class="pdf-page-info" id="pdfPageInfo">— / —</span>
+                <button class="pdf-nav-btn" id="pdfNextBtn" onclick="changePdfPage(1)" disabled>Siguiente ▶</button>
+                <button class="pdf-close-btn" onclick="closePdfViewer()">✕ Cerrar</button>
+            </div>
+        </div>
+        <div class="pdf-viewer-body" id="pdfViewerBody">
+            <div class="pdf-loading" id="pdfLoading">
+                <div class="pdf-spinner"></div>
+                <span>Cargando documento…</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     MODAL: REUTILIZAR
+============================================================ -->
+<div class="modal" id="reuseModal">
+    <div class="modal-content">
+        <h2 class="modal-title">🔄 Reutilizar Material</h2>
+        <p style="color:var(--text-secondary);font-size:14px;" id="reuseModalDesc">Elige cómo quieres usar este material:</p>
+        <div class="reuse-template-list" id="reuseTemplateList"></div>
+        <div class="modal-actions" style="margin-top:20px;">
+            <button class="btn btn-cancel" onclick="closeReuseModal()">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     MODAL: COMPARTIR
+============================================================ -->
+<div class="modal" id="shareModal">
+    <div class="modal-content">
+        <div class="share-title">🔗 Compartir Material</div>
+        <div class="share-subtitle" id="shareModalSubtitle">Elige cómo quieres compartir este documento</div>
+
+        <!-- Opción 1: Descargar para compartir -->
+        <div class="share-option" id="shareDownloadOption" onclick="">
+            <div class="share-option-icon">📥</div>
+            <div class="share-option-info">
+                <strong>Descargar y compartir</strong>
+                <span>Descarga el PDF para enviarlo por WhatsApp, email u otras apps</span>
+            </div>
+        </div>
+
+        <!-- Opción 2: Copiar link de la página del sistema -->
+        <div class="share-option">
+            <div class="share-option-icon">🌐</div>
+            <div class="share-option-info">
+                <strong>Link al sistema ARKAIOS</strong>
+                <span>Comparte la dirección de esta biblioteca de materiales</span>
+                <div class="share-link-box" style="margin-top:8px;">
+                    <input class="share-link-input" id="sharePageLink" readonly value="">
+                    <button class="btn-copy-link" id="btnCopyPageLink" onclick="copyShareLink('sharePageLink','btnCopyPageLink')">📋 Copiar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Opción 3: Código embed -->
+        <div class="share-option">
+            <div class="share-option-icon">💻</div>
+            <div class="share-option-info">
+                <strong>Código para incrustar (embed)</strong>
+                <span>Pega este código en cualquier página web para mostrar el visor</span>
+                <div class="embed-code-area" id="shareEmbedCode" style="margin-top:8px;"></div>
+                <button class="btn-copy-link" id="btnCopyEmbed" onclick="copyShareLink('shareEmbedCode','btnCopyEmbed')" style="margin-top:8px;">📋 Copiar código</button>
+            </div>
+        </div>
+
+        <div class="share-close-row">
+            <button class="btn btn-cancel" onclick="closeShareModal()" style="max-width:140px;">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- NOTIFICATION -->
+<div class="notification" id="notification"></div>
+
+<script>
+    /* ============================================================
+       CONFIG & ESTADO
+    ============================================================ */
+    const STORAGE_KEY = 'arkaios_material_biblioteca';
+
+    const TEMPLATE_MAP = {
+        'circular': {
+            file: 'plantilla_circulos_jack.html',
+            label: '⭕ Plantilla Circular Jack',
+            desc: 'Plantilla de circulares tipo jack'
+        },
+        'images': {
+            file: 'plantilla-cuadros-imagenes-v2.html',
+            label: '🖼️ Cuadros de Imágenes v2',
+            desc: 'Plantilla de cuadros con imágenes'
+        },
+        'text': {
+            file: 'plantilla_escolar_carta_mx_autoajuste_y_areas_editables.html',
+            label: '📝 Carta Escolar México',
+            desc: 'Plantilla de carta con áreas editables'
+        },
+        'photos': {
+            file: 'generador-fotos-infantiles.html',
+            label: '📸 Fotos Infantiles',
+            desc: 'Generador de fotos para niños'
+        }
+    };
+
+    let materials = [];
+    let currentFilter = 'all';
+    let pendingFile = null;
+
+    // Estado del visor PDF
+    let pdfDoc = null;
+    let pdfCurrentPage = 1;
+    let pdfTotalPages = 0;
+    let pdfScale = 1.6;
+    let pdfRendering = false;
+
+    /* ============================================================
+       INIT
+    ============================================================ */
+    document.addEventListener('DOMContentLoaded', () => {
+        materials = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        renderLibrary();
+        setupEventListeners();
+    });
+
+    function setupEventListeners() {
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelect);
+
+        uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+        uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+        uploadZone.addEventListener('drop', e => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            handleFileSelect({ target: { files: e.dataTransfer.files } });
+        });
+
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.dataset.filter;
+                renderLibrary();
+            });
+        });
+
+        document.getElementById('catalogForm').addEventListener('submit', handleCatalogSubmit);
+
+        const saveBtn = document.querySelector('#catalogModal .btn-save');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', ev => { ev.preventDefault(); handleCatalogSubmit(ev); });
+        }
+
+        // Cerrar modales con ESC
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                closePdfViewer();
+                closeReuseModal();
+                closeShareModal();
+                closeCatalogModal();
+            }
+        });
+    }
+
+    /* ============================================================
+       UPLOAD / CATALOGAR
+    ============================================================ */
+    async function handleFileSelect(e) {
+        const files = Array.from(e.target.files);
+        if (!files.length) return;
+        const file = files[0];
+        if (file.type !== 'application/pdf') {
+            showNotification('⚠️ Solo se permiten archivos PDF', 'warning');
+            return;
+        }
+        const preview = await generatePDFPreview(file);
+        const reader = new FileReader();
+        reader.onload = ev => {
+            pendingFile = { name: file.name, data: ev.target.result, size: file.size, preview };
+            openCatalogModal();
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function generatePDFPreview(file) {
+        try {
+            const ab = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+            const page = await pdf.getPage(1);
+            const viewport = page.getViewport({ scale: 1.5 });
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            await page.render({ canvasContext: ctx, viewport }).promise;
+            return canvas.toDataURL('image/png');
+        } catch (err) {
+            console.error('Preview error:', err);
+            return null;
+        }
+    }
+
+    function openCatalogModal() { document.getElementById('catalogModal').classList.add('active'); }
+    function closeCatalogModal() {
+        document.getElementById('catalogModal').classList.remove('active');
+        document.getElementById('catalogForm').reset();
+        pendingFile = null;
+    }
+
+    function handleCatalogSubmit(e) {
+        if (e && typeof e.preventDefault === 'function') e.preventDefault();
+        if (!pendingFile) { showNotification('⚠️ No hay archivo pendiente', 'warning'); return; }
+
+        const titleEl = document.getElementById('materialTitle');
+        const descEl = document.getElementById('materialDescription');
+        const typeEl = document.getElementById('materialType');
+        const safeTitle = (titleEl.value || '').trim() || (pendingFile.name || 'Documento').replace(/\.pdf$/i, '');
+
+        const material = {
+            id: Date.now(),
+            title: safeTitle,
+            description: (descEl.value || '').trim(),
+            type: typeEl.value || 'other',
+            fileName: pendingFile.name,
+            fileData: pendingFile.data,
+            fileSize: pendingFile.size,
+            preview: pendingFile.preview,
+            uploadDate: new Date().toISOString(),
+            code: generateCode(typeEl.value || 'other')
+        };
+
+        materials.push(material);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(materials));
+        closeCatalogModal();
+        renderLibrary();
+        showNotification('✅ Material guardado exitosamente');
+        const fi = document.getElementById('fileInput');
+        if (fi) fi.value = '';
+    }
+
+    function generateCode(type) {
+        const prefixes = { circular:'CIR', images:'IMG', text:'TXT', photos:'FOT', other:'GEN' };
+        const prefix = prefixes[type] || 'GEN';
+        const count = materials.filter(m => m.type === type).length + 1;
+        const date = new Date().toISOString().slice(2,10).replace(/-/g,'');
+        return `${prefix}-${date}-${String(count).padStart(3,'0')}`;
+    }
+
+    /* ============================================================
+       RENDER LIBRARY
+    ============================================================ */
+    function renderLibrary() {
+        const grid = document.getElementById('libraryGrid');
+        const emptyState = document.getElementById('emptyState');
+        const filtered = currentFilter === 'all' ? materials : materials.filter(m => m.type === currentFilter);
+
+        if (!filtered.length) {
+            grid.style.display = 'none';
+            emptyState.style.display = 'block';
+            return;
+        }
+
+        grid.style.display = 'grid';
+        emptyState.style.display = 'none';
+
+        grid.innerHTML = filtered.map(mat => `
+            <div class="material-card">
+                <div class="card-preview" onclick="openPdfViewer(${mat.id})">
+                    ${mat.preview
+                        ? `<img src="${mat.preview}" alt="${mat.title}">`
+                        : `<div class="placeholder">📄</div>`}
+                    <div class="preview-overlay">
+                        <span class="eye-icon">🔍</span>
+                        <span>Ver documento</span>
+                    </div>
+                    <span class="card-type-badge">${getTypeLabel(mat.type)}</span>
+                </div>
+                <div class="card-content">
+                    <div class="card-title">${mat.title}</div>
+                    <div class="card-description">${mat.description || 'Sin descripción'}</div>
+                    <div class="card-meta">
+                        <span>📋 ${mat.code}</span>
+                        <span>📅 ${new Date(mat.uploadDate).toLocaleDateString('es-MX')}</span>
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn btn-download" onclick="downloadMaterial(${mat.id})">📥 Bajar</button>
+                        <button class="btn btn-reuse" onclick="openReuseModal(${mat.id})">🔄 Reutilizar</button>
+                        <button class="btn btn-share" onclick="openShareModal(${mat.id})">🔗 Compartir</button>
+                        <button class="btn btn-delete" onclick="deleteMaterial(${mat.id})" title="Eliminar">🗑️</button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function getTypeLabel(type) {
+        const labels = { circular:'⭕ Circular', images:'🖼️ Imágenes', text:'📝 Texto', photos:'📸 Fotos', other:'📄 Otro' };
+        return labels[type] || '📄 Documento';
+    }
+
+    /* ============================================================
+       VISOR PDF COMPLETO
+    ============================================================ */
+    async function openPdfViewer(id) {
+        const mat = materials.find(m => m.id === id);
+        if (!mat || !mat.fileData) { showNotification('⚠️ Archivo no disponible', 'warning'); return; }
+
+        document.getElementById('pdfViewerTitle').textContent = mat.title;
+        document.getElementById('pdfViewerBody').innerHTML = `
+            <div class="pdf-loading" id="pdfLoading">
+                <div class="pdf-spinner"></div>
+                <span>Cargando documento…</span>
+            </div>`;
+        document.getElementById('pdfPageInfo').textContent = '— / —';
+        document.getElementById('pdfPrevBtn').disabled = true;
+        document.getElementById('pdfNextBtn').disabled = true;
+        document.getElementById('pdfViewerModal').classList.add('active');
+
+        try {
+            // Convertir base64 a ArrayBuffer
+            const base64 = mat.fileData.split(',')[1];
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+            pdfDoc = await pdfjsLib.getDocument({ data: bytes.buffer }).promise;
+            pdfTotalPages = pdfDoc.numPages;
+            pdfCurrentPage = 1;
+
+            document.getElementById('pdfLoading').remove();
+            await renderAllPdfPages();
+
+            document.getElementById('pdfPageInfo').textContent = `${pdfCurrentPage} / ${pdfTotalPages}`;
+            document.getElementById('pdfPrevBtn').disabled = pdfCurrentPage <= 1;
+            document.getElementById('pdfNextBtn').disabled = pdfCurrentPage >= pdfTotalPages;
+
+        } catch (err) {
+            console.error('Error loading PDF:', err);
+            document.getElementById('pdfViewerBody').innerHTML = `<p style="color:#f87171;margin-top:40px;">⚠️ Error al cargar el PDF: ${err.message}</p>`;
+        }
+    }
+
+    async function renderAllPdfPages() {
+        const body = document.getElementById('pdfViewerBody');
+        body.innerHTML = '';
+        for (let pageNum = 1; pageNum <= pdfTotalPages; pageNum++) {
+            const page = await pdfDoc.getPage(pageNum);
+            const vw = Math.min(window.innerWidth * 0.85, 860);
+            const viewport = page.getViewport({ scale: 1 });
+            const scale = vw / viewport.width;
+            const scaledViewport = page.getViewport({ scale });
+
+            const canvas = document.createElement('canvas');
+            canvas.width = scaledViewport.width;
+            canvas.height = scaledViewport.height;
+            canvas.style.display = 'block';
+
+            const wrapper = document.createElement('div');
+            wrapper.style.cssText = `position:relative; margin-bottom:4px;`;
+            const label = document.createElement('div');
+            label.style.cssText = `color:#94a3b8;font-size:11px;text-align:center;padding:4px 0;`;
+            label.textContent = `Página ${pageNum} de ${pdfTotalPages}`;
+            wrapper.appendChild(canvas);
+            wrapper.appendChild(label);
+            body.appendChild(wrapper);
+
+            await page.render({ canvasContext: canvas.getContext('2d'), viewport: scaledViewport }).promise;
+        }
+        // Scroll al inicio
+        body.scrollTop = 0;
+    }
+
+    function changePdfPage(delta) {
+        // Con renderAllPdfPages ya están todas las páginas, esta función scrollea
+        const newPage = pdfCurrentPage + delta;
+        if (newPage < 1 || newPage > pdfTotalPages) return;
+        pdfCurrentPage = newPage;
+        document.getElementById('pdfPageInfo').textContent = `${pdfCurrentPage} / ${pdfTotalPages}`;
+        document.getElementById('pdfPrevBtn').disabled = pdfCurrentPage <= 1;
+        document.getElementById('pdfNextBtn').disabled = pdfCurrentPage >= pdfTotalPages;
+
+        // Scroll a la página correspondiente
+        const body = document.getElementById('pdfViewerBody');
+        const canvases = body.querySelectorAll('canvas');
+        if (canvases[pdfCurrentPage - 1]) {
+            canvases[pdfCurrentPage - 1].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
+    function closePdfViewer() {
+        document.getElementById('pdfViewerModal').classList.remove('active');
+        pdfDoc = null;
+        pdfCurrentPage = 1;
+        pdfTotalPages = 0;
+    }
+
+    /* ============================================================
+       REUTILIZAR — MODAL CON OPCIONES
+    ============================================================ */
+    function openReuseModal(id) {
+        const mat = materials.find(m => m.id === id);
+        if (!mat) return;
+
+        document.getElementById('reuseModalDesc').textContent =
+            `"${mat.title}" — Elige una plantilla para editarlo o usarlo como base:`;
+
+        const list = document.getElementById('reuseTemplateList');
+        const assignedTemplate = TEMPLATE_MAP[mat.type];
+
+        // Construir opciones
+        let html = '';
+
+        // Plantilla asignada al tipo (si existe)
+        if (assignedTemplate) {
+            html += `
+                <div class="reuse-template-item active-template"
+                     onclick="reuseWithTemplate('${assignedTemplate.file}', ${mat.id})">
+                    <div class="reuse-icon">${assignedTemplate.label.slice(0,2)}</div>
+                    <div class="reuse-info">
+                        <strong>${assignedTemplate.label}</strong>
+                        <span>${assignedTemplate.desc}</span>
+                    </div>
+                    <span class="reuse-badge">✓ Recomendada</span>
+                </div>`;
+        }
+
+        // Todas las demás plantillas
+        Object.entries(TEMPLATE_MAP).forEach(([key, tpl]) => {
+            if (key === mat.type) return;
+            html += `
+                <div class="reuse-template-item"
+                     onclick="reuseWithTemplate('${tpl.file}', ${mat.id})">
+                    <div class="reuse-icon">${tpl.label.slice(0,2)}</div>
+                    <div class="reuse-info">
+                        <strong>${tpl.label}</strong>
+                        <span>${tpl.desc}</span>
+                    </div>
+                </div>`;
+        });
+
+        // Opción: solo descargar
+        html += `
+            <div class="reuse-template-item" onclick="downloadMaterial(${mat.id}); closeReuseModal();">
+                <div class="reuse-icon">📥</div>
+                <div class="reuse-info">
+                    <strong>Solo descargar el PDF</strong>
+                    <span>Descarga el archivo original para usarlo externamente</span>
+                </div>
+            </div>`;
+
+        list.innerHTML = html;
+        document.getElementById('reuseModal').classList.add('active');
+    }
+
+    function reuseWithTemplate(templateFile, materialId) {
+        const mat = materials.find(m => m.id === materialId);
+        if (!mat) return;
+
+        // Guardar datos en localStorage para que la plantilla los recoja
+        localStorage.setItem('arkaios_pending_load', JSON.stringify({
+            type: mat.type,
+            data: mat.fileData,
+            preview: mat.preview,
+            metadata: { title: mat.title, code: mat.code, description: mat.description }
+        }));
+
+        closeReuseModal();
+        showNotification('🔄 Abriendo plantilla seleccionada…');
+
+        // Abrir plantilla en nueva pestaña (mantiene la biblioteca abierta)
+        const baseUrl = window.location.href.split('/').slice(0,-1).join('/');
+        window.open(`${baseUrl}/${templateFile}`, '_blank');
+    }
+
+    function closeReuseModal() {
+        document.getElementById('reuseModal').classList.remove('active');
+    }
+
+    /* ============================================================
+       COMPARTIR
+    ============================================================ */
+    function openShareModal(id) {
+        const mat = materials.find(m => m.id === id);
+        if (!mat) return;
+
+        document.getElementById('shareModalSubtitle').textContent =
+            `"${mat.title}" — Elige cómo compartir este documento`;
+
+        // Link de la página actual (esta biblioteca)
+        const pageUrl = window.location.href;
+        document.getElementById('sharePageLink').value = pageUrl;
+
+        // Código de embed (iframe apuntando a la biblioteca)
+        const embedCode = `<iframe 
+  src="${pageUrl}" 
+  width="100%" 
+  height="700" 
+  frameborder="0"
+  title="${mat.title} - ARKAIOS Material Educativo"
+  style="border-radius:12px;border:1px solid #e2e8f0;">
+</iframe>`;
+        document.getElementById('shareEmbedCode').textContent = embedCode;
+
+        // Botón descargar del modal de compartir
+        document.getElementById('shareDownloadOption').onclick = () => {
+            downloadMaterial(id);
+            showNotification('📥 Descargando para compartir…');
+        };
+
+        // Reset botones de copiado
+        ['btnCopyPageLink','btnCopyEmbed'].forEach(btnId => {
+            const btn = document.getElementById(btnId);
+            if (btn) { btn.textContent = btnId.includes('Embed') ? '📋 Copiar código' : '📋 Copiar'; btn.classList.remove('copied'); }
+        });
+
+        document.getElementById('shareModal').classList.add('active');
+    }
+
+    function copyShareLink(sourceId, btnId) {
+        const el = document.getElementById(sourceId);
+        const text = el.value || el.textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            const btn = document.getElementById(btnId);
+            const orig = btn.textContent;
+            btn.textContent = '✅ Copiado!';
+            btn.classList.add('copied');
+            showNotification('✅ Copiado al portapapeles');
+            setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2500);
+        }).catch(() => {
+            // Fallback para navegadores sin API clipboard
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showNotification('✅ Copiado al portapapeles');
+        });
+    }
+
+    function closeShareModal() {
+        document.getElementById('shareModal').classList.remove('active');
+    }
+
+    /* ============================================================
+       ACCIONES BÁSICAS
+    ============================================================ */
+    function downloadMaterial(id) {
+        const mat = materials.find(m => m.id === id);
+        if (!mat) return;
+        const link = document.createElement('a');
+        link.href = mat.fileData;
+        link.download = mat.fileName;
+        link.click();
+        showNotification('✅ Descarga iniciada');
+    }
+
+    function deleteMaterial(id) {
+        if (!confirm('¿Eliminar este material permanentemente?')) return;
+        materials = materials.filter(m => m.id !== id);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(materials));
+        renderLibrary();
+        showNotification('✅ Material eliminado');
+    }
+
+    /* ============================================================
+       NOTIFICACIÓN
+    ============================================================ */
+    function showNotification(msg, type = 'success') {
+        const n = document.getElementById('notification');
+        n.textContent = msg;
+        n.style.background = type === 'warning' ? '#f59e0b' : '#10b981';
+        n.classList.add('show');
+        setTimeout(() => n.classList.remove('show'), 3200);
+    }
+
+    /* ============================================================
+       API PÚBLICA ARKAIOS
+    ============================================================ */
+    window.ARKAIOS_MaterialLibrary = {
+        addFromPDF: function(pdfData, metadata) {
+            pendingFile = {
+                data: pdfData,
+                preview: metadata.preview,
+                name: metadata.name || 'documento.pdf',
+                size: metadata.size || 0
+            };
+            openCatalogModal();
+        }
+    };
+</script>
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ARKAIOS Portal Empresarial</title>
+  <style>
+    :root { --bg:#0f172a; --panel:#111827; --text:#e5e7eb; --muted:#93a3b8; --ok:#16a34a; --warn:#dc2626; --blue:#2563eb; }
+    * { box-sizing: border-box; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    body { margin:0; background:#0b1020; color:var(--text); }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 24px; display:grid; grid-template-columns: 380px 1fr; gap:16px; }
+    .card { background:var(--panel); border:1px solid #273245; border-radius:16px; padding:16px; }
+    h1 { margin:0 0 6px; font-size: 1.4rem; }
+    .muted { color:var(--muted); font-size:.9rem; }
+    label { display:block; margin:10px 0 6px; color:#cbd5e1; font-size:.82rem; font-weight:700; }
+    input, select, button { width:100%; border-radius:10px; border:1px solid #344155; background:#0b1220; color:#f8fafc; padding:11px 12px; }
+    input:focus, select:focus { outline:2px solid #1d4ed8; border-color:transparent; }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    button { background:var(--blue); border:none; font-weight:700; cursor:pointer; margin-top:12px; }
+    button.secondary { background:#1f2937; border:1px solid #374151; }
+    .status { margin-top:12px; padding:10px; border-radius:10px; font-weight:700; font-size:.86rem; display:none; }
+    .status.ok { display:block; background:#052e1f; color:#86efac; border:1px solid #14532d; }
+    .status.err { display:block; background:#450a0a; color:#fecaca; border:1px solid #7f1d1d; }
+    .list { max-height: 65vh; overflow:auto; display:flex; flex-direction:column; gap:10px; }
+    .item { border:1px solid #334155; border-radius:12px; padding:10px 12px; background:#0b1220; }
+    .item h4 { margin:0 0 4px; font-size:1rem; }
+    .item .sub { color:var(--muted); font-size:.82rem; }
+    .amt { color:#86efac; font-weight:800; }
+    .history { margin-top:8px; padding-top:8px; border-top:1px dashed #334155; color:#d1d5db; font-size:.82rem; line-height:1.45; }
+    @media (max-width: 980px) { .wrap { grid-template-columns:1fr; } .list { max-height:none; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="card">
+      <h1>Portal Empresarial</h1>
+      <div class="muted">Login real con Core via API interna del repo educativo.</div>
+
+      <div class="row">
+        <div>
+          <label>Tenant / Empresa</label>
+          <input id="tenant" value="EMPRESA-001" />
+        </div>
+        <div>
+          <label>Caja</label>
+          <input id="box" value="CAJA-01" />
+        </div>
+      </div>
+
+      <label>Perfil</label>
+      <select id="role">
+        <option value="admin">Admin caja</option>
+        <option value="cajero">Cajero</option>
+        <option value="cliente">Cliente</option>
+      </select>
+
+      <label>ID de cuenta</label>
+      <input id="accountId" placeholder="ARK-ADMIN-CAJA-01" />
+
+      <label>NIP</label>
+      <input id="nip" type="password" placeholder="0000" />
+
+      <button id="btnLogin">Iniciar sesion</button>
+      <button class="secondary" id="btnRefresh">Actualizar cuentas de caja</button>
+      <div id="status" class="status"></div>
+    </section>
+
+    <section class="card">
+      <h1>Cuentas / Historial</h1>
+      <div id="meta" class="muted">Sin sesion activa.</div>
+      <div id="list" class="list"></div>
+    </section>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const statusBox = $("status");
+    const listEl = $("list");
+    const metaEl = $("meta");
+
+    function setStatus(msg, ok) {
+      statusBox.textContent = msg;
+      statusBox.className = "status " + (ok ? "ok" : "err");
+    }
+
+    function accountCard(acc) {
+      const history = Array.isArray(acc.historial) ? acc.historial : [];
+      const historyHtml = history.length
+        ? `<div class="history">${history.map((x) => `<div>- ${x}</div>`).join("")}</div>`
+        : `<div class="history">Sin historial.</div>`;
+      return `
+        <article class="item">
+          <h4>${acc.nombre || acc.id || "Cuenta"}</h4>
+          <div class="sub">${acc.id || ""} • rol: ${(acc.account_role || "client")}</div>
+          <div class="sub">Caja: ${acc.box_id || "-"} • Tenant: ${acc.tenant_id || "-"}</div>
+          <div class="amt">Saldo: $${Number(acc.saldo || 0).toFixed(2)}</div>
+          ${historyHtml}
+        </article>
+      `;
+    }
+
+    async function loadScopedAccounts() {
+      const tenant = $("tenant").value.trim();
+      const box = $("box").value.trim();
+      const url = `/api/pos-accounts?include_full=1&tenant_id=${encodeURIComponent(tenant)}&box_id=${encodeURIComponent(box)}&allow_master=true`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.message || "No se pudo cargar cuentas");
+      const accounts = Array.isArray(data.accounts) ? data.accounts : [];
+      listEl.innerHTML = accounts.map(accountCard).join("");
+      metaEl.textContent = `Cuentas en scope ${tenant}/${box}: ${accounts.length}`;
+      setStatus(`Scope cargado: ${accounts.length} cuentas`, true);
+    }
+
+    async function doLogin() {
+      const role = $("role").value;
+      const tenant = $("tenant").value.trim();
+      const box = $("box").value.trim();
+      const account_id = $("accountId").value.trim();
+      const nip = $("nip").value.trim();
+
+      if (!account_id || !nip) {
+        setStatus("Falta account_id o NIP", false);
+        return;
+      }
+
+      try {
+        if (role === "cliente") {
+          const res = await fetch("/api/client-login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ account_id, nip, tenant_id: tenant, box_id: box }),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.ok) throw new Error(data.message || "Login cliente fallido");
+          listEl.innerHTML = accountCard(data.account);
+          metaEl.textContent = `Cliente autenticado: ${data.account.id}`;
+          setStatus(`Cliente OK: ${data.account.id}`, true);
+          return;
+        }
+
+        const res = await fetch("/api/pos-login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ account_id, nip, role, tenant_id: tenant, box_id: box, allow_master: true }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.message || "Login POS fallido");
+        setStatus(`Login ${role} OK: ${data.account.id}`, true);
+        await loadScopedAccounts();
+      } catch (err) {
+        setStatus(String(err.message || err), false);
+      }
+    }
+
+    $("btnLogin").addEventListener("click", doLogin);
+    $("btnRefresh").addEventListener("click", async () => {
+      try { await loadScopedAccounts(); } catch (err) { setStatus(String(err.message || err), false); }
+    });
+  </script>
+</body>
+</html>

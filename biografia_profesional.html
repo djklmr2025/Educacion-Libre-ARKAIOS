@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biografías Profesionales</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #2c3e50;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .pages-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .container {
+            background: white;
+            width: 21.59cm;
+            height: 27.94cm;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Grid de biografías con tamaño fijo 5.5x7.8cm */
+        .bio-grid {
+            display: grid;
+            gap: 15px;
+            width: 100%;
+            height: 100%;
+            padding: 15px;
+            justify-content: center;
+            align-content: center;
+        }
+
+        /* Máximo 9 biografías por página en formato 5.5x7.8cm (tamaño carta) */
+        .bio-grid.count-1 { 
+            grid-template-columns: 1fr;
+            justify-items: center;
+        }
+        .bio-grid.count-2 { 
+            grid-template-columns: repeat(2, 5.5cm);
+        }
+        .bio-grid.count-3 { 
+            grid-template-columns: repeat(3, 5.5cm);
+        }
+        .bio-grid.count-4 { 
+            grid-template-columns: repeat(2, 5.5cm);
+            grid-template-rows: repeat(2, 7.8cm);
+        }
+        .bio-grid.count-5 { 
+            grid-template-columns: repeat(3, 5.5cm);
+        }
+        .bio-grid.count-6 { 
+            grid-template-columns: repeat(3, 5.5cm);
+            grid-template-rows: repeat(2, 7.8cm);
+        }
+        .bio-grid.count-7 { 
+            grid-template-columns: repeat(3, 5.5cm);
+        }
+        .bio-grid.count-8 { 
+            grid-template-columns: repeat(4, 5.5cm);
+            grid-template-rows: repeat(2, 7.8cm);
+        }
+        .bio-grid.count-9 { 
+            grid-template-columns: repeat(3, 5.5cm);
+            grid-template-rows: repeat(3, 7.8cm);
+        }
+
+        /* Tarjeta de biografía individual - TAMAÑO REAL 5.5x7.8cm */
+        .bio-card {
+            width: 5.5cm;
+            height: 7.8cm;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 0;
+            position: relative;
+        }
+
+        /* Contenedor de foto con marco de color */
+        .photo-frame {
+            background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 3px 10px rgba(59, 130, 246, 0.4);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            width: 100%;
+            height: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .photo-frame.color-sky {
+            background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+            box-shadow: 0 3px 10px rgba(59, 130, 246, 0.4);
+        }
+
+        .photo-frame.color-navy {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            box-shadow: 0 3px 10px rgba(30, 58, 138, 0.4);
+        }
+
+        .photo-frame.color-black {
+            background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+        }
+
+        .photo-frame:hover {
+            transform: translateY(-1px);
+        }
+
+        .photo-frame.color-sky:hover {
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.5);
+        }
+
+        .photo-frame.color-navy:hover {
+            box-shadow: 0 5px 15px rgba(30, 58, 138, 0.5);
+        }
+
+        .photo-frame.color-black:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Contenedor de foto - Ocupa la mayor parte del espacio */
+        .photo-container {
+            width: 100%;
+            flex: 1;
+            overflow: hidden;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            border-radius: 4px;
+        }
+
+        .photo-container.circular {
+            border-radius: 50%;
+        }
+
+        .photo-container.elliptic {
+            border-radius: 50%;
+        }
+
+        .photo-container.rectangular {
+            border-radius: 4px;
+        }
+
+        .photo-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-placeholder {
+            color: #93c5fd;
+            font-size: 8px;
+            text-align: center;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .photo-placeholder svg {
+            width: 20px;
+            height: 20px;
+            margin-bottom: 4px;
+            opacity: 0.4;
+        }
+
+        /* Campo de nombre dentro del marco - Todo el fondo del color del marco */
+        .name-field {
+            width: 100%;
+            background: transparent;
+            border: none;
+            padding: 6px 8px;
+            text-align: center;
+            font-family: 'Poppins', sans-serif;
+            font-size: 9px;
+            font-weight: 700;
+            color: white;
+            border-radius: 2px;
+            outline: none;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .name-field:focus {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .name-field::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+            text-shadow: none;
+        }
+
+        /* Panel de controles */
+        .controls-panel {
+            position: fixed;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            max-width: 280px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .controls-panel h3 {
+            font-size: 18px;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        .control-label {
+            font-size: 13px;
+            color: #555;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .info-label {
+            font-size: 11px;
+            color: #888;
+            font-weight: 400;
+            margin-top: 5px;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .size-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+
+        .size-btn {
+            padding: 8px 6px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .size-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .size-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .shape-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .shape-btn {
+            width: 70px;
+            height: 70px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .shape-btn.circular {
+            border-radius: 50%;
+        }
+
+        .shape-btn.rectangular {
+            border-radius: 10px;
+        }
+
+        .shape-btn:hover {
+            border-color: #667eea;
+            transform: scale(1.1);
+        }
+
+        .shape-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: transparent;
+        }
+
+        .shape-btn.active::after {
+            content: '✓';
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        /* Botones de color */
+        .color-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .color-btn {
+            width: 50px;
+            height: 50px;
+            border: 3px solid #e0e0e0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .color-btn.color-sky {
+            background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+        }
+
+        .color-btn.color-navy {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+        }
+
+        .color-btn.color-black {
+            background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+        }
+
+        .color-btn:hover {
+            transform: scale(1.1);
+            border-color: #667eea;
+        }
+
+        .color-btn.active {
+            border-color: #667eea;
+            border-width: 4px;
+        }
+
+        .color-btn.active::after {
+            content: '✓';
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .upload-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .page-counter {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 13px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        .page-counter span {
+            color: #667eea;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .print-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .print-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.5);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+                margin: 0;
+            }
+
+            .container {
+                box-shadow: none;
+                width: 21.59cm;
+                height: 27.94cm;
+                page-break-after: always;
+                margin: 0;
+                padding: 30px;
+            }
+
+            .container:last-child {
+                page-break-after: auto;
+            }
+
+            .print-button,
+            .controls-panel {
+                display: none !important;
+            }
+
+            .pages-container {
+                gap: 0;
+            }
+
+            .bio-grid {
+                padding: 10px;
+            }
+
+            .photo-frame,
+            .photo-container,
+            .name-field {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                color-adjust: exact;
+            }
+
+            .name-field {
+                background: transparent !important;
+                color: white !important;
+            }
+        }
+
+        @page {
+            size: letter;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls-panel">
+        <h3>⚙️ Personalizar</h3>
+
+        <div class="control-group">
+            <div class="page-counter">
+                Total de hojas: <span id="pageCount">1</span>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label">Cantidad de Biografías por Página</label>
+            <div class="size-buttons">
+                <button class="size-btn active" data-count="1">1</button>
+                <button class="size-btn" data-count="2">2</button>
+                <button class="size-btn" data-count="3">3</button>
+                <button class="size-btn" data-count="4">4</button>
+                <button class="size-btn" data-count="5">5</button>
+                <button class="size-btn" data-count="6">6</button>
+                <button class="size-btn" data-count="7">7</button>
+                <button class="size-btn" data-count="8">8</button>
+                <button class="size-btn" data-count="9">9</button>
+            </div>
+            <div class="info-label">
+                📏 Tamaño real: 5.5×7.8 cm<br>
+                📄 Máximo 9 por hoja carta (21.59×27.94 cm)
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label">Forma de la Foto</label>
+            <div class="shape-buttons">
+                <button class="shape-btn circular active" data-shape="circular" title="Circular"></button>
+                <button class="shape-btn rectangular" data-shape="rectangular" title="Rectangular"></button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label">Color del Marco</label>
+            <div class="color-buttons">
+                <button class="color-btn color-sky active" data-color="sky" title="Azul Cielo"></button>
+                <button class="color-btn color-navy" data-color="navy" title="Azul Marino"></button>
+                <button class="color-btn color-black" data-color="black" title="Negro"></button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <button class="upload-btn" onclick="document.getElementById('batchPhotoInput').click()">
+                📸 Subir Múltiples Imágenes
+            </button>
+        </div>
+    </div>
+
+    <button class="print-button" onclick="prepareAndPrint()">
+        🖨️ Imprimir Biografías
+    </button>
+
+    <div class="pages-container" id="pagesContainer">
+        <div class="container page-template">
+            <div class="bio-grid count-1">
+                <div class="bio-card">
+                    <div class="photo-frame color-sky">
+                        <div class="photo-container circular">
+                            <div class="photo-placeholder">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                    <circle cx="12" cy="13" r="4"></circle>
+                                </svg>
+                                <div>Clic para imagen</div>
+                            </div>
+                        </div>
+                        <input type="text" class="name-field" placeholder="NOMBRE COMPLETO">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" id="batchPhotoInput" accept="image/*" multiple>
+
+    <script>
+        let currentBioCount = 1;
+        let currentShape = 'circular';
+        let currentColor = 'sky';
+
+        function updatePageCount() {
+            const count = document.querySelectorAll('.container').length;
+            document.getElementById('pageCount').textContent = count;
+        }
+
+        function createBioCard() {
+            const card = document.createElement('div');
+            card.className = 'bio-card';
+            card.innerHTML = `
+                <div class="photo-frame color-${currentColor}">
+                    <div class="photo-container ${currentShape}">
+                        <div class="photo-placeholder">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                <circle cx="12" cy="13" r="4"></circle>
+                            </svg>
+                            <div>Clic para imagen</div>
+                        </div>
+                    </div>
+                    <input type="text" class="name-field" placeholder="NOMBRE COMPLETO">
+                </div>
+            `;
+            
+            card.querySelector('.photo-container').addEventListener('click', function() {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        // Extraer nombre del archivo sin extensión
+                        const fileName = file.name.replace(/\.[^/.]+$/, '');
+                        // Limpiar y formatear el nombre (reemplazar guiones/guiones bajos con espacios)
+                        const cleanName = fileName.replace(/[-_]/g, ' ').toUpperCase();
+                        
+                        const reader = new FileReader();
+                        reader.onload = function(event) {
+                            const img = document.createElement('img');
+                            img.src = event.target.result;
+                            card.querySelector('.photo-container').innerHTML = '';
+                            card.querySelector('.photo-container').appendChild(img);
+                            
+                            // Colocar el nombre automáticamente
+                            const nameField = card.querySelector('.name-field');
+                            if (nameField && !nameField.value) {
+                                nameField.value = cleanName;
+                            }
+                        }
+                        reader.readAsDataURL(file);
+                    }
+                };
+                input.click();
+            });
+            
+            return card;
+        }
+
+        function updateBioLayout() {
+            const container = document.querySelector('.page-template');
+            const bioGrid = container.querySelector('.bio-grid');
+            
+            bioGrid.className = `bio-grid count-${currentBioCount}`;
+            
+            bioGrid.innerHTML = '';
+            for (let i = 0; i < currentBioCount; i++) {
+                bioGrid.appendChild(createBioCard());
+            }
+        }
+
+        document.querySelectorAll('[data-count]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('[data-count]').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                currentBioCount = parseInt(this.dataset.count);
+                updateBioLayout();
+            });
+        });
+
+        document.querySelectorAll('.shape-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.shape-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+
+                currentShape = this.dataset.shape;
+
+                document.querySelectorAll('.photo-container').forEach(container => {
+                    container.className = 'photo-container ' + currentShape;
+                });
+            });
+        });
+
+        document.querySelectorAll('.color-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+
+                currentColor = this.dataset.color;
+
+                document.querySelectorAll('.photo-frame').forEach(frame => {
+                    frame.className = 'photo-frame color-' + currentColor;
+                });
+            });
+        });
+
+        document.getElementById('batchPhotoInput').addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            const bioCards = document.querySelectorAll('.bio-card');
+            
+            files.forEach((file, index) => {
+                if (index < bioCards.length) {
+                    // Extraer nombre del archivo sin extensión
+                    const fileName = file.name.replace(/\.[^/.]+$/, '');
+                    // Limpiar y formatear el nombre
+                    const cleanName = fileName.replace(/[-_]/g, ' ').toUpperCase();
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const img = document.createElement('img');
+                        img.src = event.target.result;
+                        const container = bioCards[index].querySelector('.photo-container');
+                        container.innerHTML = '';
+                        container.appendChild(img);
+                        
+                        // Colocar el nombre automáticamente
+                        const nameField = bioCards[index].querySelector('.name-field');
+                        if (nameField && !nameField.value) {
+                            nameField.value = cleanName;
+                        }
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+        });
+
+        updatePageCount();
+
+        // Función para preparar e imprimir
+        function prepareAndPrint() {
+            // Asegurar que todos los estilos de color se mantengan
+            const frames = document.querySelectorAll('.photo-frame');
+            frames.forEach(frame => {
+                frame.style.webkitPrintColorAdjust = 'exact';
+                frame.style.printColorAdjust = 'exact';
+            });
+
+            const nameFields = document.querySelectorAll('.name-field');
+            nameFields.forEach(field => {
+                field.style.webkitPrintColorAdjust = 'exact';
+                field.style.printColorAdjust = 'exact';
+            });
+
+            // Pequeño delay para asegurar que los estilos se apliquen
+            setTimeout(() => {
+                window.print();
+            }, 100);
+        }
+    </script>
+</body>
+</html>

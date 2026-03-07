@@ -1,0 +1,12 @@
+{
+    "type": "module",
+    "scripts": {
+        "convert:html-plus": "node tools/convert-html-plus.js"
+    },
+    "dependencies": {
+        "@upstash/redis": "^1.22.0",
+        "dotenv": "^17.2.3",
+        "express": "^5.2.1",
+        "node-fetch": "^3.3.2"
+    }
+}

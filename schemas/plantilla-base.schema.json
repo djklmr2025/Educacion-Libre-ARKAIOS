@@ -1,0 +1,46 @@
+{
+  "name": "ARKAIOS Plantilla Base",
+  "schemaVersion": "1.0.0",
+  "description": "Esquema base para plantillas HTML+ integradas con ARKAIOS Orquestador.",
+  "template": {
+    "id": "template-base",
+    "title": "Plantilla sin titulo",
+    "targetFile": "plantilla.html"
+  },
+  "capabilities": {
+    "supportsAssistant": true,
+    "supportsLibraryReference": true,
+    "supportsImageInjection": true,
+    "supportsTextAutofill": true
+  },
+  "modules": [
+    {
+      "id": "module_1",
+      "type": "text",
+      "label": "Titulo principal",
+      "selector": "[data-arkaios-module=\"module_1\"]",
+      "required": false
+    },
+    {
+      "id": "image_slot_1",
+      "type": "image",
+      "label": "Zona de imagen principal",
+      "selector": "[data-arkaios-slot=\"image_slot_1\"]",
+      "required": false
+    }
+  ],
+  "actions": [
+    {
+      "id": "fill_template",
+      "messageType": "ARKAIOS_TEMPLATE_FILL",
+      "payloadExample": {
+        "module_1": "Texto sugerido por IA",
+        "image_slot_1": "https://ejemplo.com/imagen.jpg"
+      }
+    },
+    {
+      "id": "scan_template",
+      "messageType": "ARKAIOS_TEMPLATE_SCAN_REQUEST"
+    }
+  ]
+}

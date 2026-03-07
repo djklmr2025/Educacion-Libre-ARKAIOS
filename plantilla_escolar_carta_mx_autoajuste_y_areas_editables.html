@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Plantilla para Tareas Escolares – Carta MX</title>
+  <style>
+    /* Reset básico */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* Hoja Carta Mexicana explícita (21.59 x 27.94 cm) */
+    @page {
+      size: 21.59cm 27.94cm;
+      margin: 1.9cm;
+    }
+
+    @media print {
+      @page {
+        size: 21.59cm 27.94cm;
+        margin: 1.9cm;
+      }
+
+      /* Colores y proporciones tal cual */
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      html,
+      body {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 21.59cm !important;
+        height: auto !important;
+        overflow: visible !important;
+      }
+
+      header,
+      footer,
+      .toolbar,
+      .instructions,
+      .btn-gen-slot {
+        display: none !important;
+      }
+
+      .page-container {
+        box-shadow: none !important;
+        margin: 0;
+        page-break-after: always;
+        page-break-inside: avoid;
+        width: 100% !important;
+        min-height: auto !important;
+        height: auto !important;
+        overflow: visible !important;
+      }
+
+      .page-container:last-child {
+        page-break-after: auto;
+      }
+
+      /* Quitar contornos visuales en impresión */
+      .field-input,
+      .references-input,
+      .text-block,
+      .image-slot {
+        border: none !important;
+        background: white !important;
+      }
+
+      /* Evitar recortes de contenido en impresión */
+      .references-wrap,
+      .text-block {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+      }
+
+      .text-block .content,
+      #referencesInput {
+        height: auto !important;
+        overflow: visible !important;
+      }
+
+      .image-slot .placeholder,
+      .image-slot .add-btn,
+      .image-slot .remove-btn,
+      .image-slot .drag-handle {
+        display: none !important;
+      }
+
+      .image-slot:not(.has-image) {
+        display: none;
+      }
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f0f0f0;
+      padding: 20px;
+    }
+
+    .toolbar {
+      background: #2c3e50;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+      color: #fff;
+    }
+
+    .toolbar button {
+      background: #3498db;
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: all 0.3s ease;
+    }
+
+    .toolbar button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .toolbar button.success {
+      background: #27ae60;
+    }
+
+    .toolbar button.danger {
+      background: #e74c3c;
+    }
+
+    .toolbar button.pexels {
+      background: #05a081;
+    }
+
+    .toolbar button.freepik {
+      background: #336aea;
+    }
+
+    .toolbar button.pixabay {
+      background: #2e7d32;
+    }
+
+    .toolbar button.ai {
+      background: #8e44ad;
+    }
+
+    .toolbar select {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: none;
+    }
+
+    .page-container {
+      background: white;
+      width: 21.59cm;
+      min-height: 27.94cm;
+      margin: 0 auto 20px;
+      padding: 1.9cm;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ÍNDICE */
+    .index-title {
+      text-align: center;
+      padding: 20px 0;
+      border-bottom: 3px solid #2c3e50;
+      margin-bottom: 30px;
+    }
+
+    .index-title h1 {
+      font-size: 2.5rem;
+      color: #2c3e50;
+      letter-spacing: 3px;
+    }
+
+    .index-fields {
+      margin-top: 30px;
+    }
+
+    .field-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+      gap: 15px;
+    }
+
+    .field-label {
+      min-width: 120px;
+      font-weight: 700;
+      color: #34495e;
+      background: #ecf0f1;
+      padding: 10px 15px;
+      border-radius: 6px;
+      cursor: text;
+    }
+
+    .field-input {
+      flex: 1;
+      padding: 10px 15px;
+      border: 2px solid #bdc3c7;
+      border-radius: 6px;
+      font-size: 1rem;
+      transition: all 0.3s;
+    }
+
+    .field-input:focus {
+      border-color: #3498db;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    }
+
+    .field-input.filled {
+      background: #e8f8f5;
+      border-color: #27ae60;
+    }
+
+    /* PÁGINA DE DESARROLLO */
+    .dev-header {
+      text-align: center;
+      padding-bottom: 15px;
+      border-bottom: 3px solid #3498db;
+      margin-bottom: 25px;
+    }
+
+    .dev-header h1 {
+      font-size: 2rem;
+      color: #2c3e50;
+      margin-bottom: 8px;
+    }
+
+    .dev-header .subtitle {
+      font-size: 1.1rem;
+      color: #7f8c8d;
+      font-style: italic;
+    }
+
+    .text-block {
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 2px dashed #bdc3c7;
+      border-radius: 8px;
+      min-height: 100px;
+      transition: all 0.3s;
+    }
+
+    .text-block:hover {
+      border-color: #3498db;
+      background: #f8f9fa;
+    }
+
+    .text-block.has-content {
+      border-color: #27ae60;
+      border-style: solid;
+      background: white;
+    }
+
+    .text-block .content {
+      font-size: 1rem;
+      line-height: 1.6;
+      color: #2c3e50;
+      outline: none;
+      min-height: 80px;
+    }
+
+    .text-block .content:empty:before {
+      content: "Escribe aquí tu contenido...";
+      color: #95a5a6;
+      font-style: italic;
+    }
+
+    /* REFERENCIAS */
+    .references-wrap {
+      margin-top: 30px;
+      padding: 20px;
+      background: #fef9e7;
+      border: 2px solid #f39c12;
+      border-radius: 8px;
+    }
+
+    .references-wrap h3 {
+      color: #d68910;
+      margin-bottom: 15px;
+      font-size: 1.3rem;
+    }
+
+    #referencesInput {
+      width: 100%;
+      padding: 15px;
+      border: 1px solid #f39c12;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      line-height: 1.8;
+      outline: none;
+      background: white;
+      min-height: 120px;
+    }
+
+    #referencesInput:empty:before {
+      content: "Agrega tus fuentes y referencias aquí...";
+      color: #b8860b;
+      font-style: italic;
+    }
+
+    /* IMÁGENES */
+    .image-page {
+      display: grid;
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .image-page.grid-3 {
+      grid-template-columns: repeat(1, 1fr);
+    }
+
+    .image-page.grid-6 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .image-page.grid-9 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .image-page.grid-12 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .image-slot {
+      aspect-ratio: 4/3;
+      border: 3px dashed #95a5a6;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      background: #ecf0f1;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .image-slot:hover {
+      border-color: #3498db;
+      background: #e8f4f8;
+    }
+
+    .image-slot.has-image {
+      border-color: #27ae60;
+      border-style: solid;
+    }
+
+    .image-slot img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .image-slot .placeholder {
+      color: #7f8c8d;
+      font-size: 3rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .image-slot .add-btn {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .image-slot:hover .add-btn {
+      opacity: 1;
+    }
+
+    .image-slot.has-image .add-btn {
+      display: none;
+    }
+
+    .image-slot .remove-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #e74c3c;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 10;
+    }
+
+    .image-slot.has-image:hover .remove-btn {
+      opacity: 1;
+    }
+
+    .btn-gen-slot {
+      background: #8e44ad;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      margin-top: 5px;
+    }
+
+    /* MODAL DE IA */
+    .ai-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .ai-modal-content {
+      background: #1f2937;
+      padding: 30px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 500px;
+      border: 2px solid #3b82f6;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .ai-modal h3 {
+      color: #3b82f6;
+      margin-bottom: 20px;
+      font-size: 1.5rem;
+    }
+
+    .ai-modal label {
+      display: block;
+      color: #e5e7eb;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .ai-modal input,
+    .ai-modal textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #4b5563;
+      border-radius: 6px;
+      background: #374151;
+      color: #f3f4f6;
+      font-size: 1rem;
+      margin-bottom: 15px;
+    }
+
+    .ai-modal input:focus,
+    .ai-modal textarea:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+
+    .ai-modal textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .ai-modal-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .ai-modal button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 1rem;
+      transition: all 0.3s;
+    }
+
+    .ai-modal button.generate {
+      background: #8e44ad;
+      color: white;
+    }
+
+    .ai-modal button.generate:hover {
+      background: #9b59b6;
+    }
+
+    .ai-modal button.cancel {
+      background: #6b7280;
+      color: white;
+    }
+
+    .ai-modal button.cancel:hover {
+      background: #9ca3af;
+    }
+
+    #aiStatus {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 6px;
+      text-align: center;
+      color: #e5e7eb;
+      font-size: 0.9rem;
+    }
+
+    /* Créditos de fuente */
+    .source-credit {
+      margin: 15px;
+      padding: 12px;
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: 8px;
+      text-align: center;
+      color: #0369a1;
+      font-size: 0.9rem;
+    }
+
+    @media print {
+
+      .toolbar,
+      .source-credit,
+      .no-print {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+
+<body data-arkaios-template="carta-mx-inteligente">
+  <!-- BARRA DE HERRAMIENTAS -->
+  <div class="toolbar">
+    <!-- Botón Imprimir -->
+    <button class="success" onclick="window.print()">🖨️ Imprimir</button>
+
+    <!-- Selector de Layout -->
+    <span>Imágenes por hoja:</span>
+    <select id="imageLayout" onchange="changeImageLayout()">
+      <option value="3">3 imágenes</option>
+      <option value="6">6 imágenes</option>
+      <option value="9">9 imágenes</option>
+      <option value="12">12 imágenes</option>
+    </select>
+
+    <!-- Botón Cargar Imágenes -->
+    <button onclick="document.getElementById('bulkFileInput').click()">📁 Cargar Imágenes</button>
+    <input type="file" id="bulkFileInput" multiple accept="image/*" style="display:none"
+      onchange="loadBulkImages(event)">
+
+    <!-- Botón Limpiar -->
+    <button class="danger" onclick="clearAllImages()">🗑️ Limpiar Imágenes</button>
+
+    <button class="pexels" onclick="searchPexels()">📸 Buscar en Pexels</button>
+
+    <!-- Botón IA Removido (Se usa integración global) -->
+  </div>
+
+  <!-- Crédito de fuente (se muestra cuando se usan APIs) -->
+  <div id="sourceCredit" class="source-credit no-print" style="display: none;"></div>
+
+  <!-- HOJA 1: ÍNDICE -->
+  <div class="page-container" id="page1">
+    <div class="index-title">
+      <h1>ÍNDICE</h1>
+    </div>
+
+    <div class="index-fields">
+      <div class="field-row">
+        <div class="field-label" contenteditable="true" onblur="ensureLabel(this)">Nombre:</div>
+        <input class="field-input" id="field0" placeholder="Tu nombre" oninput="checkFilled(this)">
+      </div>
+      <div class="field-row">
+        <div class="field-label" contenteditable="true" onblur="ensureLabel(this)">Materia:</div>
+        <input class="field-input" id="field1" placeholder="Materia" oninput="checkFilled(this)">
+      </div>
+      <div class="field-row">
+        <div class="field-label" contenteditable="true" onblur="ensureLabel(this)">Profesor(a):</div>
+        <input class="field-input" id="field2" placeholder="Profesor(a)" oninput="checkFilled(this)">
+      </div>
+      <div class="field-row">
+        <div class="field-label" contenteditable="true" onblur="ensureLabel(this)">Fecha:</div>
+        <input class="field-input" id="field3" type="text" placeholder="DD/MM/AAAA" oninput="checkFilled(this)">
+      </div>
+      <div class="field-row">
+        <div class="field-label" contenteditable="true" onblur="ensureLabel(this)">Tema:</div>
+        <input class="field-input" id="fieldTopic" placeholder="Se auto-completa" readonly style="background: #f8f9fa;">
+      </div>
+    </div>
+  </div>
+
+  <!-- HOJA 2: DESARROLLO -->
+  <div class="page-container" id="page2">
+    <div class="dev-header">
+      <h1 id="mainTitle" contenteditable="true" oninput="updateTopic()" onblur="checkTopicFilled()">Imágenes
+        Representativas</h1>
+      <div class="subtitle" contenteditable="true">Tradiciones del Día de Muertos</div>
+    </div>
+
+    <!-- Bloques de texto editables -->
+    <div class="text-block">
+      <div class="content" contenteditable="true" oninput="markHasContent(this)"></div>
+    </div>
+
+    <div class="text-block">
+      <div class="content" contenteditable="true" oninput="markHasContent(this)"></div>
+    </div>
+
+    <div class="text-block">
+      <div class="content" contenteditable="true" oninput="markHasContent(this)"></div>
+    </div>
+
+    <!-- Referencias -->
+    <div class="references-wrap">
+      <h3>Referencias</h3>
+      <div id="referencesInput" contenteditable="true" oninput="detectLinks()" onpaste="handleReferencePaste()"></div>
+    </div>
+  </div>
+
+  <!-- HOJA 3: IMÁGENES -->
+  <div class="page-container" id="page3">
+    <div class="image-page grid-3" id="imagePage"></div>
+  </div>
+
+  <!-- MODAL DE IA REMOVIDO -->
+
+  <script>
+    // ===== CONFIGURACIÓN DE API KEYS =====
+    const PEXELS_API_KEY = '***REMOVIDA***';
+    const FREEPIK_API_KEY = '***REMOVIDA***';
+    const PIXABAY_API_KEY = '***REMOVIDA***';
+
+    // ===== VARIABLES GLOBALES =====
+    let imageSlots = [];
+    let slotToGenerate = -1;
+
+    // Helper para convertir imagen a Base64 (evita problemas de CORS al imprimir/guardar)
+    function toDataURL(url, callback) {
+      var xhr = new XMLHttpRequest();
+      xhr.onload = function () {
+        var reader = new FileReader();
+        reader.onloadend = function () {
+          callback(reader.result);
+        }
+        reader.readAsDataURL(xhr.response);
+      };
+      xhr.onerror = function () {
+        // Fallback si falla CORS
+        callback(url);
+      };
+      xhr.open('GET', url);
+      xhr.responseType = 'blob';
+      xhr.send();
+    }
+
+    // ===== UTILIDADES =====
+    function checkFilled(input) {
+      input.value.trim()
+        ? input.classList.add('filled')
+        : input.classList.remove('filled');
+    }
+
+    function ensureLabel(node) {
+      const t = node.innerText.trim();
+      if (!t.endsWith(':')) node.innerText = t + ':';
+    }
+
+    function markHasContent(el) {
+      const box = el.closest('.text-block');
+      if (box) box.classList.add('has-content');
+    }
+
+    function updateTopic() {
+      const title = document.getElementById('mainTitle').innerText.trim();
+      const topic = document.getElementById('fieldTopic');
+      topic.value = title;
+      checkFilled(topic);
+    }
+
+    function checkTopicFilled() {
+      const el = document.getElementById('mainTitle');
+      if (!el) return;
+      const t = el.innerText.trim();
+      if (!t || t === 'Imágenes Representativas') {
+        el.innerText = 'Imágenes Representativas';
+      }
+    }
+
+    // ===== DETECTAR ENLACES EN REFERENCIAS =====
+    function detectLinks() {
+      const ref = document.getElementById('referencesInput');
+      const html = ref.innerHTML;
+      const url = / (https?:\/\/[^\s<]+)/g;
+      const updated = html.replace(url, (u) =>
+        html.includes(`<a href="${u}"`) ? u : `<a href="${u}" target="_blank">${u}</a>`
+      );
+      if (updated !== html) {
+        ref.innerHTML = updated;
+        placeCaretAtEnd(ref);
+      }
+    }
+
+    function handleReferencePaste() {
+      setTimeout(detectLinks, 80);
+    }
+
+    function placeCaretAtEnd(el) {
+      el.focus();
+      const range = document.createRange();
+      const sel = window.getSelection();
+      range.selectNodeContents(el);
+      range.collapse(false);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+
+    // ===== GESTIÓN DE IMÁGENES =====
+    function changeImageLayout() {
+      const layout = parseInt(document.getElementById('imageLayout').value, 10);
+      const imagePage = document.getElementById('imagePage');
+
+      // Actualizar clase de grid
+      imagePage.className = 'image-page grid-' + layout;
+
+      // Crear slots
+      imagePage.innerHTML = '';
+      const oldSlots = [...imageSlots];
+      imageSlots = [];
+
+      for (let i = 0; i < layout; i++) {
+        const slot = document.createElement('div');
+        slot.className = 'image-slot';
+        slot.dataset.index = i;
+
+        // Preservar imagen si existía
+        if (oldSlots[i]) {
+          const img = document.createElement('img');
+          img.src = oldSlots[i];
+          slot.appendChild(img);
+          slot.classList.add('has-image');
+          imageSlots[i] = oldSlots[i];
+        } else {
+          const placeholder = document.createElement('div');
+          placeholder.className = 'placeholder';
+          placeholder.textContent = '🖼️';
+
+          const btnGen = document.createElement('button');
+          btnGen.textContent = '✨ Generar';
+          btnGen.className = 'btn-gen-slot';
+          btnGen.onclick = (e) => {
+            e.stopPropagation();
+            openArkaiosAI(i);
+          };
+
+          placeholder.appendChild(btnGen);
+          slot.appendChild(placeholder);
+
+          const addBtn = document.createElement('button');
+          addBtn.className = 'add-btn';
+          addBtn.textContent = '+ Agregar';
+          addBtn.onclick = () => selectImage(i);
+          slot.appendChild(addBtn);
+        }
+
+        // Botón de eliminar
+        if (imageSlots[i]) {
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'remove-btn';
+          removeBtn.textContent = '✕';
+          removeBtn.onclick = (e) => {
+            e.stopPropagation();
+            removeImage(i);
+          };
+          slot.appendChild(removeBtn);
+        }
+
+        imagePage.appendChild(slot);
+      }
+    }
+
+    function selectImage(index) {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            imageSlots[index] = event.target.result;
+            changeImageLayout();
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+      input.click();
+    }
+
+    function removeImage(index) {
+      imageSlots[index] = null;
+      // Limpiar nulos al final para que no crezca infinitamente
+      while (imageSlots.length > 0 && imageSlots[imageSlots.length - 1] === null) {
+        imageSlots.pop();
+      }
+      changeImageLayout();
+    }
+
+    function loadBulkImages(event) {
+      const files = Array.from(event.target.files);
+      let loaded = 0;
+
+      files.forEach((file) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          let firstEmpty = imageSlots.indexOf(null);
+          if (firstEmpty === -1) {
+            imageSlots.push(e.target.result);
+          } else {
+            imageSlots[firstEmpty] = e.target.result;
+          }
+          loaded++;
+          if (loaded === files.length) {
+            changeImageLayout();
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+
+      event.target.value = '';
+    }
+
+    function clearAllImages() {
+      if (confirm('¿Estás seguro de que quieres eliminar todas las imágenes?')) {
+        imageSlots = [];
+        changeImageLayout();
+        hideSourceCredit();
+      }
+    }
+
+    // ===== FUNCIONES DE APIs EXTERNAS =====
+    function showSourceCredit(sourceName, count) {
+      const credit = document.getElementById('sourceCredit');
+      credit.textContent = `Imágenes de ${sourceName} (${count})`;
+      credit.style.display = 'block';
+    }
+
+    function hideSourceCredit() {
+      const credit = document.getElementById('sourceCredit');
+      credit.style.display = 'none';
+    }
+
+    function applyExternalImages(urls, sourceName) {
+      urls.forEach(url => {
+        let firstEmpty = imageSlots.indexOf(null);
+        if (firstEmpty === -1) {
+          imageSlots.push(url);
+        } else {
+          imageSlots[firstEmpty] = url;
+        }
+      });
+
+      changeImageLayout();
+      showSourceCredit(sourceName, urls.length);
+    }
+
+
+    // ===== PEXELS API =====
+    async function searchPexels() {
+      const query = prompt("¿Qué imágenes buscas en Pexels?");
+      if (!query) return;
+
+      const countStr = prompt("¿Cuántas imágenes quieres?", "1");
+      const count = parseInt(countStr) || 1;
+
+      try {
+        const response = await fetch(
+          `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=${count}`,
+          {
+            headers: { Authorization: PEXELS_API_KEY }
+          }
+        );
+        const data = await response.json();
+
+        if (!data.photos || data.photos.length === 0) {
+          alert('No se encontraron imágenes en Pexels');
+          return;
+        }
+
+        const images = data.photos.map(photo => photo.src.large);
+        applyExternalImages(images, `Pexels: ${query}`);
+      } catch (error) {
+        console.error(error);
+        alert('Error al buscar en Pexels');
+      }
+    }
+
+
+
+    // ===== INICIALIZACIÓN =====
+    window.onload = () => {
+      changeImageLayout();
+      updateTopic();
+    };
+
+    // ===== ARKAIOS WORKSPACE INTEGRATION =====
+    window.ARKAIOS_getData = function () {
+      return {
+        fields: {
+          field0: document.getElementById('field0').value,
+          field1: document.getElementById('field1').value,
+          field2: document.getElementById('field2').value,
+          field3: document.getElementById('field3').value,
+          fieldTopic: document.getElementById('fieldTopic').value,
+        },
+        titles: {
+          mainTitle: document.getElementById('mainTitle').innerText,
+          subtitle: document.querySelector('.subtitle').innerText,
+        },
+        blocks: Array.from(document.querySelectorAll('.text-block .content')).map(el => el.innerHTML),
+        references: document.getElementById('referencesInput').innerHTML,
+        layout: document.getElementById('imageLayout').value,
+        images: imageSlots
+      };
+    };
+
+    window.ARKAIOS_setData = function (data) {
+      if (!data) return;
+      if (data.fields) {
+        for (let id in data.fields) {
+          const el = document.getElementById(id);
+          if (el) {
+            el.value = data.fields[id];
+            checkFilled(el);
+          }
+        }
+      }
+      if (data.titles) {
+        if (data.titles.mainTitle) document.getElementById('mainTitle').innerText = data.titles.mainTitle;
+        if (data.titles.subtitle) document.querySelector('.subtitle').innerText = data.titles.subtitle;
+      }
+      if (data.blocks) {
+        const blocks = document.querySelectorAll('.text-block .content');
+        data.blocks.forEach((content, i) => {
+          if (blocks[i]) {
+            blocks[i].innerHTML = content;
+            markHasContent(blocks[i]);
+          }
+        });
+      }
+      if (data.references) {
+        document.getElementById('referencesInput').innerHTML = data.references;
+      }
+      if (data.layout) {
+        document.getElementById('imageLayout').value = data.layout;
+        imageSlots = data.images || [];
+        changeImageLayout();
+      }
+    };
+    // Proporcionar función de impresión para el padre
+    window.printTemplate = () => window.print();
+  </script>
+  <script src="arkaios-biblioteca.js"></script>
+  <script src="arkaios-orquestador.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,1800 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ARKAIOS - Sistema Educativo Profesional v3.0</title>
+
+    <script src="https://js.puter.com/v2/"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+    <!-- FUENTES PROFESIONALES -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <script>
+        if (window.self !== window.top) {
+            document.documentElement.classList.add('is-iframe');
+        }
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+
+    <style>
+        /* ========== VARIABLES PROFESIONALES ========== */
+        :root {
+            --primary-blue: #2563eb;
+            --primary-blue-dark: #1e40af;
+            --primary-blue-light: #3b82f6;
+
+            --secondary-gray: #64748b;
+            --secondary-gray-dark: #475569;
+            --secondary-gray-light: #94a3b8;
+
+            --bg-white: #ffffff;
+            --bg-light: #f8fafc;
+            --bg-lighter: #f1f5f9;
+            --bg-gray: #e2e8f0;
+
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+
+            --border-color: #e2e8f0;
+            --border-radius-sm: 6px;
+            --border-radius-md: 10px;
+            --border-radius-lg: 14px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-light);
+            color: var(--text-primary);
+        }
+
+        header {
+            position: relative;
+            z-index: 1000;
+            padding: 16px 32px;
+            background: var(--bg-white);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .logo:hover {
+            opacity: 0.8;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-dark) 100%);
+            border-radius: var(--border-radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .logo h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+        }
+
+        .logo .version {
+            background: var(--bg-lighter);
+            color: var(--text-secondary);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            border: 1px solid var(--border-color);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-premium {
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary-blue);
+            color: white;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-blue-dark);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--bg-white);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-lighter);
+            border-color: var(--secondary-gray);
+        }
+
+        nav {
+            width: 280px;
+            background: var(--bg-white);
+            border-right: 1px solid var(--border-color);
+            padding: 24px 16px;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-sm);
+        }
+
+        nav.collapsed {
+            width: 0;
+            padding: 0;
+            border-right: none;
+        }
+
+        .nav-section {
+            margin-bottom: 32px;
+        }
+
+        .nav-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 12px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px 16px;
+            margin-bottom: 6px;
+            background: transparent;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            color: var(--text-secondary);
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-align: left;
+        }
+
+        .btn:hover {
+            background: var(--bg-lighter);
+            color: var(--text-primary);
+        }
+
+        .btn.active {
+            background: var(--primary-blue);
+            color: white;
+            font-weight: 600;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-icon {
+            font-size: 18px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .toggle-nav {
+            position: fixed;
+            left: 280px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 32px;
+            height: 64px;
+            background: var(--bg-white);
+            border: 1px solid var(--border-color);
+            border-left: none;
+            border-radius: 0 var(--border-radius-sm) var(--border-radius-sm) 0;
+            color: var(--text-secondary);
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 1001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .toggle-nav:hover {
+            background: var(--bg-lighter);
+            color: var(--text-primary);
+        }
+
+        nav.collapsed+.toggle-nav {
+            left: 0;
+        }
+
+        .layout {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 81px);
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-lighter);
+        }
+
+        .view-controls {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            padding: 12px 20px;
+            background: var(--bg-white);
+            border-radius: 40px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-secondary);
+            padding-right: 12px;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .zoom-slider {
+            width: 100px;
+            height: 4px;
+            background: var(--bg-lighter);
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+            -webkit-appearance: none;
+        }
+
+        .zoom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--primary-blue);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .zoom-value {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 13px;
+            min-width: 45px;
+            color: var(--text-primary);
+        }
+
+        #frameWrapper {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .pdf-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 32px;
+            overflow-y: auto;
+            height: 100%;
+        }
+
+	        .pdf-card {
+	            background: var(--bg-white);
+	            border: 1px solid var(--border-color);
+	            border-radius: var(--border-radius-lg);
+	            padding: 24px;
+	            cursor: pointer;
+	            transition: all 0.2s;
+	            aspect-ratio: 3/4;
+	            position: relative;
+	            display: flex;
+	            flex-direction: column;
+	            align-items: center;
+	            justify-content: center;
+	            box-shadow: var(--shadow-sm);
+	        }
+
+        .pdf-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary-blue);
+        }
+
+	        .pdf-card::before {
+	            content: none;
+	            font-size: 48px;
+	            margin-bottom: 16px;
+	            opacity: 0.8;
+	        }
+
+        .pdf-card .name {
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .pdf-card .info {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .pdf-card .actions {
+            position: absolute;
+            bottom: 16px;
+            display: flex;
+            gap: 8px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .pdf-card:hover .actions {
+            opacity: 1;
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            background: var(--bg-lighter);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-sm);
+            color: var(--text-secondary);
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+	        .action-btn:hover {
+	            background: var(--accent-red);
+	            color: white;
+	            border-color: var(--accent-red);
+	        }
+
+	        /* ===== \"Pinterest\" cards (Biblioteca/Proyectos) ===== */
+	        .pin-card {
+	            background: var(--bg-white);
+	            border: 1px solid var(--border-color);
+	            border-radius: var(--border-radius-lg);
+	            overflow: hidden;
+	            cursor: pointer;
+	            transition: all 0.2s;
+	            box-shadow: var(--shadow-sm);
+	            display: flex;
+	            flex-direction: column;
+	            min-height: 280px;
+	        }
+
+	        .pin-card:hover {
+	            transform: translateY(-4px);
+	            box-shadow: var(--shadow-lg);
+	            border-color: var(--primary-blue);
+	        }
+
+	        .pin-thumb {
+	            height: 150px;
+	            background: linear-gradient(135deg, #0ea5e9 0%, #1e40af 100%);
+	            position: relative;
+	        }
+
+	        .pin-thumb img {
+	            width: 100%;
+	            height: 100%;
+	            object-fit: cover;
+	            display: block;
+	        }
+
+	        .pin-thumb .pin-thumb-placeholder {
+	            position: absolute;
+	            inset: 0;
+	            display: flex;
+	            align-items: center;
+	            justify-content: center;
+	            color: rgba(255, 255, 255, 0.92);
+	            font-weight: 700;
+	            font-family: 'Poppins', sans-serif;
+	            font-size: 14px;
+	            letter-spacing: 0.3px;
+	            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+	        }
+
+	        .pin-body {
+	            padding: 16px 16px 10px;
+	            display: flex;
+	            flex-direction: column;
+	            gap: 8px;
+	            flex: 1;
+	        }
+
+	        .pin-title {
+	            font-family: 'Poppins', sans-serif;
+	            font-size: 14px;
+	            font-weight: 700;
+	            color: var(--text-primary);
+	            line-height: 1.25;
+	        }
+
+	        .pin-desc {
+	            font-size: 12px;
+	            color: var(--text-secondary);
+	            line-height: 1.35;
+	            white-space: pre-wrap;
+	        }
+
+	        .pin-links {
+	            display: flex;
+	            flex-wrap: wrap;
+	            gap: 6px;
+	            margin-top: 2px;
+	        }
+
+	        .link-chip {
+	            display: inline-flex;
+	            align-items: center;
+	            gap: 6px;
+	            padding: 6px 10px;
+	            border: 1px solid var(--border-color);
+	            background: var(--bg-lighter);
+	            border-radius: 999px;
+	            font-size: 11px;
+	            font-weight: 600;
+	            color: var(--text-secondary);
+	            max-width: 100%;
+	        }
+
+	        .link-chip a {
+	            color: inherit;
+	            text-decoration: none;
+	            overflow: hidden;
+	            text-overflow: ellipsis;
+	            white-space: nowrap;
+	            max-width: 220px;
+	        }
+
+	        .link-chip a:hover {
+	            text-decoration: underline;
+	            color: var(--primary-blue-dark);
+	        }
+
+	        .pin-footer {
+	            padding: 12px 16px 16px;
+	            display: flex;
+	            align-items: center;
+	            justify-content: space-between;
+	            gap: 10px;
+	        }
+
+	        .pin-badge {
+	            display: inline-flex;
+	            align-items: center;
+	            gap: 6px;
+	            padding: 6px 10px;
+	            border-radius: 999px;
+	            border: 1px solid var(--border-color);
+	            background: var(--bg-white);
+	            font-size: 11px;
+	            font-weight: 700;
+	            color: var(--text-secondary);
+	            max-width: 65%;
+	            overflow: hidden;
+	            text-overflow: ellipsis;
+	            white-space: nowrap;
+	        }
+
+	        /* ===== Save modal form ===== */
+	        .form-row {
+	            margin-bottom: 14px;
+	        }
+
+	        .form-label {
+	            font-size: 12px;
+	            font-weight: 700;
+	            color: var(--text-secondary);
+	            margin-bottom: 8px;
+	        }
+
+	        .form-input,
+	        .form-textarea,
+	        .form-select {
+	            width: 100%;
+	            padding: 12px 14px;
+	            border: 1px solid var(--border-color);
+	            border-radius: var(--border-radius-md);
+	            outline: none;
+	            background: var(--bg-white);
+	            color: var(--text-primary);
+	            font-family: 'Inter', sans-serif;
+	            font-size: 13px;
+	            transition: border-color 0.2s, box-shadow 0.2s;
+	        }
+
+	        .form-textarea {
+	            min-height: 90px;
+	            resize: vertical;
+	        }
+
+	        .form-input:focus,
+	        .form-textarea:focus,
+	        .form-select:focus {
+	            border-color: var(--primary-blue);
+	            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+	        }
+
+	        .form-help {
+	            font-size: 12px;
+	            color: var(--text-muted);
+	            margin-top: 6px;
+	        }
+
+	        .modal-actions {
+	            margin-top: 18px;
+	            display: flex;
+	            justify-content: flex-end;
+	            gap: 12px;
+	        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-white);
+            border-radius: var(--border-radius-lg);
+            padding: 32px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: var(--shadow-xl);
+        }
+
+        .modal-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 24px;
+        }
+
+        .upload-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--border-radius-md);
+            padding: 48px 32px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--bg-lighter);
+        }
+
+        .upload-zone:hover {
+            border-color: var(--primary-blue);
+            background: var(--bg-light);
+        }
+
+        .upload-zone.dragover {
+            border-color: var(--primary-blue);
+            background: #eff6ff;
+        }
+
+        #plantillaFrame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: none;
+            background: white;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-lighter);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--secondary-gray-light);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary-gray);
+        }
+
+        body.compact-mode header,
+        body.compact-mode nav,
+        body.compact-mode .toggle-nav {
+            display: none !important;
+        }
+
+        body.compact-mode .layout {
+            height: 100vh;
+        }
+
+        .auto-save-indicator {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            background: var(--accent-green);
+            color: white;
+            border-radius: 24px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 2000;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .auto-save-indicator.show {
+            opacity: 1;
+        }
+
+        .section-header {
+            grid-column: 1 / -1;
+            margin-bottom: 8px;
+        }
+
+        .section-header h2 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        @media (max-width: 768px) {
+            nav {
+                width: 260px;
+            }
+
+            .toggle-nav {
+                left: 260px;
+            }
+
+            .logo h1 {
+                font-size: 20px;
+            }
+
+            .pdf-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 16px;
+                padding: 20px;
+            }
+
+            .view-controls {
+                padding: 10px 16px;
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="logo" onclick="toggleDashboard()">
+            <div class="logo-icon">🎓</div>
+            <div>
+                <h1>ARKAIOS</h1>
+                <span class="version">v3.0 Educativo</span>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="btn-premium btn-secondary" onclick="window.location.reload()">
+                <span>🔄</span>
+                <span>Actualizar</span>
+            </button>
+            <button class="btn-premium btn-primary" id="saveBtn">
+                <span>💾</span>
+                <span>Guardar</span>
+            </button>
+        </div>
+    </header>
+
+    <div class="layout">
+        <nav id="sidebar">
+
+            <!-- ===== MENÚ DINÁMICO (AUTO) ===== -->
+            <div id="dynamicMenuRoot"></div>
+
+            <!-- ===== FALLBACK (si NO existe modules.json) ===== -->
+            <div id="staticMenuFallback" style="display:none;">
+                <div class="nav-section">
+                    <div class="nav-title">
+                        <span>📝</span>
+                        <span>Módulos de Texto</span>
+                    </div>
+                    <button class="btn active" data-target="plantilla_escolar_carta_mx_autoajuste_y_areas_editables.html">
+                        <span class="btn-icon">📄</span>
+                        <span>Carta MX - Índice + Texto</span>
+                    </button>
+                    <button class="btn" data-target="hoja_milimetrica_interactiva.html">
+                        <span class="btn-icon">📐</span>
+                        <span>Hoja Milimétrica</span>
+                    </button>
+                    <button class="btn" data-target="biografia_profesional.html">
+                        <span class="btn-icon">👤</span>
+                        <span>Biografía Profesional</span>
+                    </button>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-title">
+                        <span>📸</span>
+                        <span>Módulos de Imagen</span>
+                    </div>
+                    <button class="btn" data-target="generador-fotos-infantiles.html">
+                        <span class="btn-icon">👶</span>
+                        <span>Fotos Infantiles 2.5×3 cm</span>
+                    </button>
+                    <button class="btn" data-target="pixabay-descargador-lote.html">
+                        <span class="btn-icon">🌐</span>
+                        <span>Pixabay Descarga Lote</span>
+                    </button>
+                    <button class="btn" data-target="plantilla_circulos_jack.html">
+                        <span class="btn-icon">⭕</span>
+                        <span>Círculos Jack Skellington</span>
+                    </button>
+                    <button class="btn" data-target="plantilla-cuadros-imagenes-v2.html">
+                        <span class="btn-icon">🖼️</span>
+                        <span>Cuadros Imágenes v2</span>
+                    </button>
+                    <button class="btn" data-target="plantilla-imagenes-v2.html">
+                        <span class="btn-icon">🎨</span>
+                        <span>Plantilla Imágenes v2</span>
+                    </button>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-title">
+                        <span>📚</span>
+                        <span>Biblioteca</span>
+                    </div>
+                    <button class="btn" data-target="material-educativo-reutilizable.html">
+                        <span class="btn-icon">📖</span>
+                        <span>Material Reutilizable</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ⚠️ NOTA: YA NO EXISTE EN EL SIDEBAR:
+                 🏗️ Proyectos / ➕ Guardar Proyecto
+                 📁 Documentos PDF / 📤 Subir PDF
+                 (Eso queda en tu instancia dedicada)
+            -->
+        </nav>
+
+        <button class="toggle-nav" id="toggleNav" title="Ocultar/Mostrar menú">‹</button>
+
+        <main>
+            <div class="view-controls">
+                <div class="zoom-controls">
+                    <span>🔍</span>
+                    <input type="range" min="50" max="150" value="100" class="zoom-slider" id="zoomSlider"
+                        oninput="updateZoom(this.value)">
+                    <span class="zoom-value" id="zoomValue">100%</span>
+                </div>
+                <button class="btn-premium btn-secondary" onclick="toggleCompactMode()" id="compactBtn">
+                    <span>👁️</span>
+                    <span>Modo Enfoque</span>
+                </button>
+                <button class="btn-premium btn-secondary" onclick="toggleFullscreen()" id="fullscreenBtn">
+                    <span>⛶</span>
+                    <span>Pantalla Completa</span>
+                </button>
+                <button class="btn-premium btn-primary" id="downloadBtn">
+                    <span>📥</span>
+                    <span>Exportar PDF</span>
+                </button>
+            </div>
+
+            <div id="frameWrapper">
+                <div id="dashboardContainer" class="pdf-grid"></div>
+                <iframe id="plantillaFrame" src="about:blank"></iframe>
+            </div>
+        </main>
+    </div>
+
+	    <!-- MODAL SUBIR PDF (se mantiene porque el dashboard lo usa internamente si lo ocupas) -->
+	    <div class="modal-overlay" id="uploadModal">
+	        <div class="modal-content">
+	            <h2 class="modal-title">📤 Subir Documento PDF</h2>
+            <div class="upload-zone" onclick="document.getElementById('hiddenFileInput').click()">
+                <div style="font-size: 40px; margin-bottom: 16px;">📄</div>
+                <p style="font-size: 16px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">Arrastra tu PDF aquí o haz clic</p>
+                <p style="color: var(--text-muted); font-size: 13px;">Los campos se extraerán automáticamente</p>
+            </div>
+            <input type="file" id="hiddenFileInput" accept=".pdf" style="display: none;"
+                onchange="handlePDFUpload(event)">
+            <div style="margin-top: 20px; text-align: center;">
+                <button class="btn-premium btn-secondary" onclick="closeUploadModal()">Cancelar</button>
+            </div>
+	        </div>
+	    </div>
+
+	    <!-- MODAL GUARDAR / CATALOGAR MATERIAL (Biblioteca tipo Pinterest) -->
+	    <div class="modal-overlay" id="saveModal">
+	        <div class="modal-content">
+	            <h2 class="modal-title">📌 Catalogar Material</h2>
+
+	            <div class="form-row">
+	                <div class="form-label">Título del Material</div>
+	                <input class="form-input" id="saveModalTitle" type="text" placeholder="Ej. El concepto del Yo" />
+	            </div>
+
+	            <div class="form-row">
+	                <div class="form-label">Descripción</div>
+	                <textarea class="form-textarea" id="saveModalDescription"
+	                    placeholder="Describe el material y pega enlaces (https://...) si aplica"></textarea>
+	                <div class="form-help">Los enlaces se detectan y se muestran como chips en la Biblioteca.</div>
+	            </div>
+
+	            <div class="form-row">
+	                <div class="form-label">Tipo de Plantilla (actual)</div>
+	                <select class="form-input form-select" id="saveModalTemplate" disabled></select>
+	                <div class="form-help">Se guarda en este navegador (localStorage).</div>
+	            </div>
+
+	            <div class="modal-actions">
+	                <button class="btn-premium btn-secondary" id="saveModalCancel">Cancelar</button>
+	                <button class="btn-premium btn-primary" id="saveModalConfirm">
+	                    <span>💾</span>
+	                    <span>Guardar</span>
+	                </button>
+	            </div>
+
+	            <div class="form-help" id="saveModalStatus" style="display:none; margin-top: 12px;"></div>
+	        </div>
+	    </div>
+
+	    <div class="auto-save-indicator" id="autoSaveIndicator">✓ Guardado</div>
+
+    <script>
+        // ===== VARIABLES GLOBALES =====
+        let currentTemplate = 'plantilla_escolar_carta_mx_autoajuste_y_areas_editables.html';
+        let workspaceItems = JSON.parse(localStorage.getItem('arkaios_workspace') || '[]');
+        let completedWorks = JSON.parse(localStorage.getItem('arkaios_works') || '[]');
+
+        // ===== MENÚ DINÁMICO (modules.json) =====
+        async function initDynamicMenu() {
+            const root = document.getElementById('dynamicMenuRoot');
+            const fallback = document.getElementById('staticMenuFallback');
+
+            try {
+                const res = await fetch('modules.json', { cache: 'no-store' });
+                if (!res.ok) throw new Error('modules.json no encontrado');
+                const manifest = await res.json();
+
+                root.innerHTML = '';
+                buildMenuFromManifest(root, manifest);
+                fallback.style.display = 'none';
+
+                // Conecta listeners del menú dinámico
+                wireTemplateButtons();
+            } catch (e) {
+                console.warn('[ARKAIOS] Menú dinámico no disponible -> usando fallback.', e);
+                root.innerHTML = '';
+                fallback.style.display = 'block';
+
+                // Conecta listeners del menú fallback
+                wireTemplateButtons();
+            }
+        }
+
+        function buildMenuFromManifest(container, manifest) {
+            // manifest esperado:
+            // { sections: [ { title, icon, items:[ { label, icon, target } ] } ] }
+            const sections = Array.isArray(manifest?.sections) ? manifest.sections : [];
+
+            for (const sec of sections) {
+                const section = document.createElement('div');
+                section.className = 'nav-section';
+
+                const title = document.createElement('div');
+                title.className = 'nav-title';
+                title.innerHTML = `<span>${sec.icon || '🧩'}</span><span>${sec.title || 'Módulos'}</span>`;
+                section.appendChild(title);
+
+                const items = Array.isArray(sec.items) ? sec.items : [];
+                items.forEach((it, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn';
+                    btn.dataset.target = it.target;
+                    btn.innerHTML = `
+                        <span class="btn-icon">${it.icon || '📄'}</span>
+                        <span>${it.label || it.target}</span>
+                    `;
+                    section.appendChild(btn);
+
+                    // activa el primero como default (solo UI)
+                    if (sec.makeFirstActive && idx === 0) btn.classList.add('active');
+                });
+
+                container.appendChild(section);
+            }
+
+            // Extra: Biblioteca fija opcional si no viene en manifest
+            if (!sections.some(s => (s.title || '').toLowerCase().includes('biblioteca'))) {
+                const lib = document.createElement('div');
+                lib.className = 'nav-section';
+                lib.innerHTML = `
+                    <div class="nav-title"><span>📚</span><span>Biblioteca</span></div>
+                    <button class="btn" data-target="material-educativo-reutilizable.html">
+                        <span class="btn-icon">📖</span>
+                        <span>Material Reutilizable</span>
+                    </button>`;
+                container.appendChild(lib);
+            }
+        }
+
+        function wireTemplateButtons() {
+            document.querySelectorAll('.btn[data-target]').forEach(btn => {
+                btn.onclick = () => loadTemplate(btn.dataset.target);
+            });
+        }
+
+	        // ===== DASHBOARD =====
+	        function escapeHTML(str) {
+	            return String(str ?? '')
+	                .replaceAll('&', '&amp;')
+	                .replaceAll('<', '&lt;')
+	                .replaceAll('>', '&gt;')
+	                .replaceAll('"', '&quot;')
+	                .replaceAll("'", '&#039;');
+	        }
+
+	        function truncate(str, maxLen) {
+	            const s = String(str ?? '');
+	            if (s.length <= maxLen) return s;
+	            return s.slice(0, Math.max(0, maxLen - 1)).trimEnd() + '…';
+	        }
+
+	        function prettifyTargetName(target) {
+	            const t = String(target ?? '').trim();
+	            if (!t) return 'Plantilla';
+	            const base = t.replace(/\.html?$/i, '');
+	            return base
+	                .replaceAll('_', ' ')
+	                .replaceAll('-', ' ')
+	                .replace(/\s+/g, ' ')
+	                .trim();
+	        }
+
+	        function extractUrls(text) {
+	            const s = String(text ?? '');
+	            const urls = [];
+	            const re = /https?:\/\/[^\s<>\")\]]+/gi;
+	            let m;
+	            while ((m = re.exec(s)) !== null) {
+	                urls.push(m[0]);
+	            }
+	            return Array.from(new Set(urls)).slice(0, 10);
+	        }
+
+	        function prettifyUrlLabel(url) {
+	            try {
+	                const u = new URL(url);
+	                return (u.hostname || url).replace(/^www\./, '');
+	            } catch {
+	                return url;
+	            }
+	        }
+
+	        function createSectionHeader(title, opts = {}) {
+	            const header = document.createElement('div');
+	            header.className = 'section-header';
+	            if (opts.marginTop) header.style.marginTop = opts.marginTop + 'px';
+
+	            const h2 = document.createElement('h2');
+	            h2.textContent = title;
+	            header.appendChild(h2);
+	            return header;
+	        }
+
+	        function createEmptyState(text) {
+	            const el = document.createElement('div');
+	            el.style.gridColumn = '1 / -1';
+	            el.style.textAlign = 'center';
+	            el.style.color = 'var(--text-muted)';
+	            el.style.padding = '28px 12px';
+	            el.textContent = text;
+	            return el;
+	        }
+
+	        function renderDashboard() {
+	            const container = document.getElementById('dashboardContainer');
+	            container.innerHTML = '';
+
+	            // Biblioteca / Proyectos (Workspace)
+	            container.appendChild(createSectionHeader('📌 Biblioteca / Proyectos Guardados'));
+
+	            if (workspaceItems.length === 0) {
+	                container.appendChild(createEmptyState('No hay material guardado todavía. Usa “Guardar” para crear tu primera ficha.'));
+	            } else {
+	                workspaceItems.forEach((item, index) => {
+	                    const card = createWorkspaceCard(item, index);
+	                    container.appendChild(card);
+	                });
+	            }
+
+	            // PDFs Finalizados
+	            container.appendChild(createSectionHeader('📚 Documentos Finalizados', { marginTop: 32 }));
+
+	            if (completedWorks.length === 0) {
+	                container.appendChild(createEmptyState('No hay documentos guardados'));
+	            } else {
+	                completedWorks.forEach((item, index) => {
+	                    const card = createPDFCard(item.name, '📄', 'PDF', () => downloadWork(index), () => removeWork(index));
+	                    container.appendChild(card);
+	                });
+	            }
+	        }
+
+	        function createWorkspaceCard(item, index) {
+	            const card = document.createElement('div');
+	            card.className = 'pin-card';
+	            card.onclick = () => loadWorkspaceItem(index);
+
+	            const title = (item && item.name) ? item.name : 'Sin título';
+	            const desc = (item && item.description) ? item.description : '';
+	            const links = Array.isArray(item && item.links) && item.links.length ? item.links : extractUrls(desc);
+	            const templateLabel = prettifyTargetName((item && item.template) ? item.template : currentTemplate);
+
+	            const thumb = document.createElement('div');
+	            thumb.className = 'pin-thumb';
+	            if (item && item.thumbnail) {
+	                const img = document.createElement('img');
+	                img.src = item.thumbnail;
+	                img.alt = 'Vista previa';
+	                thumb.appendChild(img);
+	            } else {
+	                const ph = document.createElement('div');
+	                ph.className = 'pin-thumb-placeholder';
+	                ph.textContent = 'VISTA PREVIA';
+	                thumb.appendChild(ph);
+	            }
+
+	            const body = document.createElement('div');
+	            body.className = 'pin-body';
+
+	            const t = document.createElement('div');
+	            t.className = 'pin-title';
+	            t.textContent = title;
+
+	            const d = document.createElement('div');
+	            d.className = 'pin-desc';
+	            d.textContent = desc ? truncate(desc, 180) : 'Sin descripción';
+	            if (!desc) d.style.color = 'var(--text-muted)';
+
+	            body.appendChild(t);
+	            body.appendChild(d);
+
+	            if (links && links.length) {
+	                const linkWrap = document.createElement('div');
+	                linkWrap.className = 'pin-links';
+
+	                links.slice(0, 3).forEach((url) => {
+	                    const chip = document.createElement('span');
+	                    chip.className = 'link-chip';
+
+	                    const a = document.createElement('a');
+	                    a.href = url;
+	                    a.target = '_blank';
+	                    a.rel = 'noopener noreferrer';
+	                    a.textContent = prettifyUrlLabel(url);
+	                    a.addEventListener('click', (e) => e.stopPropagation());
+
+	                    chip.appendChild(document.createTextNode('🔗 '));
+	                    chip.appendChild(a);
+	                    linkWrap.appendChild(chip);
+	                });
+
+	                body.appendChild(linkWrap);
+	            }
+
+	            const footer = document.createElement('div');
+	            footer.className = 'pin-footer';
+
+	            const badge = document.createElement('span');
+	            badge.className = 'pin-badge';
+	            badge.textContent = '🧩 ' + templateLabel;
+
+	            const del = document.createElement('button');
+	            del.className = 'action-btn delete-btn';
+	            del.textContent = '🗑️ Eliminar';
+	            del.title = 'Eliminar';
+	            del.addEventListener('click', (e) => {
+	                e.stopPropagation();
+	                removeWorkspaceItem(index);
+	            });
+
+	            footer.appendChild(badge);
+	            footer.appendChild(del);
+
+	            card.appendChild(thumb);
+	            card.appendChild(body);
+	            card.appendChild(footer);
+
+	            return card;
+	        }
+
+	        function createPDFCard(name, icon, type, onClick, onDelete) {
+	            const card = document.createElement('div');
+	            card.className = 'pdf-card';
+	            card.onclick = onClick;
+	            card.innerHTML = `
+	                <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.8;">${icon}</div>
+	                <div class="name">${escapeHTML(name)}</div>
+	                <div class="info">${escapeHTML(type)}</div>
+	                <div class="actions">
+	                    <button class="action-btn delete-btn">🗑️ Eliminar</button>
+	                </div>
+	            `;
+
+	            const deleteBtn = card.querySelector('.delete-btn');
+	            deleteBtn.addEventListener('click', (e) => {
+	                e.stopPropagation();
+	                onDelete();
+	            });
+
+	            return card;
+	        }
+
+	        function showDashboardView() {
+	            const dashboard = document.getElementById('dashboardContainer');
+	            const iframe = document.getElementById('plantillaFrame');
+	            dashboard.style.display = 'grid';
+	            iframe.style.display = 'none';
+	            renderDashboard();
+	        }
+
+	        function toggleDashboard() {
+	            showDashboardView();
+	        }
+
+	        // ===== GUARDAR / CATALOGO (Biblioteca tipo Pinterest) =====
+	        function populateSaveModalTemplate() {
+	            const select = document.getElementById('saveModalTemplate');
+	            if (!select) return;
+
+	            const opt = document.createElement('option');
+	            opt.value = currentTemplate;
+	            opt.textContent = prettifyTargetName(currentTemplate);
+	            select.innerHTML = '';
+	            select.appendChild(opt);
+	            select.value = currentTemplate;
+	        }
+
+	        function openSaveModal() {
+	            const iframe = document.getElementById('plantillaFrame');
+	            if (!iframe || iframe.style.display === 'none') {
+	                showIndicator('Abre una plantilla antes de guardar');
+	                return;
+	            }
+
+	            const modal = document.getElementById('saveModal');
+	            const title = document.getElementById('saveModalTitle');
+	            const status = document.getElementById('saveModalStatus');
+
+	            if (!modal || !title) return;
+
+	            if (status) {
+	                status.style.display = 'none';
+	                status.textContent = '';
+	            }
+
+	            populateSaveModalTemplate();
+
+	            if (!title.value.trim()) {
+	                title.value = `${prettifyTargetName(currentTemplate)} - ${new Date().toLocaleDateString()}`;
+	            }
+
+	            modal.classList.add('active');
+	            setTimeout(() => title.focus(), 0);
+	        }
+
+	        function closeSaveModal() {
+	            const modal = document.getElementById('saveModal');
+	            if (modal) modal.classList.remove('active');
+	        }
+
+	        function wireSaveModal() {
+	            const modal = document.getElementById('saveModal');
+	            if (!modal || modal.dataset.wired === '1') return;
+	            modal.dataset.wired = '1';
+
+	            const cancel = document.getElementById('saveModalCancel');
+	            const confirm = document.getElementById('saveModalConfirm');
+
+	            if (cancel) cancel.addEventListener('click', closeSaveModal);
+	            if (confirm) confirm.addEventListener('click', saveFromModal);
+
+	            modal.addEventListener('click', (e) => {
+	                if (e.target === modal) closeSaveModal();
+	            });
+
+	            document.addEventListener('keydown', (e) => {
+	                if (e.key === 'Escape' && modal.classList.contains('active')) {
+	                    closeSaveModal();
+	                }
+	            });
+	        }
+
+	        async function makeIframeThumbnail(iframe) {
+	            try {
+	                if (!iframe || !iframe.contentDocument || !iframe.contentDocument.body) return null;
+
+	                const sourceCanvas = await html2canvas(iframe.contentDocument.body, {
+	                    scale: 1.5,
+	                    useCORS: true,
+	                    logging: false,
+	                    backgroundColor: '#ffffff'
+	                });
+
+	                const targetW = 560;
+	                const targetH = 350;
+	                const targetRatio = targetW / targetH;
+	                const srcRatio = sourceCanvas.width / sourceCanvas.height;
+
+	                let sx = 0;
+	                let sy = 0;
+	                let sw = sourceCanvas.width;
+	                let sh = sourceCanvas.height;
+
+	                if (srcRatio > targetRatio) {
+	                    sw = sourceCanvas.height * targetRatio;
+	                    sx = (sourceCanvas.width - sw) / 2;
+	                } else {
+	                    sh = sourceCanvas.width / targetRatio;
+	                    sy = (sourceCanvas.height - sh) / 2;
+	                }
+
+	                const thumb = document.createElement('canvas');
+	                thumb.width = targetW;
+	                thumb.height = targetH;
+
+	                const ctx = thumb.getContext('2d');
+	                if (!ctx) return null;
+
+	                ctx.drawImage(sourceCanvas, sx, sy, sw, sh, 0, 0, targetW, targetH);
+
+	                let q = 0.75;
+	                let out = thumb.toDataURL('image/jpeg', q);
+	                while (out.length > 650000 && q > 0.45) {
+	                    q = Math.round((q - 0.1) * 100) / 100;
+	                    out = thumb.toDataURL('image/jpeg', q);
+	                }
+
+	                return out;
+	            } catch (e) {
+	                console.warn('No se pudo generar thumbnail:', e);
+	                return null;
+	            }
+	        }
+
+	        async function saveFromModal() {
+	            const titleEl = document.getElementById('saveModalTitle');
+	            const descEl = document.getElementById('saveModalDescription');
+	            const status = document.getElementById('saveModalStatus');
+	            const confirmBtn = document.getElementById('saveModalConfirm');
+
+	            const name = titleEl ? titleEl.value.trim() : '';
+	            const description = descEl ? descEl.value.trim() : '';
+
+	            if (!name) {
+	                if (status) {
+	                    status.style.display = 'block';
+	                    status.style.color = 'var(--accent-red)';
+	                    status.textContent = 'Escribe un título para guardar.';
+	                }
+	                return;
+	            }
+
+	            const iframe = document.getElementById('plantillaFrame');
+
+	            if (confirmBtn) {
+	                confirmBtn.disabled = true;
+	                confirmBtn.dataset.prev = confirmBtn.innerHTML;
+	                confirmBtn.innerHTML = '<span>⏳</span><span>Guardando...</span>';
+	            }
+
+	            let data = null;
+	            try {
+	                if (iframe && iframe.contentWindow && iframe.contentWindow.ARKAIOS_getData) {
+	                    data = iframe.contentWindow.ARKAIOS_getData();
+	                }
+	            } catch (e) {
+	                console.warn('No se pudieron obtener datos del iframe:', e);
+	            }
+
+	            let thumbnail = null;
+	            try {
+	                thumbnail = await makeIframeThumbnail(iframe);
+	            } catch (e) {
+	                console.warn('No se pudo capturar vista previa:', e);
+	                thumbnail = null;
+	            }
+
+	            const links = extractUrls(description);
+
+	            const item = {
+	                id: `ark_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
+	                name,
+	                description,
+	                links,
+	                template: currentTemplate,
+	                data,
+	                thumbnail,
+	                timestamp: Date.now()
+	            };
+
+	            workspaceItems.unshift(item);
+
+	            let persisted = false;
+	            try {
+	                localStorage.setItem('arkaios_workspace', JSON.stringify(workspaceItems));
+	                persisted = true;
+	            } catch (e) {
+	                console.warn('localStorage lleno al guardar:', e);
+	                if (thumbnail) {
+	                    item.thumbnail = null;
+	                    try {
+	                        localStorage.setItem('arkaios_workspace', JSON.stringify(workspaceItems));
+	                        persisted = true;
+	                        showIndicator('✓ Guardado (sin vista previa por límite de almacenamiento)');
+	                    } catch (e2) {
+	                        workspaceItems.shift();
+	                        if (status) {
+	                            status.style.display = 'block';
+	                            status.style.color = 'var(--accent-red)';
+	                            status.textContent = 'No se pudo guardar: almacenamiento lleno.';
+	                        }
+	                    }
+	                } else {
+	                    workspaceItems.shift();
+	                    if (status) {
+	                        status.style.display = 'block';
+	                        status.style.color = 'var(--accent-red)';
+	                        status.textContent = 'No se pudo guardar: almacenamiento lleno.';
+	                    }
+	                }
+	            }
+
+	            if (persisted) {
+	                if (!thumbnail) showIndicator('✓ Material guardado');
+	                closeSaveModal();
+	                showDashboardView();
+	            }
+
+	            if (confirmBtn) {
+	                const prev = confirmBtn.dataset.prev;
+	                if (prev) confirmBtn.innerHTML = prev;
+	                confirmBtn.disabled = false;
+	            }
+	        }
+
+        // ===== MODAL PDF =====
+        function openUploadModal() {
+            document.getElementById('uploadModal').classList.add('active');
+        }
+        function closeUploadModal() {
+            document.getElementById('uploadModal').classList.remove('active');
+        }
+
+        async function handlePDFUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function (e) {
+                const pdfData = e.target.result;
+
+                completedWorks.push({
+                    name: file.name,
+                    data: pdfData,
+                    timestamp: Date.now(),
+                    status: 'imported'
+                });
+                localStorage.setItem('arkaios_works', JSON.stringify(completedWorks));
+
+                showIndicator('Extrayendo contenido del PDF...');
+                await extractPDFContent(pdfData);
+
+                closeUploadModal();
+                showIndicator('¡PDF importado correctamente!');
+                renderDashboard();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function extractPDFContent(pdfData) {
+            try {
+                const loadingTask = pdfjsLib.getDocument(pdfData);
+                const pdf = await loadingTask.promise;
+                const textContent = [];
+
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const text = await page.getTextContent();
+                    const pageText = text.items.map(item => item.str).join(' ');
+                    textContent.push(pageText);
+                }
+
+                const projectName = `PDF Importado ${new Date().toLocaleDateString()}`;
+                workspaceItems.push({
+                    name: projectName,
+                    template: currentTemplate,
+                    data: {
+                        extractedText: textContent.join('\n\n'),
+                        imported: true
+                    },
+                    timestamp: Date.now()
+                });
+                localStorage.setItem('arkaios_workspace', JSON.stringify(workspaceItems));
+
+            } catch (error) {
+                console.error('Error al procesar PDF:', error);
+                showIndicator('Error: No se pudo extraer texto del PDF');
+            }
+        }
+
+        // ===== PLANTILLAS =====
+        function loadTemplate(target) {
+            currentTemplate = target;
+            const frame = document.getElementById('plantillaFrame');
+            frame.src = target;
+
+            document.getElementById('dashboardContainer').style.display = 'none';
+            frame.style.display = 'block';
+
+            document.querySelectorAll('.btn[data-target]').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.target === target);
+            });
+        }
+
+        // ===== WORKSPACE =====
+        function addNewWorkspaceItem() {
+            const iframe = document.getElementById('plantillaFrame');
+            let data = null;
+
+            try {
+                if (iframe.contentWindow && iframe.contentWindow.ARKAIOS_getData) {
+                    data = iframe.contentWindow.ARKAIOS_getData();
+                }
+            } catch (e) {
+                console.warn('No se pudieron obtener datos del iframe');
+            }
+
+            const name = prompt('Nombre del proyecto:', `Proyecto ${workspaceItems.length + 1}`);
+            if (!name) return;
+
+            workspaceItems.push({
+                name: name,
+                template: currentTemplate,
+                data: data,
+                timestamp: Date.now()
+            });
+
+            localStorage.setItem('arkaios_workspace', JSON.stringify(workspaceItems));
+            showIndicator('✓ Proyecto guardado');
+            renderDashboard();
+        }
+
+        function loadWorkspaceItem(index) {
+            const item = workspaceItems[index];
+            currentTemplate = item.template;
+            const frame = document.getElementById('plantillaFrame');
+
+            frame.src = item.template;
+            frame.onload = () => {
+                if (item.data && frame.contentWindow && frame.contentWindow.ARKAIOS_setData) {
+                    frame.contentWindow.ARKAIOS_setData(item.data);
+                }
+            };
+
+            document.getElementById('dashboardContainer').style.display = 'none';
+            frame.style.display = 'block';
+            showIndicator('✓ Proyecto cargado');
+        }
+
+        function removeWorkspaceItem(index) {
+            if (confirm('¿Eliminar este proyecto permanentemente?')) {
+                workspaceItems.splice(index, 1);
+                localStorage.setItem('arkaios_workspace', JSON.stringify(workspaceItems));
+                renderDashboard();
+                showIndicator('✓ Proyecto eliminado');
+            }
+        }
+
+        function downloadWork(index) {
+            const item = completedWorks[index];
+            const link = document.createElement('a');
+            link.href = item.data;
+            link.download = item.name;
+            link.click();
+            showIndicator('✓ Descarga iniciada');
+        }
+
+        function removeWork(index) {
+            if (confirm('¿Eliminar este documento?')) {
+                completedWorks.splice(index, 1);
+                localStorage.setItem('arkaios_works', JSON.stringify(completedWorks));
+                renderDashboard();
+                showIndicator('✓ Documento eliminado');
+            }
+        }
+
+        // ===== CONTROLES =====
+        function updateZoom(value) {
+            const iframe = document.getElementById('plantillaFrame');
+            const display = document.getElementById('zoomValue');
+            iframe.style.transform = `scale(${value / 100})`;
+            iframe.style.transformOrigin = 'top center';
+            display.textContent = value + '%';
+        }
+
+        function toggleCompactMode() {
+            document.body.classList.toggle('compact-mode');
+            showIndicator(document.body.classList.contains('compact-mode') ? '✓ Modo enfoque activado' : '✓ Modo normal');
+        }
+
+        function toggleFullscreen() {
+            const wrapper = document.getElementById('frameWrapper');
+            if (!document.fullscreenElement) {
+                if (wrapper.requestFullscreen) wrapper.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        }
+
+        function showIndicator(msg) {
+            const indicator = document.getElementById('autoSaveIndicator');
+            indicator.textContent = msg;
+            indicator.classList.add('show');
+            setTimeout(() => indicator.classList.remove('show'), 2500);
+        }
+
+        // ===== INICIALIZACIÓN =====
+	        window.onload = async function () {
+	            // 1) Menú dinámico (si existe modules.json)
+	            await initDynamicMenu();
+
+	            // 2) Render dashboard
+	            renderDashboard();
+	
+	            // 2.1) Guardar -> Biblioteca (fichas tipo Pinterest)
+	            const saveBtn = document.getElementById('saveBtn');
+	            if (saveBtn) saveBtn.addEventListener('click', openSaveModal);
+	            wireSaveModal();
+
+	            // 3) Plantilla default precargada (pero oculta)
+	            const frame = document.getElementById('plantillaFrame');
+	            frame.src = currentTemplate;
+
+            // Drag & drop
+            const uploadZone = document.querySelector('.upload-zone');
+            if (uploadZone) {
+                uploadZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    uploadZone.classList.add('dragover');
+                });
+                uploadZone.addEventListener('dragleave', () => {
+                    uploadZone.classList.remove('dragover');
+                });
+                uploadZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    uploadZone.classList.remove('dragover');
+                    handlePDFUpload({ target: { files: e.dataTransfer.files } });
+                });
+            }
+
+            // Toggle sidebar
+            const toggleNav = document.getElementById('toggleNav');
+            if (toggleNav) {
+                toggleNav.addEventListener('click', function () {
+                    const nav = document.getElementById('sidebar');
+                    nav.classList.toggle('collapsed');
+                    this.textContent = nav.classList.contains('collapsed') ? '›' : '‹';
+                });
+            }
+
+            // Exportar PDF
+            const downloadBtn = document.getElementById('downloadBtn');
+            if (downloadBtn) {
+                downloadBtn.addEventListener('click', async () => {
+                    showIndicator('Generando PDF...');
+                    const iframe = document.getElementById('plantillaFrame');
+                    try {
+                        if (iframe.contentWindow && iframe.contentWindow.print) {
+                            iframe.contentWindow.print();
+                            showIndicator('✓ Listo para imprimir');
+                            return;
+                        }
+
+                        const canvas = await html2canvas(iframe.contentDocument.body, {
+                            scale: 2,
+                            useCORS: true,
+                            logging: false
+                        });
+
+                        const imgData = canvas.toDataURL('image/png');
+                        const { jsPDF } = window.jspdf;
+                        const pdf = new jsPDF({
+                            orientation: 'portrait',
+                            unit: 'mm',
+                            format: 'letter'
+                        });
+
+                        const imgWidth = 210;
+                        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+                        pdf.save(`ARKAIOS_${Date.now()}.pdf`);
+                        showIndicator('✓ PDF exportado');
+                    } catch (error) {
+                        console.error('Error:', error);
+                        window.print();
+                    }
+                });
+            }
+
+            // Mostrar dashboard por defecto
+            document.getElementById('plantillaFrame').style.display = 'none';
+            document.getElementById('dashboardContainer').style.display = 'grid';
+        };
+
+		// Manejar el botón Guardar
+const saveBtn = document.getElementById('saveBtn');
+if (saveBtn) {
+  saveBtn.addEventListener('click', async function() {
+    console.log('Botón Guardar clickeado');
+    
+    // Obtener el contenido del canvas
+    const iframe = document.getElementById('pdfViewer');
+    if (!iframe || !iframe.contentWindow) {
+      alert('No se encontró el visor PDF');
+      return;
+    }
+    
+    try {
+      const canvas = iframe.contentWindow.document.querySelector('canvas');
+      if (!canvas) {
+        alert('No se encontró el canvas del PDF');
+        return;
+      }
+      
+      // Convertir canvas a blob
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+      
+      // Crear FormData y enviar a la API
+      const formData = new FormData();
+      formData.append('material', blob, 'material.png');
+      
+      // Mostrar indicador de carga
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Guardando...';
+      
+      const response = await fetch('/api/save-material', {
+        method: 'POST',
+        body: formData
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok) {
+        alert('Material guardado exitosamente');
+      } else {
+        alert('Error: ' + (result.error || 'No se pudo guardar'));
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error al guardar: ' + error.message);
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = '💾 Guardar';
+    }
+  });
+}
+    </script>
+    <a href="/portal-empresarial.html" style="position:fixed;right:16px;bottom:16px;background:#166534;color:#fff;text-decoration:none;padding:10px 14px;border-radius:999px;font-weight:700;z-index:9999;">
+      Portal Empresarial
+    </a>
+</body>
+
+</html>

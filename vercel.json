@@ -1,0 +1,19 @@
+{
+  "functions": {
+    "api/arkaios.js": {
+      "maxDuration": 30
+    },
+    "api/arkaios-tools.js": {
+      "maxDuration": 30
+    },
+    "api/arkaios-image.js": {
+      "maxDuration": 60
+    },
+    "api/arkaios-orquestador.js": {
+      "maxDuration": 60
+    },
+    "api/publish-template.js": {
+      "maxDuration": 60
+    }
+  }
+}
