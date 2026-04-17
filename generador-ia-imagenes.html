@@ -342,15 +342,15 @@ async function generateImages() {
 
   const results = [];
   for (let i = 0; i < count; i++) {
-    document.getElementById('stxt').textContent = `Generando imagen ${i+1} de ${count}...`;
+    document.getElementById('stxt').textContent = `Generando imagen ${i+1} de ${count}... espera a que cargue antes de la siguiente`;
     const sk = makeSk(resolution);
     document.getElementById('gallery').appendChild(sk);
 
     try {
-      const url = await genOne(prompt, style, neg, resolution);
+      const image = await genOne(prompt, style, neg, resolution);
       sk.remove();
-      addCard(url, prompt, resolution);
-      results.push(url);
+      addCard(image, prompt, resolution);
+      results.push(image.displayUrl);
     } catch(e) {
       sk.remove();
       console.error('Error gen:', e);
@@ -374,6 +374,12 @@ async function generateImages() {
 }
 
 async function genOne(prompt, style, neg, resolution) {
+  const imageUrl = buildImageUrl(prompt, style, neg, resolution);
+  const displayUrl = await fetchImageBlob(imageUrl);
+  return { displayUrl, sourceUrl: imageUrl };
+}
+
+function buildImageUrl(prompt, style, neg, resolution) {
   const [width, height] = resolution.split('x').map(Number);
   const seed = Math.floor(Math.random() * 2147483647);
   const fullPrompt = style ? `${prompt}, ${style}` : prompt;
@@ -382,12 +388,32 @@ async function genOne(prompt, style, neg, resolution) {
     width: String(Math.min(Math.max(width || 768, 256), 1536)),
     height: String(Math.min(Math.max(height || 768, 256), 1536)),
     seed: String(seed),
-    nologo: 'true',
-    enhance: 'true',
-    model: 'flux'
+    nologo: 'true'
   });
 
   return `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt + cleanNegative)}?${params.toString()}`;
+}
+
+async function fetchImageBlob(url, attempt = 1) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 120000);
+  try {
+    const resp = await fetch(url, { cache: 'no-store', signal: controller.signal });
+    const contentType = resp.headers.get('content-type') || '';
+    if (!resp.ok || !contentType.startsWith('image/')) {
+      throw new Error(`Motor ocupado (${resp.status})`);
+    }
+    const blob = await resp.blob();
+    return URL.createObjectURL(blob);
+  } catch (err) {
+    if (attempt < 3) {
+      await new Promise(resolve => setTimeout(resolve, 15000 * attempt));
+      return fetchImageBlob(url.replace(/seed=\d+/, 'seed=' + Math.floor(Math.random() * 2147483647)), attempt + 1);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 function makeSk(res) {
@@ -397,19 +423,22 @@ function makeSk(res) {
   return el;
 }
 
-function addCard(url, prompt, res) {
+function addCard(image, prompt, res) {
+  const url = typeof image === 'string' ? image : image.displayUrl;
+  const sourceUrl = typeof image === 'string' ? image : image.sourceUrl;
   const [w,h] = res.split('x').map(Number);
   const cls = h>w ? 'pt' : w>h ? 'ls' : 'sq';
   const card = document.createElement('div');
   card.className = `card ${cls}`;
   card.dataset.url = url;
+  card.dataset.sourceUrl = sourceUrl || url;
 
   const img = document.createElement('img');
-  img.src = url; img.alt = prompt; img.loading = 'lazy';
+  img.src = url; img.alt = prompt; img.loading = 'eager';
   img.onerror = () => {
     img.style.display = 'none';
     card.style.minHeight = '140px';
-    card.innerHTML += '<div style="padding:20px;text-align:center;color:#dc2626;font-size:11px;">⏱️ URL expirada<br><small>Las imágenes duran ~5 min — descárgalas</small></div>';
+    card.innerHTML += '<div style="padding:20px;text-align:center;color:#dc2626;font-size:11px;">⚠️ No se pudo mostrar<br><small>Intenta generar de nuevo</small></div>';
   };
 
   const ptag = document.createElement('div');
