@@ -256,7 +256,7 @@ input[type=range]{flex:1;accent-color:var(--azul);cursor:pointer;height:6px;}
       <h4>Generación Activada</h4>
       <p>El botón genera imágenes usando el puente local de ARKAIOS y el canal educativo configurado.</p>
       <ul>
-        <li>✅ Endpoint local /api/v1/image/generate</li>
+        <li>✅ Generacion directa sin funciones serverless</li>
         <li>✅ Canal xnaxg7ceyj</li>
         <li>✅ Lotes de hasta 8 imagenes</li>
         <li>✅ Envio a plantilla PDF</li>
@@ -297,10 +297,9 @@ input[type=range]{flex:1;accent-color:var(--azul);cursor:pointer;height:6px;}
 <script>
 // ============================================================
 // ARKAIOS Generador IA
-// Motor: puente local /api/v1/image/generate
+// Motor: puente directo de imagenes
 // ============================================================
 const CHANNEL = 'xnaxg7ceyj';
-const IMAGE_API = '/api/v1/image/generate';
 
 let isGenerating = false;
 
@@ -375,29 +374,20 @@ async function generateImages() {
 }
 
 async function genOne(prompt, style, neg, resolution) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 130000);
-  try {
-    const r = await fetch(IMAGE_API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        prompt,
-        style,
-        negativePrompt: neg,
-        resolution,
-        channel: CHANNEL,
-        adultContent: 0
-      }),
-      signal: controller.signal
-    });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const d = await r.json();
-    if (!d.ok || !d.url) throw new Error(d.error || d.details || 'Error del motor');
-    return d.url;
-  } finally {
-    clearTimeout(timeoutId);
-  }
+  const [width, height] = resolution.split('x').map(Number);
+  const seed = Math.floor(Math.random() * 2147483647);
+  const fullPrompt = style ? `${prompt}, ${style}` : prompt;
+  const cleanNegative = neg ? `. Evitar: ${neg}` : '';
+  const params = new URLSearchParams({
+    width: String(Math.min(Math.max(width || 768, 256), 1536)),
+    height: String(Math.min(Math.max(height || 768, 256), 1536)),
+    seed: String(seed),
+    nologo: 'true',
+    enhance: 'true',
+    model: 'flux'
+  });
+
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt + cleanNegative)}?${params.toString()}`;
 }
 
 function makeSk(res) {
