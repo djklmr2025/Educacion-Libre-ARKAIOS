@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARKAIOS · Generador de Imágenes IA</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --azul:#2563eb;--azul-claro:#eff6ff;--azul-med:#dbeafe;
+  --morado:#7c3aed;--morado-claro:#f5f3ff;
+  --verde:#059669;--verde-claro:#ecfdf5;
+  --naranja:#d97706;--naranja-claro:#fffbeb;
+  --rojo:#dc2626;--rojo-claro:#fef2f2;
+  --gris:#6b7280;--gris-claro:#f9fafb;--gris-borde:#e5e7eb;
+  --blanco:#ffffff;--texto:#111827;--texto-sec:#4b5563;
+  --sombra:0 4px 16px rgba(0,0,0,.08);
+  --sombra-lg:0 8px 32px rgba(0,0,0,.12);
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gris-claro);min-height:100vh;color:var(--texto);}
+
+/* HEADER EDUCATIVO */
+.hdr{background:var(--blanco);border-bottom:3px solid var(--azul);padding:0 24px;display:flex;align-items:center;gap:14px;height:64px;box-shadow:var(--sombra);position:sticky;top:0;z-index:100;}
+.hdr-logo{display:flex;align-items:center;gap:10px;}
+.hdr-logo span{font-size:1.8rem;}
+.hdr-logo h1{font-size:1.1rem;font-weight:800;color:var(--azul);}
+.hdr-logo small{display:block;font-size:10px;font-weight:500;color:var(--gris);letter-spacing:.4px;}
+.hdr-chips{display:flex;gap:8px;align-items:center;}
+.chip{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px;}
+.chip-azul{background:var(--azul-med);color:var(--azul);}
+.chip-verde{background:var(--verde-claro);color:var(--verde);}
+.back{margin-left:auto;background:var(--gris-claro);border:1px solid var(--gris-borde);color:var(--texto-sec);padding:7px 16px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;text-decoration:none;transition:all .2s;}
+.back:hover{background:var(--azul-med);color:var(--azul);border-color:var(--azul);}
+
+/* BANNER EDUCATIVO */
+.edu-banner{background:linear-gradient(135deg,var(--azul) 0%,var(--morado) 100%);color:#fff;padding:14px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.edu-banner p{font-size:13px;font-weight:600;}
+.edu-banner small{font-size:11px;opacity:.85;}
+.edu-banner .icon{font-size:1.6rem;flex-shrink:0;}
+
+/* LAYOUT */
+.main{display:grid;grid-template-columns:320px 1fr;gap:20px;padding:20px;max-width:1400px;margin:0 auto;}
+@media(max-width:900px){.main{grid-template-columns:1fr;}}
+
+/* PANEL IZQUIERDO */
+.panel{background:var(--blanco);border:1px solid var(--gris-borde);border-radius:16px;padding:20px;height:fit-content;box-shadow:var(--sombra);position:sticky;top:80px;}
+.sec-title{font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--azul);margin-bottom:12px;display:flex;align-items:center;gap:6px;padding-bottom:8px;border-bottom:2px solid var(--azul-med);}
+.fg{margin-bottom:14px;}
+.fg>label{display:block;font-size:11px;font-weight:700;color:var(--gris);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;}
+textarea,select,input[type=text]{width:100%;background:var(--gris-claro);border:1.5px solid var(--gris-borde);border-radius:10px;color:var(--texto);padding:9px 12px;font-size:13px;resize:vertical;transition:border .2s;font-family:inherit;}
+textarea:focus,select:focus{outline:none;border-color:var(--azul);background:var(--blanco);}
+textarea{min-height:80px;}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
+.tag{background:var(--azul-med);border:1px solid #bfdbfe;color:var(--azul);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;}
+.tag:hover{background:var(--azul);color:#fff;}
+.rrow{display:flex;align-items:center;gap:8px;margin-top:4px;}
+input[type=range]{flex:1;accent-color:var(--azul);cursor:pointer;height:6px;}
+.rv{min-width:28px;text-align:right;color:var(--azul);font-weight:800;font-size:14px;}
+
+/* BOTÓN PRINCIPAL */
+.gen-btn{width:100%;padding:13px;background:linear-gradient(135deg,var(--azul),var(--morado));border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:800;cursor:pointer;transition:all .3s;margin-top:6px;box-shadow:0 4px 16px rgba(37,99,235,.3);display:flex;align-items:center;justify-content:center;gap:8px;}
+.gen-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(37,99,235,.4);}
+.gen-btn:disabled{opacity:.55;cursor:not-allowed;transform:none;}
+
+/* BARRA DE PROGRESO */
+.prog{background:var(--gris-borde);border-radius:10px;height:6px;overflow:hidden;display:none;margin-top:10px;}
+.pf{height:100%;background:linear-gradient(90deg,var(--azul),var(--morado));border-radius:10px;transition:width .4s;}
+.st{text-align:center;font-size:11px;color:var(--gris);margin-top:5px;min-height:15px;}
+
+/* ACCIONES */
+.arow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+.abtn{padding:9px;border-radius:9px;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;border:1.5px solid;}
+.abtn:hover{transform:translateY(-1px);}
+.bt{background:var(--verde-claro);color:var(--verde);border-color:#a7f3d0;}
+.bc{background:var(--rojo-claro);color:var(--rojo);border-color:#fecaca;}
+
+/* CAJA PRO/PAGO — reemplaza NSFW */
+.pro-box{background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:14px;padding:16px;margin-top:14px;text-align:center;position:relative;overflow:hidden;}
+.pro-box::before{content:'';position:absolute;top:-20px;right:-20px;width:80px;height:80px;background:rgba(255,255,255,.06);border-radius:50%;}
+.pro-box::after{content:'';position:absolute;bottom:-15px;left:-15px;width:60px;height:60px;background:rgba(255,255,255,.04);border-radius:50%;}
+.pro-box .lock{font-size:2rem;margin-bottom:8px;}
+.pro-box h4{font-size:.9rem;font-weight:800;color:#fff;margin-bottom:4px;}
+.pro-box p{font-size:11px;color:rgba(255,255,255,.65);line-height:1.5;margin-bottom:12px;}
+.pro-box ul{text-align:left;margin:8px 0 12px;padding-left:4px;}
+.pro-box ul li{font-size:11px;color:rgba(255,255,255,.75);margin-bottom:4px;list-style:none;display:flex;align-items:center;gap:5px;}
+.pay-btn{display:block;width:100%;padding:11px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:800;cursor:pointer;transition:all .3s;text-decoration:none;box-shadow:0 4px 12px rgba(245,158,11,.35);position:relative;z-index:1;}
+.pay-btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(245,158,11,.5);}
+.pay-badge{display:inline-block;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:9px;padding:2px 7px;border-radius:10px;margin-bottom:10px;font-weight:700;letter-spacing:.5px;}
+
+/* GALERÍA */
+.galpanel{display:flex;flex-direction:column;gap:16px;}
+.ghdr{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--blanco);padding:14px 18px;border-radius:14px;border:1px solid var(--gris-borde);box-shadow:var(--sombra);}
+.ghdr h2{color:var(--texto);font-size:.95rem;font-weight:800;}
+.cnt{background:var(--azul-med);border:1px solid #bfdbfe;color:var(--azul);padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;}
+.motor-info{margin-left:auto;font-size:10px;color:var(--gris);display:flex;align-items:center;gap:5px;}
+.motor-dot{width:8px;height:8px;border-radius:50%;background:var(--verde);animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;}
+.card{background:var(--blanco);border:1.5px solid var(--gris-borde);border-radius:14px;overflow:hidden;transition:all .3s;position:relative;box-shadow:var(--sombra);}
+.card:hover{transform:translateY(-4px);box-shadow:var(--sombra-lg);border-color:#bfdbfe;}
+.card img{width:100%;display:block;object-fit:cover;}
+.card.sq img{aspect-ratio:1;}.card.pt img{aspect-ratio:9/16;}.card.ls img{aspect-ratio:16/9;}
+.cacts{padding:8px;display:flex;gap:5px;border-top:1px solid var(--gris-borde);}
+.cacts button{flex:1;padding:6px;border:none;border-radius:7px;font-size:10px;font-weight:700;cursor:pointer;transition:all .2s;}
+.cacts button:hover{transform:translateY(-1px);}
+.cdl{background:var(--azul-med);color:var(--azul);}
+.cadd{background:var(--verde-claro);color:var(--verde);}
+.cdel{background:var(--rojo-claro);color:var(--rojo);}
+.ptag{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.6);color:#fff;font-size:9px;padding:3px 8px;border-radius:8px;max-width:calc(100% - 12px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;backdrop-filter:blur(4px);}
+.sk{background:linear-gradient(90deg,#f3f4f6 25%,#e5e7eb 50%,#f3f4f6 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:14px;}
+.sk.sq{aspect-ratio:1;}.sk.pt{aspect-ratio:9/16;}
+@keyframes shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+.empty{text-align:center;padding:60px 20px;color:var(--gris);grid-column:1/-1;background:var(--blanco);border-radius:14px;border:2px dashed var(--gris-borde);}
+.empty .icon{font-size:3rem;margin-bottom:12px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--texto);color:#fff;padding:11px 20px;border-radius:12px;font-weight:700;z-index:9999;font-size:12px;box-shadow:var(--sombra-lg);animation:tin .3s ease;}
+@keyframes tin{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* MODAL CONFIRMACIÓN SALIDA */
+.mbg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:none;align-items:center;justify-content:center;}
+.mbg.open{display:flex;}
+.modal{background:#fff;border-radius:18px;padding:28px;width:min(420px,93vw);text-align:center;}
+.modal .micon{font-size:2.5rem;margin-bottom:12px;}
+.modal h3{font-size:1.1rem;font-weight:800;color:var(--texto);margin-bottom:8px;}
+.modal p{font-size:13px;color:var(--texto-sec);line-height:1.6;margin-bottom:18px;}
+.mbtns{display:flex;gap:10px;}
+.mbtns a{flex:1;padding:12px;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;text-decoration:none;text-align:center;transition:all .2s;}
+.mbtn-pay{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;box-shadow:0 4px 12px rgba(245,158,11,.3);}
+.mbtn-cancel{background:var(--gris-claro);color:var(--gris);border:1px solid var(--gris-borde);}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-logo">
+    <span>🎨</span>
+    <div>
+      <h1>Generador de Imágenes IA</h1>
+      <small>ARKAIOS Sistema Educativo — Motor Perchance FLUX</small>
+    </div>
+  </div>
+  <div class="hdr-chips">
+    <span class="chip chip-azul">🔵 Canal: xnaxg7ceyj</span>
+    <span class="chip chip-verde">✅ Modo Estudiante</span>
+  </div>
+  <a href="index.html" class="back">← Volver a ARKAIOS</a>
+</div>
+
+<!-- BANNER -->
+<div class="edu-banner">
+  <span class="icon">📚</span>
+  <div>
+    <p>Generador educativo de imágenes con Inteligencia Artificial</p>
+    <small>Escribe una descripción en español o inglés y genera imágenes para tus proyectos escolares, presentaciones y materiales educativos.</small>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- PANEL IZQUIERDO -->
+  <div class="panel">
+    <div class="sec-title">✏️ Configurar Imagen</div>
+
+    <div class="fg">
+      <label>Descripción de la imagen</label>
+      <textarea id="prompt" placeholder="Ej: volcán en erupción durante el atardecer, fotografía realista, cielo dramático..."></textarea>
+      <div class="tags">
+        <span class="tag" onclick="ap('fotografía realista')">Foto real</span>
+        <span class="tag" onclick="ap('ilustración digital')">Ilustración</span>
+        <span class="tag" onclick="ap('dibujo animado')">Dibujo animado</span>
+        <span class="tag" onclick="ap('acuarela')">Acuarela</span>
+        <span class="tag" onclick="ap('ultra detallado')">Ultra detalle</span>
+        <span class="tag" onclick="ap('fondo blanco')">Fondo blanco</span>
+        <span class="tag" onclick="ap('estilo anime')">Anime</span>
+        <span class="tag" onclick="ap('infografía educativa')">Infografía</span>
+      </div>
+    </div>
+
+    <div class="fg">
+      <label>Estilo de Arte</label>
+      <select id="artStyle">
+        <option value="">— Sin estilo adicional —</option>
+        <optgroup label="📚 Educativo / Escolar">
+          <option value="educational illustration, textbook style, clean">Ilustración de libro</option>
+          <option value="infographic, flat design, educational, colorful">Infografía</option>
+          <option value="scientific diagram, labeled, clean background">Diagrama científico</option>
+          <option value="children's book illustration, friendly, colorful">Libro infantil</option>
+          <option value="hand drawn, sketch, educational">Boceto educativo</option>
+        </optgroup>
+        <optgroup label="📷 Fotografía">
+          <option value="photorealistic, DSLR, 8k, sharp">Fotorealista</option>
+          <option value="nature photography, wildlife, detailed">Fotografía de naturaleza</option>
+          <option value="aerial photography, bird's eye view">Vista aérea / drone</option>
+          <option value="macro photography, extreme detail">Macro (primer plano)</option>
+        </optgroup>
+        <optgroup label="🎨 Arte / Ilustración">
+          <option value="watercolor painting, soft colors, artistic">Acuarela</option>
+          <option value="oil painting, classical, museum quality">Pintura al óleo</option>
+          <option value="digital art, concept art, vibrant">Arte digital</option>
+          <option value="pixel art, 8-bit, retro">Pixel Art</option>
+          <option value="3d render, CGI, realistic materials">Render 3D</option>
+          <option value="cartoon, animated, friendly">Caricatura</option>
+          <option value="anime style, manga, Studio Ghibli">Anime / Ghibli</option>
+          <option value="flat vector illustration, minimal, clean">Vector Flat</option>
+        </optgroup>
+        <optgroup label="🌎 Temática">
+          <option value="fantasy art, magical, epic landscape">Fantasía épica</option>
+          <option value="sci-fi, futuristic, space">Ciencia ficción</option>
+          <option value="historical, vintage, period accurate">Histórico</option>
+          <option value="architecture, building, modern design">Arquitectura</option>
+        </optgroup>
+      </select>
+    </div>
+
+    <div class="fg">
+      <label>🚫 Qué evitar en la imagen</label>
+      <textarea id="negPrompt" style="min-height:52px;font-size:12px;">borroso, mala calidad, deformado, texto, marca de agua, anatomía incorrecta</textarea>
+    </div>
+
+    <div class="fg">
+      <label>📐 Tamaño / Forma</label>
+      <select id="resolution">
+        <option value="768x768" selected>Cuadrado (768×768) — ideal para la mayoría</option>
+        <option value="512x768">Vertical / Retrato (512×768)</option>
+        <option value="768x512">Horizontal / Paisaje (768×512)</option>
+        <option value="512x512">Pequeño cuadrado (512×512)</option>
+        <option value="576x1024">Story / Pantalla celular (576×1024)</option>
+      </select>
+    </div>
+
+    <div class="fg">
+      <label>🔢 Cantidad de imágenes a generar</label>
+      <div class="rrow">
+        <input type="range" id="count" min="1" max="8" step="1" value="4" oninput="document.getElementById('cv').textContent=this.value">
+        <span class="rv" id="cv">4</span>
+      </div>
+    </div>
+
+    <button class="gen-btn" id="genBtn" onclick="generateImages()">
+      ✨ Generar Imágenes
+    </button>
+    <div class="prog" id="progBar"><div class="pf" id="progFill" style="width:0%"></div></div>
+    <p class="st" id="stxt"></p>
+
+    <div class="arow" style="margin-top:10px;">
+      <button class="abtn bt" onclick="sendToTemplate()">📄 → Plantilla PDF</button>
+      <button class="abtn bc" onclick="clearGallery()">🗑️ Limpiar</button>
+    </div>
+
+    <!-- ESTADO DEL MOTOR -->
+    <div class="pro-box">
+      <div class="pay-badge">ARKAIOS BRIDGE</div>
+      <div class="lock">🔓</div>
+      <h4>Generación Activada</h4>
+      <p>El botón genera imágenes usando el puente local de ARKAIOS y el canal educativo configurado.</p>
+      <ul>
+        <li>✅ Endpoint local /api/v1/image/generate</li>
+        <li>✅ Canal xnaxg7ceyj</li>
+        <li>✅ Lotes de hasta 8 imagenes</li>
+        <li>✅ Envio a plantilla PDF</li>
+      </ul>
+      <button class="pay-btn" onclick="testBridge(event)">
+        Probar Conexion
+      </button>
+    </div>
+  </div>
+
+  <!-- GALERÍA -->
+  <div class="galpanel">
+    <div class="ghdr">
+      <h2>🖼️ Imágenes Generadas</h2>
+      <span class="cnt" id="galCount">0 imágenes</span>
+      <div class="motor-info">
+        <span class="motor-dot"></span>
+        Motor Perchance FLUX · Canal xnaxg7ceyj
+      </div>
+    </div>
+
+    <div class="gallery" id="gallery">
+      <div class="empty" id="emptyState">
+        <div class="icon">🎨</div>
+        <p style="font-weight:700;color:#374151;margin-bottom:6px;">¡Listo para crear!</p>
+        <p style="font-size:12px;">Escribe una descripción a la izquierda y presiona <strong>Generar Imágenes</strong></p>
+        <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;">
+          <span style="background:#eff6ff;color:#1d4ed8;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;" onclick="setExample('un jaguar corriendo en la selva tropical, fotografía realista, alta definición')">🐆 Jaguar en la selva</span>
+          <span style="background:#f0fdf4;color:#166534;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;" onclick="setExample('sistema solar con todos los planetas, ilustración educativa, colores vibrantes')">🪐 Sistema solar</span>
+          <span style="background:#faf5ff;color:#6b21a8;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;" onclick="setExample('volcán en erupción al atardecer, fotografía dramática, cielo anaranjado')">🌋 Volcán</span>
+          <span style="background:#fff7ed;color:#c2410c;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;" onclick="setExample('ciudad futurista con edificios altos, arte digital, ciencia ficción, luces de neón')">🌆 Ciudad futurista</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// ARKAIOS Generador IA
+// Motor: puente local /api/v1/image/generate
+// ============================================================
+const CHANNEL = 'xnaxg7ceyj';
+const IMAGE_API = '/api/v1/image/generate';
+
+let isGenerating = false;
+
+(async function init() {
+  // Parámetros de URL (desde EduAgent)
+  const p = new URLSearchParams(location.search);
+  if (p.get('prompt')) document.getElementById('prompt').value = decodeURIComponent(p.get('prompt'));
+  if (p.get('resolution')) document.getElementById('resolution').value = p.get('resolution');
+  if (p.get('count')) {
+    const c = Math.min(parseInt(p.get('count'))||4, 8);
+    document.getElementById('count').value = c;
+    document.getElementById('cv').textContent = c;
+  }
+  if (p.get('autostart') === '1' && p.get('prompt')) setTimeout(generateImages, 800);
+})();
+
+async function generateImages() {
+  if (isGenerating) return;
+  const prompt = document.getElementById('prompt').value.trim();
+  if (!prompt) { toast('⚠️ Escribe una descripción primero'); return; }
+
+  const style      = document.getElementById('artStyle').value;
+  const count      = parseInt(document.getElementById('count').value);
+  const resolution = document.getElementById('resolution').value;
+  const neg = document.getElementById('negPrompt').value.trim();
+
+  isGenerating = true;
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;"></span> Generando...';
+  document.getElementById('progBar').style.display = 'block';
+  document.getElementById('progFill').style.width = '0%';
+  document.getElementById('emptyState').style.display = 'none';
+
+  if (!document.querySelector('#gallery style')) {
+    const s = document.createElement('style');
+    s.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+    document.getElementById('gallery').appendChild(s);
+  }
+
+  const results = [];
+  for (let i = 0; i < count; i++) {
+    document.getElementById('stxt').textContent = `Generando imagen ${i+1} de ${count}...`;
+    const sk = makeSk(resolution);
+    document.getElementById('gallery').appendChild(sk);
+
+    try {
+      const url = await genOne(prompt, style, neg, resolution);
+      sk.remove();
+      addCard(url, prompt, resolution);
+      results.push(url);
+    } catch(e) {
+      sk.remove();
+      console.error('Error gen:', e);
+    }
+    document.getElementById('progFill').style.width = ((i+1)/count*100) + '%';
+  }
+
+  const ok = results.length;
+  document.getElementById('stxt').textContent = ok > 0
+    ? `✅ ${ok} imagen${ok>1?'s':''} lista${ok>1?'s':''}`
+    : '❌ Error. Intenta de nuevo.';
+
+  if (ok > 0) toast(`🎉 ${ok} imagen${ok>1?'s':''} generada${ok>1?'s':''}!`);
+  else {
+    toast('⚠️ Sin respuesta del motor. Intenta de nuevo.');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '✨ Generar Imágenes';
+  isGenerating = false;
+}
+
+async function genOne(prompt, style, neg, resolution) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 130000);
+  try {
+    const r = await fetch(IMAGE_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt,
+        style,
+        negativePrompt: neg,
+        resolution,
+        channel: CHANNEL,
+        adultContent: 0
+      }),
+      signal: controller.signal
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const d = await r.json();
+    if (!d.ok || !d.url) throw new Error(d.error || d.details || 'Error del motor');
+    return d.url;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+function makeSk(res) {
+  const el = document.createElement('div');
+  const [w,h] = res.split('x').map(Number);
+  el.className = 'sk ' + (h>w ? 'pt' : 'sq');
+  return el;
+}
+
+function addCard(url, prompt, res) {
+  const [w,h] = res.split('x').map(Number);
+  const cls = h>w ? 'pt' : w>h ? 'ls' : 'sq';
+  const card = document.createElement('div');
+  card.className = `card ${cls}`;
+  card.dataset.url = url;
+
+  const img = document.createElement('img');
+  img.src = url; img.alt = prompt; img.loading = 'lazy';
+  img.onerror = () => {
+    img.style.display = 'none';
+    card.style.minHeight = '140px';
+    card.innerHTML += '<div style="padding:20px;text-align:center;color:#dc2626;font-size:11px;">⏱️ URL expirada<br><small>Las imágenes duran ~5 min — descárgalas</small></div>';
+  };
+
+  const ptag = document.createElement('div');
+  ptag.className = 'ptag';
+  ptag.textContent = prompt.substring(0,50) + (prompt.length>50?'...':'');
+
+  const acts = document.createElement('div');
+  acts.className = 'cacts';
+
+  const dl = document.createElement('button');
+  dl.className = 'cdl'; dl.textContent = '⬇️ Guardar'; dl.title = 'Abrir en nueva pestaña para guardar';
+  dl.onclick = () => window.open(url, '_blank');
+
+  const add = document.createElement('button');
+  add.className = 'cadd'; add.textContent = '📄 Plantilla';
+  add.onclick = () => toast('✅ Usa "→ Plantilla PDF" para enviar todas');
+
+  const del = document.createElement('button');
+  del.className = 'cdel'; del.textContent = '✕';
+  del.onclick = () => { card.remove(); updateCount(); };
+
+  acts.append(dl, add, del);
+  card.append(img, ptag, acts);
+  document.getElementById('gallery').appendChild(card);
+  updateCount();
+}
+
+function sendToTemplate() {
+  const urls = [...document.querySelectorAll('.card[data-url]')].map(c => c.dataset.url).filter(Boolean);
+  if (!urls.length) { toast('⚠️ No hay imágenes en la galería'); return; }
+  const n = urls.length;
+  const grid = n<=2?'1x2':n<=4?'2x2':n<=9?'3x3':n<=16?'4x4':'5x5';
+  const p = document.getElementById('prompt').value.trim();
+  window.open(`plantilla-imagenes-v2.html?agent=1&grid=${grid}&images=${encodeURIComponent(urls.join('|'))}&topic=${encodeURIComponent(p+' [IA]')}`, '_blank');
+  toast(`🚀 Plantilla ${grid} con ${n} imágenes`);
+}
+
+function clearGallery() {
+  if (!confirm('¿Limpiar todas las imágenes?')) return;
+  document.getElementById('gallery').innerHTML = '<div class="empty" id="emptyState"><div class="icon">🎨</div><p style="font-weight:700;color:#374151;">Galería limpia</p><p style="font-size:12px;margin-top:6px;">Genera nuevas imágenes cuando quieras</p></div>';
+  updateCount();
+  document.getElementById('progBar').style.display = 'none';
+  document.getElementById('stxt').textContent = '';
+}
+
+function updateCount() {
+  const n = document.querySelectorAll('.card').length;
+  document.getElementById('galCount').textContent = `${n} imagen${n!==1?'es':''}`;
+}
+
+function ap(t) {
+  const ta = document.getElementById('prompt');
+  ta.value = ta.value ? ta.value + ', ' + t : t;
+  ta.focus();
+}
+
+function setExample(text) {
+  document.getElementById('prompt').value = text;
+  document.getElementById('emptyState').style.display = 'none';
+}
+
+async function testBridge(e) {
+  const btn = e?.currentTarget;
+  const old = btn ? btn.textContent : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Probando...';
+  }
+  try {
+    await genOne('lapiz escolar sobre una libreta, foto realista', '', 'borroso, mala calidad, texto', '512x512');
+    toast('✅ Puente de imagenes activo');
+  } catch (err) {
+    toast('⚠️ Puente sin respuesta: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = old;
+    }
+  }
+}
+
+function toast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 400); }, 2800);
+}
+</script>
+</body>
+</html>

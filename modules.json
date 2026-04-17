@@ -15,10 +15,12 @@
       "icon": "📸",
       "items": [
         { "label": "Fotos Infantiles 2.5×3 cm", "icon": "👶", "target": "generador-fotos-infantiles.html" },
+        { "label": "Buscador Google Imágenes", "icon": "🔍", "target": "buscador-imagenes-educativo.html" },
         { "label": "Pixabay Descarga Lote", "icon": "🌐", "target": "pixabay-descargador-lote.html" },
         { "label": "Círculos Jack Skellington", "icon": "⭕", "target": "plantilla_circulos_jack.html" },
         { "label": "Cuadros Imágenes v2", "icon": "🖼️", "target": "plantilla-cuadros-imagenes-v2.html" },
-        { "label": "Plantilla Imágenes v2", "icon": "🎨", "target": "plantilla-imagenes-v2.html" }
+        { "label": "Plantilla Imágenes v2", "icon": "🎨", "target": "plantilla-imagenes-v2.html" },
+        { "label": "Generador IA Imágenes", "icon": "🤖", "target": "generador-ia-imagenes.html" }
       ]
     },
     {
