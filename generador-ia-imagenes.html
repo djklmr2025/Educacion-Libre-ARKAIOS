@@ -375,7 +375,7 @@ async function generateImages() {
 
 async function genOne(prompt, style, neg, resolution) {
   const imageUrl = buildImageUrl(prompt, style, neg, resolution);
-  const displayUrl = await fetchImageBlob(imageUrl);
+  const displayUrl = await waitForImage(imageUrl);
   return { displayUrl, sourceUrl: imageUrl };
 }
 
@@ -394,25 +394,34 @@ function buildImageUrl(prompt, style, neg, resolution) {
   return `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt + cleanNegative)}?${params.toString()}`;
 }
 
-async function fetchImageBlob(url, attempt = 1) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 120000);
+async function waitForImage(url, attempt = 1) {
   try {
-    const resp = await fetch(url, { cache: 'no-store', signal: controller.signal });
-    const contentType = resp.headers.get('content-type') || '';
-    if (!resp.ok || !contentType.startsWith('image/')) {
-      throw new Error(`Motor ocupado (${resp.status})`);
-    }
-    const blob = await resp.blob();
-    return URL.createObjectURL(blob);
+    await new Promise((resolve, reject) => {
+      const img = new Image();
+      const timeoutId = setTimeout(() => {
+        img.onload = null;
+        img.onerror = null;
+        reject(new Error('Tiempo agotado esperando imagen'));
+      }, 120000);
+
+      img.onload = () => {
+        clearTimeout(timeoutId);
+        resolve();
+      };
+      img.onerror = () => {
+        clearTimeout(timeoutId);
+        reject(new Error('El motor rechazo la imagen'));
+      };
+      img.referrerPolicy = 'no-referrer';
+      img.src = url;
+    });
+    return url;
   } catch (err) {
-    if (attempt < 3) {
-      await new Promise(resolve => setTimeout(resolve, 15000 * attempt));
-      return fetchImageBlob(url.replace(/seed=\d+/, 'seed=' + Math.floor(Math.random() * 2147483647)), attempt + 1);
+    if (attempt < 4) {
+      await new Promise(resolve => setTimeout(resolve, 12000 * attempt));
+      return waitForImage(url.replace(/seed=\d+/, 'seed=' + Math.floor(Math.random() * 2147483647)), attempt + 1);
     }
     throw err;
-  } finally {
-    clearTimeout(timeoutId);
   }
 }
 
@@ -434,6 +443,7 @@ function addCard(image, prompt, res) {
   card.dataset.sourceUrl = sourceUrl || url;
 
   const img = document.createElement('img');
+  img.referrerPolicy = 'no-referrer';
   img.src = url; img.alt = prompt; img.loading = 'eager';
   img.onerror = () => {
     img.style.display = 'none';
