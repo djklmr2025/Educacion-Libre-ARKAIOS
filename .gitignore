@@ -13,5 +13,6 @@ cosmos-den/
 .vercel
 .env*.local
 
+js/ark-config.js
 .vercel
 .env*.local

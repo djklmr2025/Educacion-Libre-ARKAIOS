@@ -688,9 +688,38 @@
                 e.preventDefault();
                 cell.classList.remove('drag-over');
 
+                const targetIndex = parseInt(cell.dataset.index);
+
                 if (draggedElement && draggedElement !== cell) {
-                    const targetIndex = parseInt(cell.dataset.index);
                     swapImages(draggedIndex, targetIndex);
+                } else if (e.dataTransfer) {
+                    const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+                    if (files.length > 0) {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                            allImages[targetIndex] = { data: ev.target.result, name: files[0].name };
+                            renderTemplates();
+                            updateStats();
+                        };
+                        reader.readAsDataURL(files[0]);
+                        return;
+                    }
+                    
+                    let imgUrl = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('text/uri-list');
+                    if (!imgUrl) {
+                        const htmlData = e.dataTransfer.getData('text/html');
+                        if (htmlData) {
+                            const match = htmlData.match(/src=["'](.*?)["']/);
+                            if (match) imgUrl = match[1];
+                        }
+                    }
+                    
+                    if (imgUrl && (imgUrl.startsWith('http') || imgUrl.startsWith('data:image'))) {
+                        imgUrl = imgUrl.split('\n')[0].trim();
+                        allImages[targetIndex] = { data: imgUrl, name: 'Imagen Generada IA' };
+                        renderTemplates();
+                        updateStats();
+                    }
                 }
             });
 
