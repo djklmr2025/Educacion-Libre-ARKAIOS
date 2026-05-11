@@ -177,6 +177,13 @@
             background: #f9f9f9;
             transition: all 0.3s;
             cursor: move;
+            outline: none;
+        }
+
+        .grid-cell:focus {
+            outline: 3px solid #05a081;
+            box-shadow: 0 0 10px rgba(5, 160, 129, 0.5);
+            z-index: 10;
         }
 
         .grid-cell:hover {
@@ -399,8 +406,8 @@
             • Arrastra múltiples imágenes a la zona azul o haz clic para seleccionar<br>
             • Las imágenes se llenarán automáticamente de izquierda a derecha<br>
             • Arrastra cualquier imagen para cambiarla de posición<br>
-            • Si hay más imágenes que espacios, se crearán plantillas adicionales<br>
-            • Usa Ctrl+V para pegar imágenes del portapapeles
+            • <strong style="color:#d9534f">IA Manual:</strong> Las imágenes generadas manualmente con IA deben copiarse primero, luego haz clic en una celda y presiona <code>Ctrl+V</code> para pegarla directamente ahí.<br>
+            • Si hay más imágenes que espacios, se crearán plantillas adicionales.
         </div>
     </div>
 
@@ -466,6 +473,7 @@
             });
 
             document.addEventListener('paste', (e) => {
+                if (e.target && e.target.classList && e.target.classList.contains('grid-cell')) return;
                 const items = e.clipboardData.items;
                 for (let item of items) {
                     if (item.type.indexOf('image') !== -1) {
@@ -622,6 +630,7 @@
         function createCell(localIndex, image, globalIndex) {
             const cell = document.createElement('div');
             cell.className = 'grid-cell';
+            cell.tabIndex = 0; // Permite enfocar la celda para pegar
             // Only draggable if image exists AND is not fixed
             cell.draggable = image && !image.isFixed ? true : false;
             cell.dataset.index = globalIndex;
@@ -723,6 +732,42 @@
                             updateStats();
                         }
                     }
+                }
+            });
+
+            cell.addEventListener('paste', (e) => {
+                const targetIndex = parseInt(cell.dataset.index);
+                const items = e.clipboardData.items;
+                for (let item of items) {
+                    if (item.type.indexOf('image') !== -1) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const file = item.getAsFile();
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                            allImages[targetIndex] = {
+                                data: ev.target.result,
+                                name: `Pegado_${new Date().getTime()}.png`
+                            };
+                            renderTemplates();
+                            updateStats();
+                        };
+                        reader.readAsDataURL(file);
+                        return;
+                    }
+                }
+
+                // Support pasting image URLs directly into cell
+                const text = e.clipboardData.getData('text/plain');
+                if (text && (text.startsWith('http') || text.startsWith('data:') || text.startsWith('blob:'))) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    allImages[targetIndex] = {
+                        data: text.split('\n')[0].trim(),
+                        name: `Pegado_URL`
+                    };
+                    renderTemplates();
+                    updateStats();
                 }
             });
 

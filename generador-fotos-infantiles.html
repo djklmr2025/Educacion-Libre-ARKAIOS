@@ -357,6 +357,13 @@
             z-index: 10;
         }
 
+        .photo-cell:focus {
+            outline: 3px solid #05a081;
+            box-shadow: 0 0 10px rgba(5, 160, 129, 0.5);
+            z-index: 20;
+            outline-offset: -2px;
+        }
+
         .photo-cell.dragging {
             opacity: 0.5;
             border: 2px solid #f5576c;
@@ -547,8 +554,8 @@
                 <div class="info-banner">
                     <strong>💡 Control Posicional:</strong><br>
                     • Cada renglón llena SU fila específica<br>
+                    • <strong style="color:#d9534f">IA Manual:</strong> Selecciona una celda y usa <code>Ctrl+V</code> para pegar imágenes.<br>
                     • Renglón 1 = Espacios 1-8<br>
-                    • Renglón 9 = Espacios 65-72<br>
                     • Arrastra fotos para reorganizar
                 </div>
 
@@ -862,6 +869,7 @@
 
                 const cell = document.createElement('div');
                 cell.className = 'photo-cell';
+                cell.tabIndex = 0; // Permitir enfocar
                 cell.dataset.index = cellIndex;
                 cell.draggable = false;
 
@@ -898,6 +906,31 @@
                 cell.addEventListener('dragover', handleDragOver);
                 cell.addEventListener('drop', handleDrop);
                 cell.addEventListener('dragend', handleDragEnd);
+
+                cell.addEventListener('paste', (e) => {
+                    const rowTarget = Math.floor(parseInt(cell.dataset.index) / PHOTOS_PER_ROW) + 1;
+                    const items = e.clipboardData.items;
+                    for (let item of items) {
+                        if (item.type.indexOf('image') !== -1) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const file = item.getAsFile();
+                            const reader = new FileReader();
+                            reader.onload = (ev) => {
+                                setRowImage(rowTarget, ev.target.result);
+                            };
+                            reader.readAsDataURL(file);
+                            return;
+                        }
+                    }
+
+                    const text = e.clipboardData.getData('text/plain');
+                    if (text && (text.startsWith('http') || text.startsWith('data:') || text.startsWith('blob:'))) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setRowImage(rowTarget, text.split('\n')[0].trim());
+                    }
+                });
 
                 grid.appendChild(cell);
             }
