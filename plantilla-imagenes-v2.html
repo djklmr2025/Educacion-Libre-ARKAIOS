@@ -705,7 +705,7 @@
                         return;
                     }
                     
-                    let imgUrl = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('text/uri-list');
+                    let imgUrl = e.dataTransfer.getData('URL') || e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain');
                     if (!imgUrl) {
                         const htmlData = e.dataTransfer.getData('text/html');
                         if (htmlData) {
@@ -714,11 +714,14 @@
                         }
                     }
                     
-                    if (imgUrl && (imgUrl.startsWith('http') || imgUrl.startsWith('data:image'))) {
+                    if (imgUrl) {
                         imgUrl = imgUrl.split('\n')[0].trim();
-                        allImages[targetIndex] = { data: imgUrl, name: 'Imagen Generada IA' };
-                        renderTemplates();
-                        updateStats();
+                        // Permitir http, https, data: y blob:
+                        if (imgUrl.startsWith('http') || imgUrl.startsWith('data:') || imgUrl.startsWith('blob:')) {
+                            allImages[targetIndex] = { data: imgUrl, name: 'Imagen Generada IA' };
+                            renderTemplates();
+                            updateStats();
+                        }
                     }
                 }
             });
