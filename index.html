@@ -2,6 +2,35 @@
 <html lang="es">
 
 <head>
+    <!-- ARKAIOS EDU — Auth Guard -->
+    <script type="module">
+      import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+      import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+      const app = initializeApp({
+        apiKey: "AIzaSyD-ceCiJPVnLlepVBcMBhLABJEC771uypM",
+        authDomain: "arkaios-world.firebaseapp.com",
+        projectId: "arkaios-world",
+        appId: "1:502663599735:web:d702f5242ff9672e9c9872"
+      });
+      const auth = getAuth(app);
+      onAuthStateChanged(auth, (user) => {
+        if (!user && !sessionStorage.getItem('ark_user')) {
+          window.location.href = '/login.html';
+        } else if (user) {
+          // Make user info available globally
+          const stored = sessionStorage.getItem('ark_user');
+          if (!stored) {
+            const apiKey = 'aek_' + btoa(`ARK-EDU:${user.uid}:${user.email}:2026`).replace(/=/g,'').substring(0,32);
+            sessionStorage.setItem('ark_user', JSON.stringify({
+              uid: user.uid, name: user.displayName,
+              email: user.email, photo: user.photoURL, apiKey
+            }));
+          }
+          window.ARK_USER = JSON.parse(sessionStorage.getItem('ark_user'));
+        }
+      });
+    </script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ARKAIOS - Sistema Educativo Profesional v3.0</title>

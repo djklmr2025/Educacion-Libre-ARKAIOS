@@ -14,6 +14,19 @@
     },
     "api/publish-template.js": {
       "maxDuration": 60
+    },
+    "api/apikey.js": {
+      "maxDuration": 30
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/login",
+      "destination": "/login.html"
+    },
+    {
+      "source": "/api/apikey",
+      "destination": "/api/apikey.js"
+    }
+  ]
 }
