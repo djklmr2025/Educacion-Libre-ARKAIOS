@@ -888,10 +888,6 @@
 
     function handleDragStart(e) {
       const idx = parseInt(e.currentTarget.dataset.idx);
-      if (estadosImagen[idx]?.fijada) {
-        e.preventDefault();
-        return;
-      }
       indiceDragInicio = idx;
       e.currentTarget.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'move';
@@ -957,11 +953,7 @@
     }
 
     function toggleFijar(idx) {
-      if (!estadosImagen[idx]) {
-        estadosImagen[idx] = { zoom: 100, x: 0, y: 0, fijada: false };
-      }
-      estadosImagen[idx].fijada = !estadosImagen[idx].fijada;
-      generarPlantilla();
+      return;
     }
 
     function eliminarImagen(idx) {
