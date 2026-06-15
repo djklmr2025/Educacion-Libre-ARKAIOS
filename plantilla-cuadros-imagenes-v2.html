@@ -843,15 +843,13 @@
         celda.appendChild(container);
       }
 
+      celda.addEventListener('dragover', handleDragOver);
+      celda.addEventListener('drop', handleDrop);
       return celda;
     }
 
     function handleDragStart(e) {
       const idx = parseInt(e.currentTarget.dataset.idx);
-      if (estadosImagen[idx]?.fijada) {
-        e.preventDefault();
-        return;
-      }
       indiceDragInicio = idx;
       e.currentTarget.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'move';
