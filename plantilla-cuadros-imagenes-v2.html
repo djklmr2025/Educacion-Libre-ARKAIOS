@@ -219,12 +219,6 @@
       background: #f7fafc;
     }
 
-    .celda-imagen:focus {
-      outline: 3px solid #05a081;
-      box-shadow: 0 0 10px rgba(5, 160, 129, 0.5);
-      z-index: 10;
-    }
-
     .celda-imagen.dragging {
       opacity: 0.5;
       border: 2px solid #667eea;
@@ -460,10 +454,7 @@
       .botones-celda,
       .btn-celda,
       .num-celda,
-      .celda-vacia,
-      #ark-orq-fab,
-      #ark-orq-panel,
-      button {
+      .celda-vacia {
         display: none !important;
       }
 
@@ -525,8 +516,7 @@
     <div class="panel-control">
       <div class="header">
         <h1>🖼️ Plantilla de Impresión de Imágenes</h1>
-        <p>Sube tus imágenes, ajusta el tamaño y genera tu PDF listo para imprimir<br>
-        <strong style="color:#d9534f; font-size: 14px;">IA Manual:</strong><span style="font-size: 14px;"> Las imágenes generadas con IA (o arrastradas que fallen) deben copiarse primero, luego haz clic en una celda y presiona <code>Ctrl+V</code> para pegarla.</span></p>
+        <p>Sube tus imágenes, ajusta el tamaño y genera tu PDF listo para imprimir</p>
       </div>
 
       <div class="controles-grid">
@@ -773,7 +763,6 @@
     function crearCelda(idx, tamano) {
       const celda = document.createElement('div');
       celda.className = 'celda-imagen arkaios-image-slot';
-      celda.tabIndex = 0; // Permitir enfocar la celda para pegar
       celda.style.width = `${tamano}cm`;
       celda.style.height = `${tamano}cm`;
       celda.draggable = imagenes[idx] ? true : false;
@@ -854,40 +843,15 @@
         celda.appendChild(container);
       }
 
-      celda.addEventListener('paste', (e) => {
-        const idxTarget = parseInt(celda.dataset.idx);
-        const items = e.clipboardData.items;
-        for (let item of items) {
-          if (item.type.indexOf('image') !== -1) {
-            e.preventDefault();
-            e.stopPropagation();
-            const file = item.getAsFile();
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-              imagenes[idxTarget] = ev.target.result;
-              estadosImagen[idxTarget] = { zoom: 100, x: 0, y: 0, fijada: false };
-              generarPlantilla();
-            };
-            reader.readAsDataURL(file);
-            return;
-          }
-        }
-
-        const text = e.clipboardData.getData('text/plain');
-        if (text && (text.startsWith('http') || text.startsWith('data:') || text.startsWith('blob:'))) {
-          e.preventDefault();
-          e.stopPropagation();
-          imagenes[idxTarget] = text.split('\n')[0].trim();
-          estadosImagen[idxTarget] = { zoom: 100, x: 0, y: 0, fijada: false };
-          generarPlantilla();
-        }
-      });
-
       return celda;
     }
 
     function handleDragStart(e) {
       const idx = parseInt(e.currentTarget.dataset.idx);
+      if (estadosImagen[idx]?.fijada) {
+        e.preventDefault();
+        return;
+      }
       indiceDragInicio = idx;
       e.currentTarget.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'move';
@@ -953,7 +917,11 @@
     }
 
     function toggleFijar(idx) {
-      return;
+      if (!estadosImagen[idx]) {
+        estadosImagen[idx] = { zoom: 100, x: 0, y: 0, fijada: false };
+      }
+      estadosImagen[idx].fijada = !estadosImagen[idx].fijada;
+      generarPlantilla();
     }
 
     function eliminarImagen(idx) {
