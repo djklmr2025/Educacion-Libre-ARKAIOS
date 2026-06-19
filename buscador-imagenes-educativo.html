@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ARKAIOS — Buscador de Imágenes Educativas</title>
+
+  <!-- Puter.js — IA sin API Keys -->
+  <script src="https://js.puter.com/v2/"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+    :root {
+      --bg: #0a0a12;
+      --surface: #12121e;
+      --border: #1e1e32;
+      --accent: #6c63ff;
+      --accent2: #00d4aa;
+      --text: #e8e8f0;
+      --text-dim: #7777aa;
+      --card-bg: #15152a;
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ─── HEADER ─────────────────────────────────────────── */
+    header {
+      background: linear-gradient(135deg, #0d0d22 0%, #12122a 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .logo { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+    .logo span { color: var(--accent); }
+    .badge {
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 100px;
+      letter-spacing: 0.5px;
+    }
+
+    /* ─── SEARCH BAR ─────────────────────────────────────── */
+    .search-section {
+      padding: 40px 32px 24px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .search-title {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 6px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .search-subtitle { color: var(--text-dim); font-size: 14px; margin-bottom: 24px; }
+
+    .search-box {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .search-input {
+      flex: 1;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      padding: 14px 20px;
+      border-radius: var(--radius);
+      outline: none;
+      transition: border 0.2s;
+    }
+    .search-input:focus { border-color: var(--accent); }
+    .search-input::placeholder { color: var(--text-dim); }
+
+    .btn {
+      padding: 14px 24px;
+      border: none;
+      border-radius: var(--radius);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      color: #fff;
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(108,99,255,0.4); }
+    .btn-ai {
+      background: linear-gradient(135deg, #00d4aa, #0ea5e9);
+      color: #fff;
+    }
+    .btn-ai:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,212,170,0.4); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .tab {
+      padding: 8px 16px;
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      color: var(--text-dim);
+      transition: all 0.2s;
+    }
+    .tab.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    /* ─── RESULTS GRID ───────────────────────────────────── */
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 32px 60px;
+    }
+
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: var(--text-dim);
+      min-height: 24px;
+    }
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: none;
+    }
+    .spinner.active { display: block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 14px;
+    }
+
+    .img-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .img-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--accent);
+      box-shadow: 0 8px 24px rgba(108,99,255,0.25);
+    }
+    .img-card img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      display: block;
+      background: var(--surface);
+    }
+    .img-card .card-info {
+      padding: 10px 12px;
+    }
+    .card-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .card-source {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+    .card-actions {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      display: flex;
+      gap: 6px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .img-card:hover .card-actions { opacity: 1; }
+    .card-btn {
+      background: rgba(0,0,0,0.7);
+      border: none;
+      color: #fff;
+      font-size: 16px;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+      transition: background 0.15s;
+    }
+    .card-btn:hover { background: var(--accent); }
+
+    /* AI badge */
+    .ai-badge {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background: linear-gradient(90deg, var(--accent2), #0ea5e9);
+      color: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 100px;
+      letter-spacing: 0.5px;
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--text-dim);
+    }
+    .empty-state .emoji { font-size: 56px; margin-bottom: 16px; }
+    .empty-state h3 { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+    .empty-state p { font-size: 14px; line-height: 1.6; }
+
+    /* Lightbox */
+    .lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.9);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(8px);
+    }
+    .lightbox.open { display: flex; }
+    .lightbox img {
+      max-width: 90vw;
+      max-height: 85vh;
+      border-radius: var(--radius);
+      box-shadow: 0 24px 80px rgba(0,0,0,0.8);
+    }
+    .lightbox-close {
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 32px;
+      cursor: pointer;
+      opacity: 0.7;
+    }
+    .lightbox-close:hover { opacity: 1; }
+    .lightbox-download {
+      position: absolute;
+      bottom: 30px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 100px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+    }
+    .lightbox-download:hover { background: #8b5cf6; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">ARK<span>AIOS</span></div>
+    <span class="badge">PUTER.JS</span>
+    <span style="color: var(--text-dim); font-size: 14px; margin-left: 4px;">Buscador de Imágenes Educativas</span>
+  </header>
+
+  <div class="search-section">
+    <h1 class="search-title">🔍 Buscador de Imágenes</h1>
+    <p class="search-subtitle">Busca imágenes de Unsplash o genera con IA — sin API Keys, gratis.</p>
+
+    <div class="search-box">
+      <input
+        type="text"
+        class="search-input"
+        id="searchInput"
+        placeholder="ej. sistema solar, mariposas, pirámides..."
+        onkeydown="if(event.key==='Enter') search()"
+        autofocus
+      />
+      <button class="btn btn-primary" id="btnSearch" onclick="search()">🔍 Buscar</button>
+      <button class="btn btn-ai" id="btnAI" onclick="generateAI()">✨ Generar con IA</button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" id="tab-all" onclick="switchTab('all')">Todo</button>
+      <button class="tab" id="tab-unsplash" onclick="switchTab('unsplash')">📷 Unsplash</button>
+      <button class="tab" id="tab-ai" onclick="switchTab('ai')">🤖 IA Generada</button>
+    </div>
+  </div>
+
+  <main>
+    <div class="status-bar">
+      <div class="spinner" id="spinner"></div>
+      <span id="statusText">Escribe un tema y presiona Buscar o Generar con IA.</span>
+    </div>
+    <div class="grid" id="grid">
+      <div class="empty-state" id="emptyState" style="grid-column:1/-1;">
+        <div class="emoji">🖼️</div>
+        <h3>Tu buscador de imágenes educativas</h3>
+        <p>Busca en Unsplash para fotos reales<br>o usa "Generar con IA" para imágenes únicas.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+    <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+    <img id="lightboxImg" src="" alt="" />
+    <button class="lightbox-download" onclick="downloadCurrent()">⬇️ Descargar</button>
+  </div>
+
+  <script>
+    let allCards = [];
+    let currentTab = 'all';
+    let currentLightboxSrc = '';
+
+    const UNSPLASH_KEYWORDS = (q) =>
+      `https://source.unsplash.com/400x320/?${encodeURIComponent(q)}&t=`;
+
+    function setStatus(msg, loading = false) {
+      document.getElementById('statusText').textContent = msg;
+      document.getElementById('spinner').classList.toggle('active', loading);
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      ['all','unsplash','ai'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.toggle('active', t === tab);
+      });
+      renderCards();
+    }
+
+    function renderCards() {
+      const grid = document.getElementById('grid');
+      const filtered = currentTab === 'all'
+        ? allCards
+        : allCards.filter(c => c.source === currentTab);
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
+          <div class="emoji">🔎</div>
+          <h3>Sin resultados en esta pestaña</h3>
+          <p>Prueba con otra pestaña o realiza una nueva búsqueda.</p>
+        </div>`;
+        return;
+      }
+
+      grid.innerHTML = '';
+      filtered.forEach((card, i) => {
+        const el = document.createElement('div');
+        el.className = 'img-card';
+        el.innerHTML = `
+          ${card.source === 'ai' ? '<span class="ai-badge">✨ IA</span>' : ''}
+          <img src="${card.src}" alt="${card.label}" loading="lazy"
+            onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(card.label)}&background=6c63ff&color=fff&size=320'" />
+          <div class="card-actions">
+            <button class="card-btn" title="Ver" onclick="openLightbox('${card.src.replace(/'/g,"\\'")}')">🔍</button>
+            <button class="card-btn" title="Descargar" onclick="downloadImg('${card.src.replace(/'/g,"\\'")}','${card.label.replace(/'/g,"\\'")}')">⬇️</button>
+          </div>
+          <div class="card-info">
+            <div class="card-label">${card.label}</div>
+            <div class="card-source">${card.source === 'ai' ? '✨ Generada con IA' : '📷 Unsplash'}</div>
+          </div>
+        `;
+        grid.appendChild(el);
+      });
+    }
+
+    // ─── BÚSQUEDA EN UNSPLASH ──────────────────────────────
+    async function search() {
+      const q = document.getElementById('searchInput').value.trim();
+      if (!q) return;
+
+      document.getElementById('btnSearch').disabled = true;
+      setStatus(`Buscando "${q}" en Unsplash...`, true);
+
+      // Unsplash Source genera imágenes distintas con seed numérica
+      const count = 20;
+      const newCards = [];
+
+      for (let i = 0; i < count; i++) {
+        const seed = Math.random().toString(36).substr(2, 6);
+        const src = `https://source.unsplash.com/400x320/?${encodeURIComponent(q)}&sig=${seed}`;
+        newCards.push({
+          src,
+          label: `${q} — #${i + 1}`,
+          source: 'unsplash'
+        });
+      }
+
+      // Quitar Unsplash existentes, conservar IA
+      allCards = allCards.filter(c => c.source !== 'unsplash');
+      allCards = [...newCards, ...allCards];
+
+      renderCards();
+      document.getElementById('btnSearch').disabled = false;
+      setStatus(`✅ ${count} imágenes de Unsplash para "${q}"`);
+    }
+
+    // ─── GENERACIÓN CON PUTER.JS ───────────────────────────
+    async function generateAI() {
+      const q = document.getElementById('searchInput').value.trim();
+      if (!q) { alert('Escribe un tema primero.'); return; }
+
+      const btn = document.getElementById('btnAI');
+      btn.disabled = true;
+      setStatus('🔑 Conectando con Puter.js...', true);
+
+      try {
+        if (!puter.auth.isSignedIn()) {
+          await puter.auth.signIn();
+        }
+
+        const count = 6; // 6 imágenes IA (son más lentas)
+        const aiCards = [];
+
+        for (let i = 0; i < count; i++) {
+          setStatus(`✨ Generando imagen IA ${i + 1}/${count}...`, true);
+          const prompt = `Educational illustration of "${q}", concept ${i + 1}, white background, textbook style, clean vector art, no text`;
+
+          try {
+            const result = await puter.ai.txt2img(prompt, false);
+            const src = result?.src || result;
+            if (src && (String(src).startsWith('http') || String(src).startsWith('data:'))) {
+              aiCards.push({ src: String(src), label: `${q} — IA #${i + 1}`, source: 'ai' });
+            }
+          } catch(e) {
+            console.warn('Error imagen IA', e);
+          }
+        }
+
+        // Quitar IA existentes, conservar Unsplash
+        allCards = allCards.filter(c => c.source !== 'ai');
+        allCards = [...allCards, ...aiCards];
+
+        switchTab('ai');
+        setStatus(`✅ ${aiCards.length} imágenes generadas con IA para "${q}"`);
+
+      } catch(e) {
+        setStatus('⚠️ Error: ' + e.message);
+      }
+
+      btn.disabled = false;
+    }
+
+    // ─── LIGHTBOX ─────────────────────────────────────────
+    function openLightbox(src) {
+      currentLightboxSrc = src;
+      document.getElementById('lightboxImg').src = src;
+      document.getElementById('lightbox').classList.add('open');
+    }
+    function closeLightbox(e) {
+      if (!e || e.target.id === 'lightbox' || e.target.classList.contains('lightbox-close')) {
+        document.getElementById('lightbox').classList.remove('open');
+      }
+    }
+
+    // ─── DESCARGAR ─────────────────────────────────────────
+    async function downloadImg(src, label) {
+      try {
+        const a = document.createElement('a');
+        a.href = src;
+        a.download = label + '.jpg';
+        a.target = '_blank';
+        a.click();
+      } catch(e) {
+        window.open(src, '_blank');
+      }
+    }
+    function downloadCurrent() {
+      downloadImg(currentLightboxSrc, 'arkaios-imagen');
+    }
+
+    // Enter key
+    document.getElementById('searchInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') search();
+    });
+  </script>
+</body>
+</html>
