@@ -238,6 +238,8 @@ input[type=range]{flex:1;accent-color:var(--azul);cursor:pointer;height:6px;}
         <option value="secuencial">🎬 Motor Secuencial Cinemático (5 frames)</option>
         <option value="json2video">🎥 JSON2Video (renderizado cloud)</option>
         <option value="veo">🚀 Veo 3.1 Lite — Video Google (4 seg)</option>
+        <option value="arena">⚔️ ARENA — Multi-motor paralelo + Auto-Score</option>
+        <option value="sweep">🎲 Seed Sweep — 4 variaciones, elige la mejor</option>
       </select>
       <div id="motorDesc" style="margin-top:6px;font-size:11px;color:var(--gris);line-height:1.5;padding:7px 10px;background:var(--gris-claro);border-radius:8px;border-left:3px solid var(--azul);">
         Motor abierto sin API Key. Ideal para uso educativo diario.
@@ -363,6 +365,20 @@ const MOTORES = {
     label:'Veo 3.1 Lite · Google Video AI',
     features:['✅ Video de 4 segundos','✅ Alta consistencia de movimiento','✅ Modelo veo-3.1-lite-preview','⚠️ Requiere Gemini API Key'],
     motorDesc:'Genera animaciones de 4s con Veo 3.1. Requiere Gemini API Key.'
+  },
+  arena: {
+    badge:'⚔️ ARENA', emoji:'🏆', title:'Multi-Motor Arena',
+    desc:'Lanza Pollinations y Gemini en paralelo. Auto-scoring corona la mejor imagen.',
+    label:'ARENA — Pollinations vs Gemini · Auto-Score',
+    features:['⚔️ Ambos motores en paralelo','🏆 Auto-scoring por sharpness + color','⭐ Badge "GANADORA" en el resultado','⚠️ Requiere Gemini API Key para competir'],
+    motorDesc:'Pollinations vs Gemini. Gana la que cargue con mejor score. Inspirado en G0DM0D3.'
+  },
+  sweep: {
+    badge:'🎲 SWEEP', emoji:'🎰', title:'Seed Sweep — 4 variaciones',
+    desc:'Genera 4 versiones del mismo prompt con seeds distintos. Tú eliges o el scoring elige por ti.',
+    label:'Seed Sweep · 4 variaciones automáticas',
+    features:['🎲 4 seeds distintos del mismo prompt','⚡ Generación en paralelo','🏅 Auto-destaca el mejor score','✅ Sin API Key necesaria'],
+    motorDesc:'4 variaciones del mismo prompt corriendo en paralelo. El scoring resalta la mejor.'
   }
 };
 
@@ -435,6 +451,8 @@ async function generateImages() {
     else if (motor === 'secuencial') await runSecuencial(prompt, style, neg, resolution);
     else if (motor === 'json2video') await runJson2Video(prompt, style, resolution);
     else if (motor === 'veo')      await runVeo(prompt, style, resolution);
+    else if (motor === 'arena')    await runArena(prompt, style, neg, resolution);
+    else if (motor === 'sweep')    await runSweep(prompt, style, neg, resolution);
   } catch(e) {
     toast('❌ Error: ' + e.message);
     document.getElementById('stxt').textContent = '❌ ' + e.message;
@@ -744,6 +762,161 @@ function addVideoCard(videoUrl, prompt) {
   updateCount();
 }
 
+// ── MOTOR 6: ARENA — PARALELO + AUTOSCORE ────────────────────
+async function runArena(prompt, style, neg, resolution) {
+  const apiKey = document.getElementById('geminiKey').value.trim();
+  document.getElementById('stxt').textContent = '⚔️ ARENA: lanzando Pollinations vs Gemini en paralelo...';
+  document.getElementById('progFill').style.width = '10%';
+
+  const fullPrompt = style ? `${prompt}, ${style}` : prompt;
+  const polUrl = buildPollinationsUrl(prompt, style, neg, resolution);
+
+  // Lanzar ambos en paralelo
+  const [polResult, gemResult] = await Promise.allSettled([
+    waitForImage(polUrl).then(() => ({ motor:'Pollinations', url: polUrl, type:'img' })),
+    apiKey
+      ? fetchGeminiImage(fullPrompt, neg, apiKey).then(b64 => ({ motor:'Gemini', url:'data:image/png;base64,'+b64, type:'img' }))
+      : Promise.reject(new Error('Sin Gemini Key — solo Pollinations compite'))
+  ]);
+
+  document.getElementById('progFill').style.width = '70%';
+  document.getElementById('stxt').textContent = '🏆 Calculando scores...';
+
+  const contestants = [];
+  if (polResult.status === 'fulfilled') contestants.push(polResult.value);
+  if (gemResult.status === 'fulfilled') contestants.push(gemResult.value);
+  if (!contestants.length) throw new Error('Ningún motor respondió');
+
+  // Scoring en canvas
+  const scores = await Promise.all(contestants.map(c => scoreImage(c.url)));
+  let winnerIdx = scores[0] >= (scores[1]??-1) ? 0 : 1;
+
+  contestants.forEach((c, i) => {
+    const isWinner = i === winnerIdx;
+    addArenaCard(c.url, prompt, resolution, c.motor, scores[i], isWinner);
+  });
+
+  document.getElementById('progFill').style.width = '100%';
+  const winner = contestants[winnerIdx];
+  document.getElementById('stxt').textContent = `🏆 ARENA: ${winner.motor} ganó con score ${scores[winnerIdx]}/100`;
+  toast(`⚔️ ${winner.motor} gana el ARENA! Score: ${scores[winnerIdx]}/100`);
+}
+
+// ── MOTOR 7: SEED SWEEP ───────────────────────────────────────
+async function runSweep(prompt, style, neg, resolution) {
+  document.getElementById('stxt').textContent = '🎲 Seed Sweep: generando 4 variaciones en paralelo...';
+  document.getElementById('progFill').style.width = '10%';
+
+  const seeds = Array.from({length:4}, () => Math.floor(Math.random()*2147483647));
+  const [w,h] = resolution.split('x').map(Number);
+  const fullPrompt = style ? `${prompt}, ${style}` : prompt;
+  const cleanNeg = neg ? `. Evitar: ${neg}` : '';
+
+  const urls = seeds.map(seed =>
+    `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt+cleanNeg)}?width=${w}&height=${h}&seed=${seed}&nologo=true`
+  );
+
+  // Esqueletos mientras cargan
+  const skeletons = urls.map(() => { const s=makeSk(resolution); document.getElementById('gallery').appendChild(s); return s; });
+
+  const results = await Promise.allSettled(urls.map(u => waitForImage(u)));
+  document.getElementById('progFill').style.width = '70%';
+  document.getElementById('stxt').textContent = '🏅 Calculando scores de variaciones...';
+
+  const loaded = [];
+  results.forEach((r,i) => { skeletons[i].remove(); if(r.status==='fulfilled') loaded.push({url:urls[i],seed:seeds[i]}); });
+
+  if (!loaded.length) throw new Error('Ninguna variación cargó');
+
+  const scores = await Promise.all(loaded.map(l => scoreImage(l.url)));
+  const bestIdx = scores.indexOf(Math.max(...scores));
+
+  loaded.forEach((l,i) => addArenaCard(l.url, prompt, resolution, `Seed ${l.seed.toString().substring(0,6)}`, scores[i], i===bestIdx));
+
+  document.getElementById('progFill').style.width = '100%';
+  document.getElementById('stxt').textContent = `✅ Sweep completo — ${loaded.length} variaciones. Mejor seed: ${loaded[bestIdx].seed.toString().substring(0,6)} (${scores[bestIdx]}/100)`;
+  toast(`🎲 Mejor variación: seed ${loaded[bestIdx].seed.toString().substring(0,6)} · Score ${scores[bestIdx]}/100`);
+}
+
+// ── AUTO-SCORING ENGINE (inspirado en G0DM0D3) ───────────────
+async function scoreImage(url) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.referrerPolicy = 'no-referrer';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        const size = 64; // muestra reducida para velocidad
+        canvas.width = size; canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, size, size);
+        const data = ctx.getImageData(0,0,size,size).data;
+
+        // Métrica 1: Varianza de color (diversidad visual)
+        let rSum=0,gSum=0,bSum=0, rSq=0,gSq=0,bSq=0, n=data.length/4;
+        for(let i=0;i<data.length;i+=4){
+          rSum+=data[i]; gSum+=data[i+1]; bSum+=data[i+2];
+          rSq+=data[i]**2; gSq+=data[i+1]**2; bSq+=data[i+2]**2;
+        }
+        const rVar = rSq/n - (rSum/n)**2;
+        const gVar = gSq/n - (gSum/n)**2;
+        const bVar = bSq/n - (bSum/n)**2;
+        const colorScore = Math.min(((rVar+gVar+bVar)/3) / 30, 1) * 50; // 0-50 pts
+
+        // Métrica 2: Sharpness (detección de bordes simplificada)
+        let edgeSum = 0;
+        for(let y=1;y<size-1;y++) for(let x=1;x<size-1;x++){
+          const i=(y*size+x)*4;
+          const il=((y*size+(x-1)))*4, ir=((y*size+(x+1)))*4;
+          const it=((y-1)*size+x)*4, ib=((y+1)*size+x)*4;
+          const gx = Math.abs(data[ir]-data[il]);
+          const gy = Math.abs(data[ib]-data[it]);
+          edgeSum += Math.sqrt(gx*gx+gy*gy);
+        }
+        const sharpScore = Math.min(edgeSum / (size*size*30), 1) * 50; // 0-50 pts
+
+        resolve(Math.round(colorScore + sharpScore));
+      } catch(e) { resolve(50); } // fallback neutro si CORS bloquea
+    };
+    img.onerror = () => resolve(40);
+    img.src = url;
+  });
+}
+
+// ── ARENA CARD (con badge de motor y score) ───────────────────
+function addArenaCard(url, prompt, res, motorName, score, isWinner) {
+  const [w,h] = res.split('x').map(Number);
+  const cls = h>w ? 'pt' : w>h ? 'ls' : 'sq';
+  const card = document.createElement('div');
+  card.className = `card ${cls}`;
+  card.dataset.url = url;
+  if (isWinner) card.style.cssText += 'box-shadow:0 0 0 3px #f59e0b,0 4px 20px rgba(245,158,11,0.4);';
+
+  const img = document.createElement('img');
+  img.referrerPolicy='no-referrer'; img.src=url; img.alt=prompt; img.loading='eager';
+  img.onerror = () => { img.style.display='none'; };
+
+  // Badge motor + score
+  const badge = document.createElement('div');
+  badge.style.cssText = `position:absolute;top:8px;left:8px;background:${isWinner?'#f59e0b':'rgba(0,0,0,0.6)'};color:${isWinner?'#000':'#fff'};font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;z-index:3;`;
+  badge.textContent = (isWinner?'⭐ ':'')+motorName+' · '+score+'/100';
+  card.style.position='relative';
+
+  const ptag = document.createElement('div');
+  ptag.className='ptag'; ptag.textContent=prompt.substring(0,50)+(prompt.length>50?'...':'');
+
+  const acts = document.createElement('div'); acts.className='cacts';
+  const dl = document.createElement('button'); dl.className='cdl'; dl.textContent='⬇️ Guardar';
+  dl.onclick = () => window.open(url,'_blank');
+  const del = document.createElement('button'); del.className='cdel'; del.textContent='✕';
+  del.onclick = () => { card.remove(); updateCount(); };
+  acts.append(dl, del);
+  card.append(img, badge, ptag, acts);
+  document.getElementById('gallery').appendChild(card);
+  updateCount();
+}
+
 // ── HELPERS (sin cambios) ─────────────────────────────────────
 async function waitForImage(url, attempt = 1) {
   try {
@@ -858,7 +1031,7 @@ async function testBridge(e) {
     btn.textContent = 'Probando...';
   }
   try {
-    await genOne('lapiz escolar sobre una libreta, foto realista', '', 'borroso, mala calidad, texto', '512x512');
+    await genOnePollinations('lapiz escolar sobre una libreta, foto realista', '', 'borroso, mala calidad, texto', '512x512');
     toast('✅ Puente de imagenes activo');
   } catch (err) {
     toast('⚠️ Puente sin respuesta: ' + err.message);
