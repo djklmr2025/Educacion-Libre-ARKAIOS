@@ -231,6 +231,29 @@ input[type=range]{flex:1;accent-color:var(--azul);cursor:pointer;height:6px;}
     </div>
 
     <div class="fg">
+      <label>⚡ Motor de Generación</label>
+      <select id="motorSelect" onchange="onMotorChange()">
+        <option value="pollinations">🆓 Pollinations FLUX (gratuito, rápido)</option>
+        <option value="gemini">🧠 Gemini 2.5 Flash Image (Google AI)</option>
+        <option value="secuencial">🎬 Motor Secuencial Cinemático (5 frames)</option>
+        <option value="json2video">🎥 JSON2Video (renderizado cloud)</option>
+        <option value="veo">🚀 Veo 3.1 Lite — Video Google (4 seg)</option>
+      </select>
+      <div id="motorDesc" style="margin-top:6px;font-size:11px;color:var(--gris);line-height:1.5;padding:7px 10px;background:var(--gris-claro);border-radius:8px;border-left:3px solid var(--azul);">
+        Motor abierto sin API Key. Ideal para uso educativo diario.
+      </div>
+    </div>
+
+    <div class="fg" id="geminiKeyBox" style="display:none;">
+      <label>🔑 Gemini API Key</label>
+      <input type="text" id="geminiKey" placeholder="AIzaSy..." autocomplete="off">
+    </div>
+    <div class="fg" id="j2vKeyBox" style="display:none;">
+      <label>🔑 JSON2Video API Key</label>
+      <input type="text" id="j2vKey" placeholder="sVbVwf..." autocomplete="off" value="***REMOVIDA***">
+    </div>
+
+    <div class="fg">
       <label>🔢 Cantidad de imágenes a generar</label>
       <div class="rrow">
         <input type="range" id="count" min="1" max="8" step="1" value="4" oninput="document.getElementById('cv').textContent=this.value">
@@ -251,18 +274,18 @@ input[type=range]{flex:1;accent-color:var(--azul);cursor:pointer;height:6px;}
 
     <!-- ESTADO DEL MOTOR -->
     <div class="pro-box">
-      <div class="pay-badge">ARKAIOS BRIDGE</div>
-      <div class="lock">🔓</div>
-      <h4>Generación Activada</h4>
-      <p>El botón genera imágenes usando el puente local de ARKAIOS y el canal educativo configurado.</p>
-      <ul>
-        <li>✅ Generacion directa sin funciones serverless</li>
+      <div class="pay-badge" id="motorBadge">POLLINATIONS</div>
+      <div class="lock" id="motorEmoji">🔓</div>
+      <h4 id="motorTitle">Motor Activo</h4>
+      <p id="motorCapDesc">Generación directa sin API Key. Canal educativo xnaxg7ceyj.</p>
+      <ul id="motorFeatures">
+        <li>✅ Generacion directa sin clave</li>
         <li>✅ Canal xnaxg7ceyj</li>
-        <li>✅ Lotes de hasta 8 imagenes</li>
+        <li>✅ Lotes de hasta 8 imágenes</li>
         <li>✅ Envio a plantilla PDF</li>
       </ul>
       <button class="pay-btn" onclick="testBridge(event)">
-        Probar Conexion
+        Probar Conexión
       </button>
     </div>
   </div>
@@ -274,7 +297,7 @@ input[type=range]{flex:1;accent-color:var(--azul);cursor:pointer;height:6px;}
       <span class="cnt" id="galCount">0 imágenes</span>
       <div class="motor-info">
         <span class="motor-dot"></span>
-        Motor Perchance FLUX · Canal xnaxg7ceyj
+        <span id="motorLabel">Pollinations FLUX · xnaxg7ceyj</span>
       </div>
     </div>
 
@@ -296,15 +319,76 @@ input[type=range]{flex:1;accent-color:var(--azul);cursor:pointer;height:6px;}
 
 <script>
 // ============================================================
-// ARKAIOS Generador IA
-// Motor: puente directo de imagenes
+// ARKAIOS Generador IA — Multi-Motor v2
+// Motores: Pollinations · Gemini · Secuencial · JSON2Video · Veo
 // ============================================================
 const CHANNEL = 'xnaxg7ceyj';
+const J2V_API_KEY_DEFAULT = '***REMOVIDA***';
 
 let isGenerating = false;
 
+// ── Descripciones de motores ──────────────────────────────────
+const MOTORES = {
+  pollinations: {
+    badge:'POLLINATIONS', emoji:'🔓', title:'Motor Gratuito Activo',
+    desc:'Canal abierto sin API Key. Rápido para uso educativo.',
+    label:'Pollinations FLUX · xnaxg7ceyj',
+    features:['✅ Sin clave API necesaria','✅ Canal xnaxg7ceyj','✅ Lotes de hasta 8 imágenes','✅ Envío a plantilla PDF'],
+    motorDesc:'Motor abierto sin API Key. Ideal para uso educativo diario.'
+  },
+  gemini: {
+    badge:'GEMINI AI', emoji:'🧠', title:'Google Gemini Image',
+    desc:'Genera imágenes con el modelo gemini-2.5-flash de Google. Requiere Gemini API Key.',
+    label:'Gemini 2.5 Flash Image · Google AI',
+    features:['✅ Modelo gemini-2.5-flash-image','✅ Alta calidad artística','✅ Respuesta en Base64','⚠️ Requiere Gemini API Key'],
+    motorDesc:'Modelo de Google. Requiere tu Gemini API Key (Google AI Studio).'
+  },
+  secuencial: {
+    badge:'CINEMÁTICO', emoji:'🎬', title:'Motor Secuencial Arkaios',
+    desc:'Genera 5 variaciones del mismo prompt y las anima en secuencia cinemática.',
+    label:'Motor Secuencial Cinemático · 5 frames',
+    features:['✅ 5 variaciones progresivas','✅ Animación de transición fluida','✅ Sin costo de servidor','✅ Usa Pollinations internamente'],
+    motorDesc:'Genera 5 frames cinemáticos y los reproduce como animación sin costo.'
+  },
+  json2video: {
+    badge:'JSON2VIDEO', emoji:'🎥', title:'JSON2Video Cloud Render',
+    desc:'Renderiza videos en la nube a partir de la imagen generada.',
+    label:'JSON2Video · Cloud Render',
+    features:['✅ Renderizado cloud profesional','✅ Video de alta calidad','✅ API Key incluida (sandbox)','🎥 Salida en formato MP4'],
+    motorDesc:'Envía imagen + prompt a JSON2Video y devuelve un MP4 renderizado en la nube.'
+  },
+  veo: {
+    badge:'VEO 3.1', emoji:'🚀', title:'Veo 3.1 Lite — Google Video',
+    desc:'Genera un clip de video de 4 segundos con el modelo Veo de Google.',
+    label:'Veo 3.1 Lite · Google Video AI',
+    features:['✅ Video de 4 segundos','✅ Alta consistencia de movimiento','✅ Modelo veo-3.1-lite-preview','⚠️ Requiere Gemini API Key'],
+    motorDesc:'Genera animaciones de 4s con Veo 3.1. Requiere Gemini API Key.'
+  }
+};
+
+function onMotorChange() {
+  const m = document.getElementById('motorSelect').value;
+  const info = MOTORES[m];
+  // Actualizar UI panel
+  document.getElementById('motorDesc').textContent = info.motorDesc;
+  document.getElementById('motorBadge').textContent = info.badge;
+  document.getElementById('motorEmoji').textContent = info.emoji;
+  document.getElementById('motorTitle').textContent = info.title;
+  document.getElementById('motorCapDesc').textContent = info.desc;
+  document.getElementById('motorLabel').textContent = info.label;
+  const ul = document.getElementById('motorFeatures');
+  ul.innerHTML = info.features.map(f=>`<li>${f}</li>`).join('');
+  // Mostrar/ocultar campos de API key
+  document.getElementById('geminiKeyBox').style.display = (m==='gemini'||m==='veo') ? '' : 'none';
+  document.getElementById('j2vKeyBox').style.display = m==='json2video' ? '' : 'none';
+  // Texto botón
+  document.getElementById('genBtn').innerHTML = m==='veo'||m==='json2video'
+    ? '🎬 Generar Video' : '✨ Generar Imágenes';
+  // Deshabilitar cantidad si es video
+  document.getElementById('count').disabled = (m==='veo'||m==='json2video'||m==='secuencial');
+}
+
 (async function init() {
-  // Parámetros de URL (desde EduAgent)
   const p = new URLSearchParams(location.search);
   if (p.get('prompt')) document.getElementById('prompt').value = decodeURIComponent(p.get('prompt'));
   if (p.get('resolution')) document.getElementById('resolution').value = p.get('resolution');
@@ -313,16 +397,22 @@ let isGenerating = false;
     document.getElementById('count').value = c;
     document.getElementById('cv').textContent = c;
   }
+  if (p.get('motor')) {
+    document.getElementById('motorSelect').value = p.get('motor');
+    onMotorChange();
+  }
   if (p.get('autostart') === '1' && p.get('prompt')) setTimeout(generateImages, 800);
 })();
 
+// ── DISPATCHER PRINCIPAL ──────────────────────────────────────
 async function generateImages() {
   if (isGenerating) return;
   const prompt = document.getElementById('prompt').value.trim();
   if (!prompt) { toast('⚠️ Escribe una descripción primero'); return; }
 
-  const style      = document.getElementById('artStyle').value;
-  const count      = parseInt(document.getElementById('count').value);
+  const motor = document.getElementById('motorSelect').value;
+  const style = document.getElementById('artStyle').value;
+  const count = parseInt(document.getElementById('count').value);
   const resolution = document.getElementById('resolution').value;
   const neg = document.getElementById('negPrompt').value.trim();
 
@@ -331,95 +421,345 @@ async function generateImages() {
   btn.disabled = true;
   btn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;"></span> Generando...';
   document.getElementById('progBar').style.display = 'block';
-  document.getElementById('progFill').style.width = '0%';
+  document.getElementById('progFill').style.width = '5%';
   document.getElementById('emptyState').style.display = 'none';
-
   if (!document.querySelector('#gallery style')) {
     const s = document.createElement('style');
     s.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
     document.getElementById('gallery').appendChild(s);
   }
 
-  const results = [];
-  for (let i = 0; i < count; i++) {
-    document.getElementById('stxt').textContent = `Generando imagen ${i+1} de ${count}... espera a que cargue antes de la siguiente`;
-    const sk = makeSk(resolution);
-    document.getElementById('gallery').appendChild(sk);
-
-    try {
-      const image = await genOne(prompt, style, neg, resolution);
-      sk.remove();
-      addCard(image, prompt, resolution);
-      results.push(image.displayUrl);
-    } catch(e) {
-      sk.remove();
-      console.error('Error gen:', e);
-    }
-    document.getElementById('progFill').style.width = ((i+1)/count*100) + '%';
-  }
-
-  const ok = results.length;
-  document.getElementById('stxt').textContent = ok > 0
-    ? `✅ ${ok} imagen${ok>1?'s':''} lista${ok>1?'s':''}`
-    : '❌ Error. Intenta de nuevo.';
-
-  if (ok > 0) toast(`🎉 ${ok} imagen${ok>1?'s':''} generada${ok>1?'s':''}!`);
-  else {
-    toast('⚠️ Sin respuesta del motor. Intenta de nuevo.');
+  try {
+    if (motor === 'pollinations') await runPollinations(prompt, style, neg, resolution, count);
+    else if (motor === 'gemini')   await runGemini(prompt, style, neg, resolution, count);
+    else if (motor === 'secuencial') await runSecuencial(prompt, style, neg, resolution);
+    else if (motor === 'json2video') await runJson2Video(prompt, style, resolution);
+    else if (motor === 'veo')      await runVeo(prompt, style, resolution);
+  } catch(e) {
+    toast('❌ Error: ' + e.message);
+    document.getElementById('stxt').textContent = '❌ ' + e.message;
   }
 
   btn.disabled = false;
-  btn.innerHTML = '✨ Generar Imágenes';
+  btn.innerHTML = (motor==='veo'||motor==='json2video') ? '🎬 Generar Video' : '✨ Generar Imágenes';
   isGenerating = false;
 }
 
-async function genOne(prompt, style, neg, resolution) {
-  const imageUrl = buildImageUrl(prompt, style, neg, resolution);
+// ── MOTOR 1: POLLINATIONS ────────────────────────────────────
+async function runPollinations(prompt, style, neg, resolution, count) {
+  const results = [];
+  for (let i = 0; i < count; i++) {
+    document.getElementById('stxt').textContent = `Generando imagen ${i+1} de ${count}...`;
+    const sk = makeSk(resolution);
+    document.getElementById('gallery').appendChild(sk);
+    try {
+      const image = await genOnePollinations(prompt, style, neg, resolution);
+      sk.remove();
+      addCard(image, prompt, resolution);
+      results.push(image.displayUrl);
+    } catch(e) { sk.remove(); console.error(e); }
+    document.getElementById('progFill').style.width = ((i+1)/count*100) + '%';
+  }
+  const ok = results.length;
+  document.getElementById('stxt').textContent = ok > 0 ? `✅ ${ok} imagen${ok>1?'es':''} lista${ok>1?'s':''}` : '❌ Error';
+  if (ok > 0) toast(`🎉 ${ok} imagen${ok>1?'es':''} generada${ok>1?'s':''}!`);
+}
+
+async function genOnePollinations(prompt, style, neg, resolution) {
+  const imageUrl = buildPollinationsUrl(prompt, style, neg, resolution);
   const displayUrl = await waitForImage(imageUrl);
   return { displayUrl, sourceUrl: imageUrl };
 }
 
-function buildImageUrl(prompt, style, neg, resolution) {
+function buildPollinationsUrl(prompt, style, neg, resolution) {
   const [width, height] = resolution.split('x').map(Number);
   const seed = Math.floor(Math.random() * 2147483647);
   const fullPrompt = style ? `${prompt}, ${style}` : prompt;
-  const cleanNegative = neg ? `. Evitar: ${neg}` : '';
+  const cleanNeg = neg ? `. Evitar: ${neg}` : '';
   const params = new URLSearchParams({
-    width: String(Math.min(Math.max(width || 768, 256), 1536)),
-    height: String(Math.min(Math.max(height || 768, 256), 1536)),
-    seed: String(seed),
-    nologo: 'true'
+    width: String(Math.min(Math.max(width||768,256),1536)),
+    height: String(Math.min(Math.max(height||768,256),1536)),
+    seed: String(seed), nologo: 'true'
   });
-
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt + cleanNegative)}?${params.toString()}`;
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt+cleanNeg)}?${params.toString()}`;
 }
 
+// ── MOTOR 2: GEMINI IMAGE ─────────────────────────────────────
+async function runGemini(prompt, style, neg, resolution, count) {
+  const apiKey = document.getElementById('geminiKey').value.trim();
+  if (!apiKey) { toast('⚠️ Ingresa tu Gemini API Key primero'); throw new Error('Sin API Key'); }
+  const fullPrompt = style ? `${prompt}, ${style}` : prompt;
+  const results = [];
+  for (let i = 0; i < count; i++) {
+    document.getElementById('stxt').textContent = `Gemini generando imagen ${i+1} de ${count}...`;
+    const sk = makeSk(resolution);
+    document.getElementById('gallery').appendChild(sk);
+    try {
+      const b64 = await fetchGeminiImage(fullPrompt, neg, apiKey);
+      sk.remove();
+      const dataUrl = 'data:image/png;base64,' + b64;
+      addCard({ displayUrl: dataUrl, sourceUrl: dataUrl }, prompt, resolution);
+      results.push(dataUrl);
+    } catch(e) { sk.remove(); console.error(e); toast('⚠️ Gemini: ' + e.message); }
+    document.getElementById('progFill').style.width = ((i+1)/count*100) + '%';
+  }
+  const ok = results.length;
+  document.getElementById('stxt').textContent = ok > 0 ? `✅ ${ok} imagen${ok>1?'es':''} lista${ok>1?'s':''}` : '❌ Error Gemini';
+  if (ok > 0) toast(`🧠 Gemini: ${ok} imagen${ok>1?'es':''} generada${ok>1?'s':''}!`);
+}
+
+async function fetchGeminiImage(prompt, neg, apiKey) {
+  const negText = neg ? ` Avoid: ${neg}.` : '';
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${apiKey}`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      contents:[{parts:[{text: prompt + negText}]}],
+      generationConfig:{responseModalities:['TEXT','IMAGE']}
+    })
+  });
+  if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || 'Error Gemini'); }
+  const data = await res.json();
+  const parts = data.candidates?.[0]?.content?.parts || [];
+  const imgPart = parts.find(p => p.inlineData?.mimeType?.startsWith('image/'));
+  if (!imgPart) throw new Error('Gemini no devolvió imagen');
+  return imgPart.inlineData.data;
+}
+
+// ── MOTOR 3: SECUENCIAL CINEMÁTICO ───────────────────────────
+async function runSecuencial(prompt, style, neg, resolution) {
+  document.getElementById('stxt').textContent = 'Generando 5 frames cinemáticos...';
+  const baseSeed = Math.floor(Math.random() * 2147483647);
+  const frames = [];
+  const fullPrompt = style ? `${prompt}, ${style}, cinematic` : `${prompt}, cinematic`;
+
+  for (let i = 0; i < 5; i++) {
+    document.getElementById('progFill').style.width = (i/5*60) + '%';
+    document.getElementById('stxt').textContent = `Frame ${i+1}/5...`;
+    const [w,h] = resolution.split('x').map(Number);
+    const seed = baseSeed + i * 137;
+    const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=${w}&height=${h}&seed=${seed}&nologo=true`;
+    try { await waitForImage(url); frames.push(url); } catch(e) { console.warn('Frame error',i,e); }
+  }
+
+  if (!frames.length) throw new Error('No se pudieron generar frames');
+  document.getElementById('progFill').style.width = '80%';
+  document.getElementById('stxt').textContent = 'Ensamblando animación...';
+  addAnimatedCard(frames, prompt, resolution);
+  document.getElementById('progFill').style.width = '100%';
+  document.getElementById('stxt').textContent = `✅ Animación cinemática lista (${frames.length} frames)`;
+  toast('🎬 Animación cinemática generada!');
+}
+
+function addAnimatedCard(frames, prompt, resolution) {
+  const [w,h] = resolution.split('x').map(Number);
+  const cls = h>w ? 'pt' : w>h ? 'ls' : 'sq';
+  const card = document.createElement('div');
+  card.className = `card ${cls}`;
+  card.dataset.url = frames[0];
+
+  // Canvas para animación
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  canvas.style.cssText = 'width:100%;display:block;';
+  const ctx = canvas.getContext('2d');
+
+  // Cargar imágenes y animar
+  const imgs = frames.map(src => { const i=new Image(); i.referrerPolicy='no-referrer'; i.src=src; return i; });
+  let fi = 0, opacity = 0, dir = 1;
+  function animate() {
+    const cur = imgs[fi], nxt = imgs[(fi+1)%imgs.length];
+    if (cur.complete && nxt.complete) {
+      ctx.globalAlpha = 1; ctx.drawImage(cur,0,0,w,h);
+      ctx.globalAlpha = opacity; ctx.drawImage(nxt,0,0,w,h);
+      opacity += dir * 0.03;
+      if (opacity >= 1) { fi=(fi+1)%imgs.length; opacity=0; }
+    }
+    requestAnimationFrame(animate);
+  }
+  imgs[0].onload = () => animate();
+
+  const ptag = document.createElement('div');
+  ptag.className='ptag';
+  ptag.textContent = '🎬 ' + prompt.substring(0,45) + '...';
+
+  const acts = document.createElement('div'); acts.className='cacts';
+  const dl = document.createElement('button'); dl.className='cdl'; dl.textContent='⬇️ Frame 1';
+  dl.onclick = () => window.open(frames[0],'_blank');
+  const del = document.createElement('button'); del.className='cdel'; del.textContent='✕';
+  del.onclick = () => { card.remove(); updateCount(); };
+  acts.append(dl, del);
+  card.append(canvas, ptag, acts);
+  document.getElementById('gallery').appendChild(card);
+  updateCount();
+}
+
+// ── MOTOR 4: JSON2VIDEO ───────────────────────────────────────
+async function runJson2Video(prompt, style, resolution) {
+  const apiKey = document.getElementById('j2vKey').value.trim() || J2V_API_KEY_DEFAULT;
+  document.getElementById('stxt').textContent = 'Generando imagen base con Pollinations...';
+  document.getElementById('progFill').style.width = '20%';
+
+  // Primero generar una imagen base con Pollinations
+  const imgUrl = buildPollinationsUrl(prompt, style, '', resolution);
+  await waitForImage(imgUrl);
+  document.getElementById('progFill').style.width = '40%';
+  document.getElementById('stxt').textContent = 'Enviando a JSON2Video para renderizado...';
+
+  const payload = {
+    resolution: '720p',
+    quality: 'high',
+    scenes:[{
+      comment: prompt,
+      elements:[{
+        type:'image', src: imgUrl,
+        duration: 4, zoom: 1.05, zoom_start: 1
+      },{
+        type:'text', text: prompt.substring(0,60),
+        duration:4, style:'bottom', color:'#ffffff',
+        font_size:18
+      }]
+    }]
+  };
+
+  try {
+    const res = await fetch('https://api.json2video.com/v2/movies', {
+      method:'POST',
+      headers:{'x-api-key': apiKey, 'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    document.getElementById('progFill').style.width = '70%';
+
+    if (!data.project) throw new Error(data.message || 'Sin proyecto JSON2Video');
+    document.getElementById('stxt').textContent = 'Esperando renderizado en cloud...';
+
+    // Polling hasta que esté listo
+    let videoUrl = null;
+    for (let tries = 0; tries < 20; tries++) {
+      await new Promise(r => setTimeout(r, 5000));
+      const poll = await fetch(`https://api.json2video.com/v2/movies?project=${data.project}`, {
+        headers:{'x-api-key': apiKey}
+      });
+      const pd = await poll.json();
+      if (pd.movie?.status === 'done') { videoUrl = pd.movie.url; break; }
+      if (pd.movie?.status === 'error') throw new Error('Error en render JSON2Video');
+      document.getElementById('stxt').textContent = `Renderizando... ${pd.movie?.status||'en cola'}`;
+    }
+
+    document.getElementById('progFill').style.width = '100%';
+    if (videoUrl) {
+      addVideoCard(videoUrl, prompt);
+      document.getElementById('stxt').textContent = '✅ Video JSON2Video listo!';
+      toast('🎥 Video renderizado en la nube!');
+    } else {
+      throw new Error('Timeout esperando render');
+    }
+  } catch(e) {
+    // Fallback: mostrar imagen base como resultado
+    document.getElementById('progFill').style.width = '100%';
+    document.getElementById('stxt').textContent = '⚠️ JSON2Video sin respuesta — mostrando imagen base';
+    addCard({displayUrl:imgUrl, sourceUrl:imgUrl}, prompt, resolution);
+    toast('⚠️ JSON2Video no respondió, mostrando imagen base');
+  }
+}
+
+// ── MOTOR 5: VEO 3.1 LITE ───────────────────────────────────
+async function runVeo(prompt, style, resolution) {
+  const apiKey = document.getElementById('geminiKey').value.trim();
+  if (!apiKey) { toast('⚠️ Ingresa tu Gemini API Key para Veo'); throw new Error('Sin API Key'); }
+  document.getElementById('stxt').textContent = 'Iniciando generación Veo 3.1 Lite...';
+  document.getElementById('progFill').style.width = '15%';
+
+  const fullPrompt = style ? `${prompt}, ${style}, cinematic 4 second video` : `${prompt}, cinematic 4 second video`;
+
+  try {
+    // Iniciar operación larga
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/veo-3.1-lite-generate-preview:generateVideo?key=${apiKey}`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        prompt: { text: fullPrompt },
+        generationConfig: { durationSeconds:4, aspectRatio:'16:9' }
+      })
+    });
+    if (!res.ok) { const e=await res.json(); throw new Error(e.error?.message||'Error Veo'); }
+    const opData = await res.json();
+    const opName = opData.name;
+    if (!opName) throw new Error('Veo no inició operación');
+
+    document.getElementById('stxt').textContent = 'Veo generando video... (puede tomar ~1-2 min)';
+    document.getElementById('progFill').style.width = '30%';
+
+    // Polling operación
+    let videoUri = null;
+    for (let tries = 0; tries < 24; tries++) {
+      await new Promise(r => setTimeout(r, 5000));
+      const poll = await fetch(`https://generativelanguage.googleapis.com/v1beta/${opName}?key=${apiKey}`);
+      const pd = await poll.json();
+      if (pd.done) {
+        const vids = pd.response?.generateVideoResponse?.generatedSamples;
+        if (vids?.[0]?.video?.uri) { videoUri = vids[0].video.uri + `?key=${apiKey}`; break; }
+        throw new Error('Veo terminó sin video');
+      }
+      document.getElementById('progFill').style.width = (30 + tries*2.5) + '%';
+    }
+
+    document.getElementById('progFill').style.width = '100%';
+    if (videoUri) {
+      addVideoCard(videoUri, prompt);
+      document.getElementById('stxt').textContent = '✅ Video Veo 3.1 Lite listo!';
+      toast('🚀 Video Veo generado!');
+    } else {
+      throw new Error('Timeout esperando video Veo');
+    }
+  } catch(e) {
+    document.getElementById('stxt').textContent = '❌ Veo: ' + e.message;
+    throw e;
+  }
+}
+
+// ── VIDEO CARD ────────────────────────────────────────────────
+function addVideoCard(videoUrl, prompt) {
+  const card = document.createElement('div');
+  card.className = 'card ls'; card.dataset.url = videoUrl;
+  card.style.gridColumn = 'span 2';
+
+  const vid = document.createElement('video');
+  vid.src = videoUrl; vid.controls = true; vid.autoplay = true;
+  vid.loop = true; vid.muted = true;
+  vid.style.cssText = 'width:100%;display:block;max-height:320px;object-fit:cover;';
+
+  const ptag = document.createElement('div');
+  ptag.className='ptag'; ptag.textContent='🎥 '+prompt.substring(0,45)+'...';
+
+  const acts = document.createElement('div'); acts.className='cacts';
+  const dl = document.createElement('button'); dl.className='cdl'; dl.textContent='⬇️ Descargar';
+  dl.onclick = () => window.open(videoUrl,'_blank');
+  const del = document.createElement('button'); del.className='cdel'; del.textContent='✕';
+  del.onclick = () => { card.remove(); updateCount(); };
+  acts.append(dl, del);
+  card.append(vid, ptag, acts);
+  document.getElementById('gallery').appendChild(card);
+  updateCount();
+}
+
+// ── HELPERS (sin cambios) ─────────────────────────────────────
 async function waitForImage(url, attempt = 1) {
   try {
     await new Promise((resolve, reject) => {
       const img = new Image();
-      const timeoutId = setTimeout(() => {
-        img.onload = null;
-        img.onerror = null;
-        reject(new Error('Tiempo agotado esperando imagen'));
-      }, 120000);
-
-      img.onload = () => {
-        clearTimeout(timeoutId);
-        resolve();
-      };
-      img.onerror = () => {
-        clearTimeout(timeoutId);
-        reject(new Error('El motor rechazo la imagen'));
-      };
+      const timeoutId = setTimeout(() => { img.onload=null; img.onerror=null; reject(new Error('Tiempo agotado')); }, 120000);
+      img.onload = () => { clearTimeout(timeoutId); resolve(); };
+      img.onerror = () => { clearTimeout(timeoutId); reject(new Error('Motor rechazó imagen')); };
       img.referrerPolicy = 'no-referrer';
       img.src = url;
     });
     return url;
-  } catch (err) {
+  } catch(err) {
     if (attempt < 4) {
-      await new Promise(resolve => setTimeout(resolve, 12000 * attempt));
-      return waitForImage(url.replace(/seed=\d+/, 'seed=' + Math.floor(Math.random() * 2147483647)), attempt + 1);
+      await new Promise(r => setTimeout(r, 12000 * attempt));
+      return waitForImage(url.replace(/seed=\d+/, 'seed='+Math.floor(Math.random()*2147483647)), attempt+1);
     }
     throw err;
   }
