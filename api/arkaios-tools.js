@@ -66,6 +66,13 @@ async function listTemplates(req, res) {
             category: 'texto'
         },
         {
+            id: 'croquis_animado_v3',
+            name: 'Croquis Animado Casa ⇄ Escuela',
+            file: 'croquis_animado_v3.html',
+            description: 'Croquis animado interactivo con ruteo OSRM/OpenStreetMap, bitácora en vivo, iconos/imágenes flotantes ajustables y exportación a PDF',
+            category: 'mapas_y_rutas'
+        },
+        {
             id: 'generador_fotos',
             name: 'Fotos infantiles 2.5×3 cm',
             file: 'generador-fotos-infantiles.html',

@@ -5,36 +5,94 @@
       "icon": "📝",
       "makeFirstActive": true,
       "items": [
-        { "label": "Carta MX - Índice + Texto", "icon": "📄", "target": "plantilla_escolar_carta_mx_autoajuste_y_areas_editables.html" },
-        { "label": "Hoja Milimétrica", "icon": "📐", "target": "hoja_milimetrica_interactiva.html" },
-        { "label": "Biografía Profesional", "icon": "👤", "target": "biografia_profesional.html" }
+        {
+          "label": "Biografia Profesional",
+          "icon": "👤",
+          "target": "biografia_profesional.html"
+        },
+        {
+          "label": "Croquis Animado Casa ⇄ Escuela",
+          "icon": "🗺️",
+          "target": "croquis_animado_v3.html"
+        },
+        {
+          "label": "Hoja Milimetrica Interactiva",
+          "icon": "📐",
+          "target": "hoja_milimetrica_interactiva.html"
+        },
+        {
+          "label": "Plantilla Escolar Carta Mx Autoajuste Y Areas Editables",
+          "icon": "📄",
+          "target": "plantilla_escolar_carta_mx_autoajuste_y_areas_editables.html"
+        }
       ]
     },
     {
       "title": "Módulos de Imagen",
       "icon": "📸",
       "items": [
-        { "label": "Fotos Infantiles 2.5×3 cm", "icon": "👶", "target": "generador-fotos-infantiles.html" },
-        { "label": "Buscador Google Imágenes", "icon": "🔍", "target": "buscador-imagenes-educativo.html" },
-        { "label": "Pixabay Descarga Lote", "icon": "🌐", "target": "pixabay-descargador-lote.html" },
-        { "label": "Círculos Jack Skellington", "icon": "⭕", "target": "plantilla_circulos_jack.html" },
-        { "label": "Cuadros Imágenes v2", "icon": "🖼️", "target": "plantilla-cuadros-imagenes-v2.html" },
-        { "label": "Plantilla Imágenes v2", "icon": "🎨", "target": "plantilla-imagenes-v2.html" },
-        { "label": "Generador IA Imágenes", "icon": "🤖", "target": "generador-ia-imagenes.html" }
+        {
+          "label": "Buscador Imagenes Educativo",
+          "icon": "🎨",
+          "target": "buscador-imagenes-educativo.html"
+        },
+        {
+          "label": "Generador Fotos Infantiles",
+          "icon": "👶",
+          "target": "generador-fotos-infantiles.html"
+        },
+        {
+          "label": "Generador Ia Imagenes",
+          "icon": "🎨",
+          "target": "generador-ia-imagenes.html"
+        },
+        {
+          "label": "Pixabay Descargador Lote",
+          "icon": "🌐",
+          "target": "pixabay-descargador-lote.html"
+        },
+        {
+          "label": "Plantilla Circulos Jack",
+          "icon": "⭕",
+          "target": "plantilla_circulos_jack.html"
+        },
+        {
+          "label": "Plantilla Cuadros Imagenes V2",
+          "icon": "🖼️",
+          "target": "plantilla-cuadros-imagenes-v2.html"
+        },
+        {
+          "label": "Plantilla Imagenes V2",
+          "icon": "🎨",
+          "target": "plantilla-imagenes-v2.html"
+        }
+      ]
+    },
+    {
+      "title": "Otros",
+      "icon": "🧩",
+      "items": [
+        {
+          "label": "Material Educativo Reutilizable",
+          "icon": "📄",
+          "target": "material-educativo-reutilizable.html"
+        },
+        {
+          "label": "Orquestador Html Plus",
+          "icon": "📄",
+          "target": "orquestador-html-plus.html"
+        }
       ]
     },
     {
       "title": "Biblioteca",
       "icon": "📚",
       "items": [
-        { "label": "Material Reutilizable", "icon": "📖", "target": "material-educativo-reutilizable.html" }
-      ]
-    },
-    {
-      "title": "Automatización IA",
-      "icon": "🤖",
-      "items": [
-        { "label": "Orquestador HTML+", "icon": "🧠", "target": "orquestador-html-plus.html" }
+        {
+          "label": "Material Reutilizable",
+          "icon": "📖",
+          "target": "material-educativo-reutilizable.html"
+        }
       ]
     }
   ]

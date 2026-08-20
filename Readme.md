@@ -24,6 +24,7 @@ El **Centro de Plantillas Educativas ARKAIOS** es una plataforma web de código 
 | Recurso | Descripción | Aplicación Pedagógica |
 |:---:|---|---|
 | 📄 **Carta MX** | Formato académico con áreas editables e índice automático. | Ensayos, reportes y tareas formales. |
+| 🗺️ **Croquis Animado** | Ruta animada en mapa interactivo (OSRM/OSM), bitácora en vivo y exportación a PDF. | Geografía, orientación espacial, croquis casa-escuela. |
 | 👶 **Fotos Infantiles** | Generador de grillas (2.5×3cm) con control posicional por renglón. | Identificaciones y registros escolares. |
 | 👤 **Biografías** | Tarjetas de presentación profesional con ajuste de fotos. | Proyectos históricos y currículum escolar. |
 | 📐 **Hoja Milimétrica** | Grilla interactiva de alta precisión. | Matemáticas, dibujo técnico y gráficas. |

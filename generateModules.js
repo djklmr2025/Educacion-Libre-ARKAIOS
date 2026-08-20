@@ -3,8 +3,8 @@
  * Escanea archivos .html y genera modules.json para menú dinámico del index.
  * Heurística simple por nombre de archivo para clasificar.
  */
-const fs = require("fs");
-const path = require("path");
+import fs from "fs";
+import path from "path";
 
 const ROOT = process.cwd();
 const OUT = path.join(ROOT, "modules.json");
@@ -16,10 +16,14 @@ const SCAN_DIR = ROOT;
 const EXCLUDE = new Set([
   "index.html",
   "projects.html",
-  "pdf-manager.html"
+  "pdf-manager.html",
+  "CODIGO_PARA_INDEX.html",
+  "login.html",
+  "portal-empresarial.html"
 ]);
 
 function prettifyName(file) {
+  if (file === "croquis_animado_v3.html") return "Croquis Animado Casa ⇄ Escuela";
   return file
     .replace(/\.html$/i, "")
     .replace(/[-_]/g, " ")
@@ -35,6 +39,7 @@ function categorize(file) {
     f.includes("carta") ||
     f.includes("hoja") ||
     f.includes("biografia") ||
+    f.includes("croquis") ||
     f.includes("plantilla_escolar") ||
     f.includes("texto");
 
@@ -59,6 +64,7 @@ function iconForCategory(cat) {
 
 function iconForFile(file) {
   const f = file.toLowerCase();
+  if (f.includes("croquis")) return "🗺️";
   if (f.includes("carta")) return "📄";
   if (f.includes("hoja")) return "📐";
   if (f.includes("biografia")) return "👤";
