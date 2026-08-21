@@ -768,7 +768,7 @@ btnRoute.addEventListener('click', async ()=>{
     steps.forEach(s=>{ s._instr = instrFor(s, originInfo.label, destInfo.label); });
     buildScene(r.geometry, steps);
     buildStepsPanel();
-    render();
+    const km=(r.distance/1000).toFixed(2), min=Math.round(r.duration/60);
     const labelRoute = (originInfo.label === 'ese punto' && destInfo.label === 'ese punto') ? 'De Mi Casa a mi Escuela' : `${originInfo.label} → ${destInfo.label}`;
     metaEl.innerHTML = `<span contenteditable="true">${labelRoute}</span><span contenteditable="true">${km} km</span><span contenteditable="true">${min}mnts</span>`;
     const fldEscuela = document.getElementById('fldEscuela');
