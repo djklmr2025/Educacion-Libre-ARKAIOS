@@ -32,6 +32,10 @@ El **Centro de Plantillas Educativas ARKAIOS** es una plataforma web de código 
 
 ---
 
+<p align="center">
+  <img src="https://github.com/djklmr2025/Eduacion-Libre-Proyecto-ARKAIOS/blob/MAIN/ejemplo%20de%20archivo%20resultante.png?raw=true" width="800" height="600" alt="Ejemplo de archivo resultante">
+</p>
+
 ## 🗺️ Guía de Uso: Croquis Animado Casa ⇄ Escuela (`croquis_animado_v3.html`)
 
 Esta plantilla interactiva está diseñada para proyectos escolares de orientación espacial, geografía y mapas de trayecto (ej. *De mi Casa a mi Escuela*). Funciona 100% con datos abiertos (OpenStreetMap + OSRM + CARTO) **sin necesidad de API keys de Google ni tarjetas de crédito**.
