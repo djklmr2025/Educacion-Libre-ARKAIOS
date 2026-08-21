@@ -250,9 +250,9 @@
       <div class="print-header">
         <h2 contenteditable="true">Croquis de mi casa a mi escuela</h2>
         <div class="print-fields">
-          <div><span class="fld-label" contenteditable="true">Nombre:</span> <span id="fldNombre" contenteditable="true"></span></div>
-          <div><span class="fld-label" contenteditable="true">Grado / Grupo:</span> <span id="fldGrado" contenteditable="true" title="Puedes poner cualquier nota aquí, no solo grado/grupo"></span></div>
-          <div><span class="fld-label" contenteditable="true">Escuela:</span> <span id="fldEscuela" contenteditable="true"></span></div>
+          <div><span class="fld-label" contenteditable="true">Ubicación Casa:</span> <span id="fldCasa" contenteditable="true">Privada Río Turía</span></div>
+          <div><span class="fld-label" contenteditable="true">Tiempo de trayecto:</span> <span id="fldTiempo" contenteditable="true">5 mnts.</span></div>
+          <div><span class="fld-label" contenteditable="true">Nombre de Escuela:</span> <span id="fldEscuela" contenteditable="true">Jardín de niños "José Vasconcelos"</span></div>
         </div>
       </div>
       <div class="grid">
@@ -506,8 +506,10 @@ function buildScene(routeGeo, steps){
     if(el){ L.DomEvent.disableClickPropagation(el); L.DomEvent.disableScrollPropagation(el); }
     pinLayers.push(m);
   }
-  pin(allPts[0], '🏠', originInfo.label);
-  pin(allPts[allPts.length-1], '🏫', destInfo.label);
+  const oLabel = (originInfo.label && originInfo.label !== 'ese punto') ? originInfo.label : 'Mi Casa';
+  const dLabel = (destInfo.label && destInfo.label !== 'ese punto') ? destInfo.label : 'Mi Escuela';
+  pin(allPts[0], '🏠', oLabel);
+  pin(allPts[allPts.length-1], '🏫', dLabel);
 
   const markerIcon = L.divIcon({html:`<span class="marker-emoji">${isCar?'🚗':'🚶'}</span>`, className:'', iconSize:[24,24], iconAnchor:[12,12]});
   markerLayer = L.marker(allPts[0], {icon:markerIcon, interactive:false}).addTo(map);
@@ -633,17 +635,17 @@ function convertPinsToFloating(){
 }
 
 btnPdf.addEventListener('click', ()=>{
-  if(!previewFilled){
-    playing = false; btnPlay.textContent = '▶ Reproducir';
-    dNow = totalLength; render(); // revela toda la ruta y todo el texto, solo la primera vez
-    convertPinsToFloating();
-    previewFilled = true;
-  }
+  playing = false; btnPlay.textContent = '▶ Reproducir';
+  dNow = totalLength; render(); // revela toda la ruta y todo el texto
   document.body.classList.add('preview-active');
   setTimeout(()=>{
     map.invalidateSize({ animate: false });
     if(guideLayer) map.fitBounds(guideLayer.getBounds(), { padding: [30,30], animate: false });
-  }, 120);
+    if(!previewFilled){
+      convertPinsToFloating();
+      previewFilled = true;
+    }
+  }, 150);
 });
 
 btnExitPreview.addEventListener('click', ()=>{
@@ -767,8 +769,8 @@ btnRoute.addEventListener('click', async ()=>{
     buildScene(r.geometry, steps);
     buildStepsPanel();
     render();
-    const km=(r.distance/1000).toFixed(2), min=Math.round(r.duration/60);
-    metaEl.innerHTML = `<span contenteditable="true">${originInfo.label} → ${destInfo.label}</span><span contenteditable="true">${km} km</span><span contenteditable="true">~${min} min</span>`;
+    const labelRoute = (originInfo.label === 'ese punto' && destInfo.label === 'ese punto') ? 'De Mi Casa a mi Escuela' : `${originInfo.label} → ${destInfo.label}`;
+    metaEl.innerHTML = `<span contenteditable="true">${labelRoute}</span><span contenteditable="true">${km} km</span><span contenteditable="true">${min}mnts</span>`;
     const fldEscuela = document.getElementById('fldEscuela');
     if(fldEscuela) fldEscuela.textContent = destInfo.display || destInfo.label;
     statusEl.textContent = `Ruta trazada · ${steps.length} tramos`;
@@ -780,6 +782,7 @@ btnRoute.addEventListener('click', async ()=>{
 });
 
 window.addEventListener('beforeprint', ()=>{ map.invalidateSize(); });
+document.addEventListener('DOMContentLoaded', ()=>{ setTimeout(()=> btnRoute.click(), 200); });
 </script>
 </body>
 </html>
