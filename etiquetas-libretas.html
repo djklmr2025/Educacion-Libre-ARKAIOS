@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generador de etiquetas para libretas y cuadernos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1F2A44;
+    --paper:#FAFAF7;
+    --paper-2:#FFFFFF;
+    --line:#D8D4C8;
+    --tape:#E8B923;
+    --teal:#3E7C7B;
+    --grey:#6B6F7A;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Inter',system-ui,sans-serif;background:var(--ink);color:var(--ink);min-height:100vh;}
+  h1,h2,.mono-label{font-family:'Space Grotesk',system-ui,sans-serif;}
+
+  .app{display:grid;grid-template-columns:360px 1fr;min-height:100vh;}
+
+  .sidebar{background:var(--paper);padding:26px 22px 40px;border-right:1px solid var(--line);overflow-y:auto;max-height:100vh;}
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+  .brand .chip{width:14px;height:14px;border-radius:3px;background:var(--tape);transform:rotate(-8deg);}
+  .brand h1{font-size:18px;margin:0;font-weight:700;letter-spacing:-0.01em;}
+  .sidebar > p.sub{margin:6px 0 22px;font-size:13px;color:var(--grey);line-height:1.5;}
+
+  .section-title{font-size:12px;font-weight:700;text-transform:none;color:var(--ink);margin:22px 0 12px;padding-top:18px;border-top:1px solid var(--line);}
+  .section-title:first-of-type{border-top:none;padding-top:0;margin-top:0;}
+
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--ink);margin-bottom:6px;}
+  .field .hint{font-size:11px;color:var(--grey);margin-top:5px;line-height:1.45;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+  input[type="number"], input[type="text"]{
+    width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;
+    font-family:'Inter',sans-serif;font-size:13.5px;background:var(--paper-2);color:var(--ink);
+  }
+  input[type="number"]:focus, input[type="text"]:focus{outline:2px solid var(--teal);outline-offset:1px;}
+  input[type="number"]:disabled{background:var(--line);color:var(--grey);cursor:not-allowed;}
+  input[type="color"]{width:44px;height:32px;border:1px solid var(--line);border-radius:6px;padding:2px;background:var(--paper-2);cursor:pointer;}
+  input[type="range"]{width:100%;accent-color:var(--teal);}
+  .range-value{font-size:11.5px;color:var(--grey);display:flex;justify-content:space-between;}
+
+  .radio-row{display:flex;gap:16px;margin-bottom:10px;}
+  .radio-row label{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--ink);margin-bottom:0;cursor:pointer;}
+  .radio-row input[type="radio"]{accent-color:var(--teal);}
+
+  .color-line{display:flex;align-items:center;gap:10px;}
+  .color-line span{font-size:12.5px;color:var(--grey);}
+
+  .file-drop{border:1.5px dashed var(--line);border-radius:8px;padding:12px;text-align:center;font-size:12px;color:var(--grey);background:var(--paper-2);cursor:pointer;display:block;}
+  .file-drop:hover{border-color:var(--teal);color:var(--teal);}
+  .file-drop input{display:none;}
+  .file-name{margin-top:7px;font-size:11.5px;color:var(--ink);word-break:break-all;}
+  .link-btn{margin-top:6px;background:none;border:none;color:var(--grey);font-size:11.5px;text-decoration:underline;cursor:pointer;padding:0;}
+
+  /* Campos de texto: lista */
+  .field-item{
+    background:var(--paper-2);border:1px solid var(--line);border-radius:8px;
+    padding:10px; margin-bottom:8px;
+  }
+  .field-item-top{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+  .field-item-top input[type="text"]{flex:1;}
+  .field-remove{
+    background:none;border:none;color:#B23B3B;font-size:16px;line-height:1;
+    cursor:pointer;padding:4px 6px;flex-shrink:0;
+  }
+  .field-item-opts{display:flex;align-items:center;gap:14px;font-size:11.5px;color:var(--grey);}
+  .field-item-opts label{display:flex;align-items:center;gap:5px;cursor:pointer;}
+
+  .add-btn{
+    width:100%;background:var(--paper-2);border:1.5px dashed var(--teal);color:var(--teal);
+    border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;
+    font-family:'Inter',sans-serif;
+  }
+  .add-btn:hover{background:#EAF3F2;}
+
+  .stat-box{background:var(--ink);color:var(--paper);border-radius:10px;padding:14px 16px;margin:20px 0;}
+  .stat-box .big{font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:700;line-height:1;}
+  .stat-box .lbl{font-size:11px;color:#C8CCD8;margin-top:5px;line-height:1.5;}
+
+  .print-btn{width:100%;background:var(--teal);color:#fff;border:none;border-radius:8px;padding:13px 14px;font-size:14.5px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;}
+  .print-btn:hover{background:#356968;}
+
+  /* Main area */
+  .main{overflow-y:auto;max-height:100vh;}
+  .main-inner{padding:36px 32px 60px;max-width:1100px;margin:0 auto;}
+  .main-block{margin-bottom:36px;}
+  .main-block h2{color:#fff;font-size:15px;margin:0 0 4px;}
+  .main-block p{color:#B7BDD1;font-size:12.5px;margin:0 0 16px;line-height:1.5;}
+
+  /* Tarjeta editable (una sola, tamaño real, interactiva) */
+  .editor-stage{
+    background:#3A4568;
+    border-radius:12px;
+    padding:26px;
+    display:flex;
+    justify-content:center;
+  }
+  .card{
+    position:relative;
+    background:#fff;
+    box-shadow:0 12px 30px rgba(0,0,0,0.3);
+    overflow:hidden;
+  }
+  .card-bg{position:absolute;inset:0;}
+  .card-img{
+    position:absolute;
+    cursor:move;
+    user-select:none;
+    -webkit-user-drag:none;
+  }
+  .card-img img{width:100%;height:100%;display:block;pointer-events:none;object-fit:contain;}
+  .resize-handle{
+    position:absolute; right:-6px; bottom:-6px;
+    width:14px;height:14px;border-radius:50%;
+    background:var(--teal); border:2px solid #fff;
+    cursor:nwse-resize;
+  }
+  .card-field{
+    position:absolute;
+    cursor:move;
+    user-select:none;
+    white-space:nowrap;
+    padding:2px 4px;
+    border-radius:3px;
+  }
+  .card-field.selected{outline:1.5px dashed var(--teal);}
+  .card-field .lbl-text{white-space:nowrap;}
+  .card-field .lbl-line{
+    display:block;
+    border-bottom:1.5px solid currentColor;
+    margin-top:2px;
+    min-width:60px;
+  }
+  .write-box{
+    position:absolute;
+    cursor:move;
+    user-select:none;
+  }
+  .write-box .resize-handle{background:#B9B0D6;}
+
+  /* Hoja completa (impresión) */
+  .sheet-stage{
+    background:#3A4568;
+    border-radius:12px;
+    padding:26px;
+    display:flex;
+    justify-content:center;
+    overflow:auto;
+  }
+  .page-shell{background:#fff;box-shadow:0 20px 50px rgba(0,0,0,0.35);}
+  .sheet{width:216mm;height:279mm;display:grid;justify-content:center;align-content:center;background:#fff;}
+  .sheet-cell{position:relative;overflow:hidden;background:#fff;box-sizing:border-box;}
+  .sheet-cell .card-bg{position:absolute;inset:0;}
+  .sheet-cell .s-img{position:absolute;}
+  .sheet-cell .s-img img{width:100%;height:100%;object-fit:contain;display:block;}
+  .sheet-cell .s-field{position:absolute;white-space:nowrap;}
+  .sheet-cell .s-field .lbl-line{display:block;border-bottom:1.5px solid currentColor;margin-top:2px;min-width:40px;}
+  .sheet-cell .s-writebox{position:absolute;}
+
+  @media print{
+    body *{visibility:hidden;}
+    .sheet, .sheet *{visibility:visible;}
+    .sheet{position:absolute;top:0;left:0;box-shadow:none;}
+    .sheet-cell{border:none;}
+    @page{size:216mm 279mm;margin:0;}
+  }
+
+  @media (max-width:900px){
+    .app{grid-template-columns:1fr;}
+    .sidebar{max-height:none;border-right:none;border-bottom:1px solid var(--line);}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><span class="chip"></span><h1>Etiquetas para libretas</h1></div>
+    <p class="sub">Diseña una etiqueta libre — mueve, agrega o quita campos de texto y una imagen decorativa — y genera automáticamente la hoja carta completa.</p>
+
+    <div class="section-title">Tamaño de la etiqueta y la hoja</div>
+
+    <div class="row2">
+      <div class="field">
+        <label for="cardW">Ancho (mm)</label>
+        <input type="number" id="cardW" value="97" min="20" max="216" step="1">
+      </div>
+      <div class="field">
+        <label for="cardH">Alto (mm)</label>
+        <input type="number" id="cardH" value="63" min="20" max="279" step="1">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="margin">Margen de la hoja (mm)</label>
+      <input type="number" id="margin" value="8" min="0" max="20" step="0.5">
+    </div>
+
+    <div class="field">
+      <label>Columnas en la hoja</label>
+      <div class="radio-row">
+        <label><input type="radio" name="colMode" value="auto" checked> Automático</label>
+        <label><input type="radio" name="colMode" value="manual"> Número fijo</label>
+      </div>
+      <input type="number" id="colCount" value="2" min="1" max="10" step="1" disabled>
+      <div class="hint">En número fijo, el ancho de la etiqueta se ajusta solo para llenar el ancho de la hoja.</div>
+    </div>
+
+    <div class="section-title">Fondo de la etiqueta</div>
+
+    <div class="field">
+      <div class="color-line">
+        <input type="color" id="bgColor" value="#5C4A9E">
+        <span>Color de fondo de la tarjeta</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label><input type="checkbox" id="writeBoxToggle" checked style="accent-color:var(--teal);margin-right:6px;">Caja blanca para escribir (arrástrala y redimensiónala en la vista previa)</label>
+      <div class="color-line" style="margin-top:8px;">
+        <input type="color" id="writeBoxColor" value="#ffffff">
+        <span>Color de la caja</span>
+      </div>
+    </div>
+
+    <div class="section-title">Imagen decorativa (PNG recomendado)</div>
+
+    <div class="field">
+      <label class="file-drop" id="dropLabel">
+        Toca para subir una imagen .png
+        <input type="file" id="imgInput" accept="image/*">
+      </label>
+      <div class="file-name" id="fileName"></div>
+      <button class="link-btn" id="clearImg" style="display:none;">Quitar imagen</button>
+      <div class="hint">Arrástrala en la vista previa para moverla y usa el punto de la esquina para agrandarla o achicarla. No cubre toda la tarjeta — colócala solo donde la quieras, como en tu ejemplo.</div>
+    </div>
+
+    <div class="field">
+      <label for="imgOpacity">Opacidad de la imagen</label>
+      <input type="range" id="imgOpacity" min="0" max="100" step="5" value="100">
+      <div class="range-value"><span>Transparente</span><span id="imgOpacityVal">100%</span><span>Sólida</span></div>
+    </div>
+
+    <div class="section-title">Campos de texto</div>
+    <div class="hint" style="margin-bottom:10px;">Agrega los que necesites (o quítalos), escribe la etiqueta de cada uno y arrástralos en la vista previa a donde quieras que queden.</div>
+
+    <div class="row2" style="margin-bottom:14px;">
+      <div class="field" style="margin-bottom:0;">
+        <label for="fieldFont">Tamaño de texto (mm)</label>
+        <input type="number" id="fieldFont" value="4.2" min="1.5" max="15" step="0.2">
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label for="fieldColor">Color de texto</label>
+        <input type="text" id="fieldColor" value="#1F2A44">
+      </div>
+    </div>
+
+    <div id="fieldsList"></div>
+    <button class="add-btn" id="addFieldBtn">+ Agregar campo de texto</button>
+
+    <div class="stat-box">
+      <div class="big" id="totalCount">0</div>
+      <div class="lbl" id="gridInfo">etiquetas por hoja</div>
+    </div>
+
+    <button class="print-btn" id="printBtn">Imprimir / Guardar como PDF</button>
+  </aside>
+
+  <main class="main">
+    <div class="main-inner">
+      <div class="main-block">
+        <h2>Editor de la etiqueta</h2>
+        <p>Este es el tamaño real de tu etiqueta. Arrastra la imagen y los campos de texto para acomodarlos donde quieras.</p>
+        <div class="editor-stage">
+          <div class="card" id="editorCard"></div>
+        </div>
+      </div>
+
+      <div class="main-block">
+        <h2>Hoja completa</h2>
+        <p>Así se imprimirá en la hoja carta — el diseño se repite igual en todas las etiquetas.</p>
+        <div class="sheet-stage">
+          <div class="page-shell"><div class="sheet" id="sheet"></div></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const PAGE_W = 216, PAGE_H = 279; // hoja carta mexicana / US letter, mm
+
+  const cardWInp = $('cardW'), cardHInp = $('cardH'), marginInp = $('margin');
+  const colModeRadios = document.querySelectorAll('input[name="colMode"]');
+  const colCount = $('colCount');
+  const bgColor = $('bgColor');
+  const writeBoxToggle = $('writeBoxToggle');
+  const writeBoxColor = $('writeBoxColor');
+  const imgInput = $('imgInput'), fileName = $('fileName'), clearImg = $('clearImg');
+  const imgOpacity = $('imgOpacity');
+  const fieldFont = $('fieldFont'), fieldColor = $('fieldColor');
+  const fieldsList = $('fieldsList');
+  const addFieldBtn = $('addFieldBtn');
+  const editorCard = $('editorCard');
+  const sheet = $('sheet');
+  const totalCount = $('totalCount');
+  const gridInfo = $('gridInfo');
+
+  // ---- Estado ----
+  let bgImage = null;
+  let img = { x: 6, y: 5, w: 40, h: 32 }; // % de la tarjeta
+  let writeBox = { x: 6, y: 42, w: 88, h: 50 };
+  let fieldIdSeq = 0;
+  let fields = [
+    mkField('ASIGNATURA:', 10, 48, true),
+    mkField('NOMBRE:', 10, 62, true),
+    mkField('GRADO:', 10, 76, true)
+  ];
+
+  function mkField(text, x, y, underline){
+    return { id: 'f' + (fieldIdSeq++), text, x, y, underline };
+  }
+
+  // ---- Lista de campos en la barra lateral ----
+  function renderFieldsList(){
+    fieldsList.innerHTML = '';
+    fields.forEach(f => {
+      const item = document.createElement('div');
+      item.className = 'field-item';
+
+      const top = document.createElement('div');
+      top.className = 'field-item-top';
+
+      const txt = document.createElement('input');
+      txt.type = 'text';
+      txt.value = f.text;
+      txt.addEventListener('input', () => { f.text = txt.value; renderAll(); });
+
+      const del = document.createElement('button');
+      del.className = 'field-remove';
+      del.innerHTML = '&times;';
+      del.title = 'Quitar campo';
+      del.addEventListener('click', () => {
+        fields = fields.filter(x => x.id !== f.id);
+        renderFieldsList();
+        renderAll();
+      });
+
+      top.appendChild(txt);
+      top.appendChild(del);
+
+      const opts = document.createElement('div');
+      opts.className = 'field-item-opts';
+      const lbl = document.createElement('label');
+      const chk = document.createElement('input');
+      chk.type = 'checkbox';
+      chk.checked = f.underline;
+      chk.style.accentColor = 'var(--teal)';
+      chk.addEventListener('change', () => { f.underline = chk.checked; renderAll(); });
+      lbl.appendChild(chk);
+      lbl.appendChild(document.createTextNode('línea para escribir'));
+      opts.appendChild(lbl);
+
+      item.appendChild(top);
+      item.appendChild(opts);
+      fieldsList.appendChild(item);
+    });
+  }
+
+  addFieldBtn.addEventListener('click', () => {
+    fields.push(mkField('Campo nuevo:', 10, 50, true));
+    renderFieldsList();
+    renderAll();
+  });
+
+  // ---- Imagen ----
+  imgInput.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      bgImage = ev.target.result;
+      fileName.textContent = file.name;
+      clearImg.style.display = 'inline-block';
+      renderAll();
+    };
+    reader.readAsDataURL(file);
+  });
+  clearImg.addEventListener('click', () => {
+    bgImage = null;
+    imgInput.value = '';
+    fileName.textContent = '';
+    clearImg.style.display = 'none';
+    renderAll();
+  });
+
+  // ---- Listeners generales ----
+  [cardWInp, cardHInp, marginInp, bgColor, writeBoxToggle, writeBoxColor,
+   imgOpacity, fieldFont, fieldColor].forEach(el => el.addEventListener('input', renderAll));
+
+  colCount.addEventListener('input', renderAll);
+  colModeRadios.forEach(r => r.addEventListener('change', () => {
+    const manual = document.querySelector('input[name="colMode"]:checked').value === 'manual';
+    colCount.disabled = !manual;
+    cardWInp.disabled = manual;
+    renderAll();
+  }));
+
+  $('printBtn').addEventListener('click', () => window.print());
+
+  // ---- Arrastre / redimensión sobre la tarjeta editora ----
+  let drag = null; // {type:'move'|'resize', target:'img'|'writeBox'|fieldId, startX, startY, orig}
+
+  function cardRect(){ return editorCard.getBoundingClientRect(); }
+
+  function startDrag(e, type, target, orig){
+    e.preventDefault();
+    e.stopPropagation();
+    drag = { type, target, startClientX: e.clientX, startClientY: e.clientY, orig: {...orig} };
+    document.addEventListener('pointermove', onDrag);
+    document.addEventListener('pointerup', endDrag);
+  }
+
+  function onDrag(e){
+    if (!drag) return;
+    const rect = cardRect();
+    const dxPct = ((e.clientX - drag.startClientX) / rect.width) * 100;
+    const dyPct = ((e.clientY - drag.startClientY) / rect.height) * 100;
+
+    let obj = drag.target === 'img' ? img : (drag.target === 'writeBox' ? writeBox : fields.find(f => f.id === drag.target));
+    if (!obj) return;
+
+    if (drag.type === 'move'){
+      if (drag.target === 'img' || drag.target === 'writeBox'){
+        obj.x = clamp(drag.orig.x + dxPct, 0, 100 - obj.w);
+        obj.y = clamp(drag.orig.y + dyPct, 0, 100 - obj.h);
+      } else {
+        obj.x = clamp(drag.orig.x + dxPct, 0, 96);
+        obj.y = clamp(drag.orig.y + dyPct, 0, 96);
+      }
+    } else if (drag.type === 'resize'){
+      obj.w = clamp(drag.orig.w + dxPct, 6, 100 - obj.x);
+      obj.h = clamp(drag.orig.h + dyPct, 6, 100 - obj.y);
+    }
+    renderEditorOnly();
+  }
+
+  function endDrag(){
+    drag = null;
+    document.removeEventListener('pointermove', onDrag);
+    document.removeEventListener('pointerup', endDrag);
+    renderSheet();
+  }
+
+  function clamp(v, min, max){ return Math.max(min, Math.min(v, Math.max(max, min))); }
+
+  // ---- Construcción del contenido de una tarjeta ----
+  function buildCardInto(container, interactive){
+    container.innerHTML = '';
+
+    const bg = document.createElement('div');
+    bg.className = 'card-bg';
+    bg.style.background = bgColor.value;
+    container.appendChild(bg);
+
+    if (writeBoxToggle.checked){
+      const wb = document.createElement('div');
+      wb.className = interactive ? 'write-box' : 's-writebox';
+      wb.style.left = writeBox.x + '%';
+      wb.style.top = writeBox.y + '%';
+      wb.style.width = writeBox.w + '%';
+      wb.style.height = writeBox.h + '%';
+      wb.style.background = writeBoxColor.value;
+      wb.style.borderRadius = '6px';
+      if (interactive){
+        wb.addEventListener('pointerdown', e => startDrag(e, 'move', 'writeBox', writeBox));
+        const rh = document.createElement('div');
+        rh.className = 'resize-handle';
+        rh.addEventListener('pointerdown', e => startDrag(e, 'resize', 'writeBox', writeBox));
+        wb.appendChild(rh);
+      }
+      container.appendChild(wb);
+    }
+
+    if (bgImage){
+      const box = document.createElement('div');
+      box.className = interactive ? 'card-img' : 's-img';
+      box.style.left = img.x + '%';
+      box.style.top = img.y + '%';
+      box.style.width = img.w + '%';
+      box.style.height = img.h + '%';
+      box.style.opacity = (parseFloat(imgOpacity.value) || 0) / 100;
+      const im = document.createElement('img');
+      im.src = bgImage;
+      box.appendChild(im);
+      if (interactive){
+        box.addEventListener('pointerdown', e => startDrag(e, 'move', 'img', img));
+        const rh = document.createElement('div');
+        rh.className = 'resize-handle';
+        rh.addEventListener('pointerdown', e => startDrag(e, 'resize', 'img', img));
+        box.appendChild(rh);
+      }
+      container.appendChild(box);
+    }
+
+    const fs = parseFloat(fieldFont.value) || 4;
+    const col = fieldColor.value || '#1F2A44';
+    fields.forEach(f => {
+      const el = document.createElement('div');
+      el.className = interactive ? 'card-field' : 's-field';
+      el.style.left = f.x + '%';
+      el.style.top = f.y + '%';
+      el.style.fontSize = fs + 'mm';
+      el.style.color = col;
+
+      const lblTxt = document.createElement('span');
+      lblTxt.className = 'lbl-text';
+      lblTxt.textContent = f.text;
+      el.appendChild(lblTxt);
+
+      if (f.underline){
+        const line = document.createElement('span');
+        line.className = 'lbl-line';
+        el.appendChild(line);
+      }
+
+      if (interactive){
+        el.addEventListener('pointerdown', e => startDrag(e, 'move', f.id, f));
+      }
+      container.appendChild(el);
+    });
+  }
+
+  function renderEditorOnly(){
+    const W = Math.max(parseFloat(cardWInp.value) || 1, 1);
+    const H = Math.max(parseFloat(cardHInp.value) || 1, 1);
+    const scale = Math.min(340 / W, 340 / H, 6);
+    editorCard.style.width = (W * scale) + 'px';
+    editorCard.style.height = (H * scale) + 'px';
+    buildCardInto(editorCard, true);
+  }
+
+  function renderSheet(){
+    const m = Math.max(parseFloat(marginInp.value) || 0, 0);
+    const H = Math.max(parseFloat(cardHInp.value) || 1, 1);
+    const usableW = PAGE_W - m * 2;
+    const usableH = PAGE_H - m * 2;
+    const manualCols = document.querySelector('input[name="colMode"]:checked').value === 'manual';
+
+    let W, cols;
+    if (manualCols){
+      cols = Math.max(parseInt(colCount.value) || 1, 1);
+      W = usableW / cols;
+      cardWInp.value = W.toFixed(2);
+    } else {
+      W = Math.max(parseFloat(cardWInp.value) || 1, 1);
+      cols = Math.max(Math.floor(usableW / W), 0);
+    }
+    const rows = Math.max(Math.floor(usableH / H), 0);
+    const total = cols * rows;
+
+    totalCount.textContent = total;
+    gridInfo.textContent = total > 0
+      ? `etiquetas por hoja  ·  ${cols} columnas × ${rows} filas`
+      : 'la etiqueta no cabe en la hoja con ese tamaño';
+
+    sheet.style.padding = m + 'mm';
+    sheet.style.gridTemplateColumns = `repeat(${cols}, ${W}mm)`;
+    sheet.style.gridAutoRows = `${H}mm`;
+    sheet.innerHTML = '';
+
+    for (let i = 0; i < total; i++){
+      const cell = document.createElement('div');
+      cell.className = 'sheet-cell';
+      buildCardInto(cell, false);
+      sheet.appendChild(cell);
+    }
+  }
+
+  function renderAll(){
+    renderEditorOnly();
+    renderSheet();
+  }
+
+  renderFieldsList();
+  renderAll();
+</script>
+
+</body>
+</html>
