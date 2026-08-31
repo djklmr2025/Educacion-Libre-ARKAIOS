@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ARKAIOS Educacion Libre</string>
+    <string name="title_activity_main">ARKAIOS Educacion Libre</string>
+    <string name="package_name">com.arkaios.educacionlibre</string>
+    <string name="custom_url_scheme">com.arkaios.educacionlibre</string>
+</resources>

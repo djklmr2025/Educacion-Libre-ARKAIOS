@@ -1,0 +1,31 @@
+{
+  "appId": "com.arkaios.educacionlibre",
+  "appName": "ARKAIOS Educacion Libre",
+  "webDir": "www",
+  "server": {
+    "url": "https://eduacion-libre-proyecto-arkaios.vercel.app",
+    "androidScheme": "https",
+    "cleartext": false,
+    "allowNavigation": [
+      "eduacion-libre-proyecto-arkaios.vercel.app",
+      "*.arkaios-projects.vercel.app",
+      "arkaios-gateway-open.onrender.com",
+      "arkaios-api.onrender.com"
+    ]
+  },
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1200,
+      "backgroundColor": "#1F2A44",
+      "showSpinner": false
+    },
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    }
+  }
+}

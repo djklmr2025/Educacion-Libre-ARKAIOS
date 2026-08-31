@@ -1,0 +1,24 @@
+{
+  "name": "arkaios-android-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Envoltorio Android (Capacitor) de la plataforma web ARKAIOS Educacion Libre. Carga el sitio en vivo en un WebView y expone permisos nativos: archivos, notificaciones y microfono.",
+  "scripts": {
+    "sync": "npx cap sync android",
+    "add:android": "npx cap add android",
+    "open:android": "npx cap open android",
+    "build:apk": "cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/core": "^6.1.2",
+    "@capacitor/filesystem": "^6.0.1",
+    "@capacitor/local-notifications": "^6.1.0",
+    "@capacitor/push-notifications": "^6.0.2",
+    "@capacitor/share": "^6.0.2",
+    "@capacitor/splash-screen": "^6.0.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.2"
+  }
+}
