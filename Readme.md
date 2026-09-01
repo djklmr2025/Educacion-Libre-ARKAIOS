@@ -29,6 +29,8 @@ El **Centro de Plantillas Educativas ARKAIOS** es una plataforma web de código 
 | 👤 **Biografías** | Tarjetas de presentación profesional con ajuste de fotos. | Proyectos históricos y currículum escolar. |
 | 📐 **Hoja Milimétrica** | Grilla interactiva de alta precisión. | Matemáticas, dibujo técnico y gráficas. |
 | 🖼️ **Cuadros de Imagen** | Organizador dinámico de recursos visuales. | Collages, diagramas y portafolios. |
+| ✏️ **Tiras de Calcomanías para Lápiz** | Genera tiras de calcomanías a la medida exacta del largo y grosor de lápices, colores y demás material escolar, con auto-ajuste por número de columnas y editor de imagen de fondo (tamaño, posición y opacidad). | Personalizar y rotular lápices, colores, marcadores y útiles escolares. |
+| 🏷️ **Etiquetas para Libretas y Cuadernos** | Constructor libre de etiquetas profesionales sobre hoja carta: campos de texto que se agregan, quitan y arrastran a donde se necesiten, caja de datos para llenar a mano, e imagen decorativa en PNG con tamaño/posición/opacidad ajustables. | Rotular cuadernos, libretas y libros de texto con diseño propio. |
 
 ---
 
@@ -55,6 +57,47 @@ Al hacer clic en **👁 Previsualizar resultado**, la plantilla pasa al modo lie
 
 ### 🖨️ 3. Exportación Limpia a PDF
 Haz clic en el botón **⬇ Descargar / Guardar PDF** (o presiona `Ctrl+P`). La arquitectura CSS homologa de forma exacta las dimensiones del canvas al formato Carta Horizontal, evitando cortes de mosaicos o manchas oscuras en los bordes.
+
+---
+
+## ✏️ Guía de Uso: Tiras de Calcomanías para Lápiz (`tiras-calcomanias-lapiz.html`)
+
+Genera automáticamente una hoja carta completa de calcomanías del tamaño exacto de un
+lápiz (o cualquier útil escolar), calculando cuántas caben según su largo y grosor.
+
+* **Medidas reales**: define el largo de la tira (a lo ancho del lápiz) y el alto del
+  diseño (el grosor/espesor del lápiz) en milímetros; el sistema calcula cuántas
+  calcomanías caben en la hoja y las centra automáticamente.
+* **Columnas automáticas o fijas**: elige que el sistema calcule las columnas solas
+  según el largo, o fija un número de columnas y deja que el largo se ajuste solo para
+  llenar el ancho completo de la hoja.
+* **Texto e imagen de fondo**: escribe el nombre o texto a mostrar, sube una imagen de
+  fondo y ajústala con el mini editor — una ventana con la proporción real de la
+  calcomanía donde puedes agrandarla/achicarla y moverla (posición horizontal y
+  vertical) hasta encontrar el recorte exacto, más un control de opacidad para que el
+  texto siempre se lea bien encima.
+
+---
+
+## 🏷️ Guía de Uso: Etiquetas para Libretas y Cuadernos (`etiquetas-libretas.html`)
+
+Constructor libre de etiquetas escolares/profesionales (tipo "Asignatura / Nombre /
+Grado") sobre hoja carta, pensado para que cada campo se acomode donde el usuario
+quiera, sin diseños fijos.
+
+* **Campos de texto libres**: agrega tantos campos como necesites con el botón
+  "+ Agregar campo de texto", quítalos con la "×", edita su etiqueta y actívales o no
+  una línea para llenar el dato a mano — cada campo se arrastra directamente en la
+  vista previa a la posición exacta donde se quiera, incluso ya con texto escrito.
+* **Caja de datos**: una caja de color (blanco por defecto) para el área de llenado,
+  también arrastrable y redimensionable, que se dibuja por encima de la imagen de
+  fondo y por debajo del texto — así nunca tapa lo que se necesita leer o escribir.
+* **Imagen decorativa en PNG**: se sube y se coloca solo en la zona deseada (no cubre
+  toda la etiqueta), con control de tamaño, posición y opacidad, igual que en la
+  plantilla de calcomanías.
+* **Hoja completa en vivo**: la vista previa de la hoja carta se actualiza en tiempo
+  real con el número de etiquetas que caben (columnas × filas), lista para imprimir o
+  guardar como PDF con el tamaño exacto.
 
 ---
 
