@@ -35,6 +35,8 @@ function prettifyName(file) {
 function categorize(file) {
   const f = file.toLowerCase();
 
+  const isCiencias = f.includes("tabla") || f.includes("periodica") || f.includes("quimica");
+
   const isText =
     f.includes("carta") ||
     f.includes("hoja") ||
@@ -49,14 +51,18 @@ function categorize(file) {
     f.includes("imagen") ||
     f.includes("circulos") ||
     f.includes("jack") ||
-    f.includes("cuadros");
+    f.includes("cuadros") ||
+    f.includes("etiquetas") ||
+    f.includes("tiras");
 
+  if (isCiencias) return "ciencias";
   if (isText) return "text";
   if (isImage) return "image";
   return "other";
 }
 
 function iconForCategory(cat) {
+  if (cat === "ciencias") return "⚛️";
   if (cat === "text") return "📝";
   if (cat === "image") return "📸";
   return "🧩";
@@ -64,6 +70,7 @@ function iconForCategory(cat) {
 
 function iconForFile(file) {
   const f = file.toLowerCase();
+  if (f.includes("tabla") || f.includes("periodica")) return "⚛️";
   if (f.includes("croquis")) return "🗺️";
   if (f.includes("carta")) return "📄";
   if (f.includes("hoja")) return "📐";
@@ -73,6 +80,8 @@ function iconForFile(file) {
   if (f.includes("circulos") || f.includes("jack")) return "⭕";
   if (f.includes("cuadros")) return "🖼️";
   if (f.includes("imagen")) return "🎨";
+  if (f.includes("etiquetas")) return "🏷️";
+  if (f.includes("tiras")) return "✏️";
   return "📄";
 }
 
@@ -91,6 +100,7 @@ function listHtmlFiles(dir) {
 
 function buildManifest(files) {
   const buckets = {
+    ciencias: [],
     text: [],
     image: [],
     other: [],
@@ -98,6 +108,7 @@ function buildManifest(files) {
 
   files.forEach(file => {
     const cat = categorize(file);
+    if (!buckets[cat]) buckets[cat] = [];
     buckets[cat].push({
       label: prettifyName(file),
       icon: iconForFile(file),
@@ -106,6 +117,14 @@ function buildManifest(files) {
   });
 
   const sections = [];
+
+  if (buckets.ciencias.length) {
+    sections.push({
+      title: "Módulos de Ciencias e Interactivos",
+      icon: "⚛️",
+      items: buckets.ciencias,
+    });
+  }
 
   if (buckets.text.length) {
     sections.push({

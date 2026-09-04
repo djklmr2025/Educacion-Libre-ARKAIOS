@@ -1,15 +1,21 @@
 {
   "sections": [
     {
+      "title": "Módulos de Ciencias e Interactivos",
+      "icon": "⚛️",
+      "items": [
+        {
+          "label": "Tabla Periodica Interactiva",
+          "icon": "⚛️",
+          "target": "tabla_periodica_interactiva.html"
+        }
+      ]
+    },
+    {
       "title": "Módulos de Texto",
       "icon": "📝",
       "makeFirstActive": true,
       "items": [
-        {
-          "label": "Tabla Periódica Interactiva",
-          "icon": "⚛️",
-          "target": "tabla_periodica_interactiva.html"
-        },
         {
           "label": "Biografia Profesional",
           "icon": "👤",
@@ -42,6 +48,11 @@
           "target": "buscador-imagenes-educativo.html"
         },
         {
+          "label": "Etiquetas Libretas",
+          "icon": "🏷️",
+          "target": "etiquetas-libretas.html"
+        },
+        {
           "label": "Generador Fotos Infantiles",
           "icon": "👶",
           "target": "generador-fotos-infantiles.html"
@@ -70,6 +81,11 @@
           "label": "Plantilla Imagenes V2",
           "icon": "🎨",
           "target": "plantilla-imagenes-v2.html"
+        },
+        {
+          "label": "Tiras Calcomanias Lapiz",
+          "icon": "✏️",
+          "target": "tiras-calcomanias-lapiz.html"
         }
       ]
     },
@@ -86,22 +102,6 @@
           "label": "Orquestador Html Plus",
           "icon": "📄",
           "target": "orquestador-html-plus.html"
-        }
-      ]
-    },
-    {
-      "title": "Papelería Imprimible",
-      "icon": "🏷️",
-      "items": [
-        {
-          "label": "Tiras de Calcomanías para Lápiz",
-          "icon": "✏️",
-          "target": "tiras-calcomanias-lapiz.html"
-        },
-        {
-          "label": "Etiquetas para Libretas y Cuadernos",
-          "icon": "🏷️",
-          "target": "etiquetas-libretas.html"
         }
       ]
     },
