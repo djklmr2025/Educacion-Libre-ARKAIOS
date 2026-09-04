@@ -6,6 +6,11 @@
       "makeFirstActive": true,
       "items": [
         {
+          "label": "Tabla Periódica Interactiva",
+          "icon": "⚛️",
+          "target": "tabla_periodica_interactiva.html"
+        },
+        {
           "label": "Biografia Profesional",
           "icon": "👤",
           "target": "biografia_profesional.html"

@@ -162,6 +162,45 @@
             gap: 12px;
         }
 
+        .module-dropdown-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-lighter);
+            padding: 6px 14px;
+            border-radius: var(--border-radius-md);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .dropdown-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .module-select {
+            padding: 8px 14px;
+            border-radius: var(--border-radius-sm);
+            border: 1px solid var(--border-color);
+            background: var(--bg-white);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .module-select:hover, .module-select:focus {
+            border-color: var(--primary-blue);
+            box-shadow: var(--shadow-md);
+        }
+
         .btn-premium {
             padding: 10px 20px;
             border: none;
@@ -805,6 +844,32 @@
                 <span class="version">v3.0 Educativo</span>
             </div>
         </div>
+
+        <!-- BOTÓN DESPLEGABLE DE MÓDULOS .HTML -->
+        <div class="module-dropdown-container">
+            <label for="moduleSelect" class="dropdown-label">
+                <span>🧩</span>
+                <span>Seleccionar Módulo .HTML:</span>
+            </label>
+            <select id="moduleSelect" class="module-select" onchange="loadTemplate(this.value)">
+                <option value="tabla_periodica_interactiva.html">⚛️ Tabla Periódica Interactiva</option>
+                <option value="plantilla_escolar_carta_mx_autoajuste_y_areas_editables.html">📄 Carta MX - Índice + Texto</option>
+                <option value="hoja_milimetrica_interactiva.html">📐 Hoja Milimétrica</option>
+                <option value="biografia_profesional.html">👤 Biografía Profesional</option>
+                <option value="croquis_animado_v3.html">🗺️ Croquis Animado Casa ⇄ Escuela</option>
+                <option value="generador-fotos-infantiles.html">👶 Fotos Infantiles 2.5×3 cm</option>
+                <option value="buscador-imagenes-educativo.html">🎨 Buscador Imágenes Educativo</option>
+                <option value="generador-ia-imagenes.html">🎨 Generador IA Imágenes</option>
+                <option value="pixabay-descargador-lote.html">🌐 Pixabay Descarga Lote</option>
+                <option value="plantilla_circulos_jack.html">⭕ Círculos Jack Skellington</option>
+                <option value="plantilla-cuadros-imagenes-v2.html">🖼️ Cuadros Imágenes v2</option>
+                <option value="plantilla-imagenes-v2.html">🎨 Plantilla Imágenes v2</option>
+                <option value="tiras-calcomanias-lapiz.html">✏️ Tiras de Calcomanías para Lápiz</option>
+                <option value="etiquetas-libretas.html">🏷️ Etiquetas para Libretas</option>
+                <option value="material-educativo-reutilizable.html">📖 Material Reutilizable</option>
+            </select>
+        </div>
+
         <div class="header-actions">
             <button class="btn-premium btn-secondary" onclick="window.location.reload()">
                 <span>🔄</span>
@@ -830,7 +895,11 @@
                         <span>📝</span>
                         <span>Módulos de Texto</span>
                     </div>
-                    <button class="btn active" data-target="plantilla_escolar_carta_mx_autoajuste_y_areas_editables.html">
+                    <button class="btn active" data-target="tabla_periodica_interactiva.html">
+                        <span class="btn-icon">⚛️</span>
+                        <span>Tabla Periódica Interactiva</span>
+                    </button>
+                    <button class="btn" data-target="plantilla_escolar_carta_mx_autoajuste_y_areas_editables.html">
                         <span class="btn-icon">📄</span>
                         <span>Carta MX - Índice + Texto</span>
                     </button>
@@ -1012,9 +1081,9 @@
         }
 
         function buildMenuFromManifest(container, manifest) {
-            // manifest esperado:
-            // { sections: [ { title, icon, items:[ { label, icon, target } ] } ] }
             const sections = Array.isArray(manifest?.sections) ? manifest.sections : [];
+
+            populateDropdownFromManifest(manifest);
 
             for (const sec of sections) {
                 const section = document.createElement('div');
@@ -1036,14 +1105,12 @@
                     `;
                     section.appendChild(btn);
 
-                    // activa el primero como default (solo UI)
                     if (sec.makeFirstActive && idx === 0) btn.classList.add('active');
                 });
 
                 container.appendChild(section);
             }
 
-            // Extra: Biblioteca fija opcional si no viene en manifest
             if (!sections.some(s => (s.title || '').toLowerCase().includes('biblioteca'))) {
                 const lib = document.createElement('div');
                 lib.className = 'nav-section';
@@ -1055,6 +1122,53 @@
                     </button>`;
                 container.appendChild(lib);
             }
+        }
+
+        function populateDropdownFromManifest(manifest) {
+            const select = document.getElementById('moduleSelect');
+            if (!select) return;
+            select.innerHTML = '';
+
+            const sections = Array.isArray(manifest?.sections) ? manifest.sections : [];
+            sections.forEach(sec => {
+                const group = document.createElement('optgroup');
+                group.label = `${sec.icon || '🧩'} ${sec.title || 'Módulos'}`;
+                (sec.items || []).forEach(it => {
+                    const opt = document.createElement('option');
+                    opt.value = it.target;
+                    opt.textContent = `${it.icon || '📄'} ${it.label || it.target}`;
+                    if (it.target === currentTemplate) opt.selected = true;
+                    group.appendChild(opt);
+                });
+                select.appendChild(group);
+            });
+        }
+
+        function loadTemplate(target) {
+            if (!target) return;
+            currentTemplate = target;
+            const frame = document.getElementById('plantillaFrame');
+            const dashboard = document.getElementById('dashboardContainer');
+
+            document.querySelectorAll('.btn[data-target]').forEach(btn => {
+                if (btn.dataset.target === target) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            const select = document.getElementById('moduleSelect');
+            if (select && select.value !== target) {
+                select.value = target;
+            }
+
+            if (dashboard) dashboard.style.display = 'none';
+            if (frame) {
+                frame.style.display = 'block';
+                frame.src = target;
+            }
+            showIndicator('✓ Módulo cargado: ' + target);
         }
 
         function wireTemplateButtons() {
