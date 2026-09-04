@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tabla Periódica Interactiva · Laboratorio Arkaios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://js.puter.com/v2/"></script>
+<style>
+  :root{
+    --paper:#F6F1E4;
+    --paper-2:#EFE7D3;
+    --ink:#20211C;
+    --ink-soft:#5B5A4E;
+    --brass:#A9832B;
+    --brass-dark:#7C5E1E;
+    --line:#D9CFB4;
+
+    --c-alk:#C1443B;       /* Alcalino */
+    --c-alkt:#D98A2E;      /* Alcalinotérreo */
+    --c-trans:#C9A93A;     /* Metal de transición */
+    --c-pblock:#4C8C6B;    /* Metales del bloque p */
+    --c-metaloide:#3D8E85; /* Metaloide */
+    --c-nometal:#3D6EA5;   /* No metal */
+    --c-halogeno:#7A5AAE;  /* Halógeno */
+    --c-noble:#4A5C9E;     /* Gas noble */
+    --c-lant:#B85C9E;      /* Lantánido */
+    --c-act:#8B4FA8;       /* Actínido */
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 15% -10%, #FBF7EC 0%, transparent 60%),
+      var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    line-height:1.5;
+  }
+
+  .wrap{max-width:1400px;margin:0 auto;padding:28px 20px 80px;}
+
+  header.hero{
+    display:flex;flex-wrap:wrap;gap:24px;align-items:flex-end;justify-content:space-between;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:20px;margin-bottom:24px;
+  }
+  header.hero .title-block h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:clamp(28px, 4vw, 44px);
+    margin:0 0 6px 0;
+    letter-spacing:-0.01em;
+  }
+  header.hero .title-block p{
+    margin:0;color:var(--ink-soft);font-size:15px;max-width:52ch;
+  }
+  .hero-actions{display:flex;gap:10px;flex-wrap:wrap;}
+  .btn{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:13.5px;font-weight:600;
+    border:1.5px solid var(--ink);
+    background:transparent;color:var(--ink);
+    padding:10px 16px;border-radius:3px;cursor:pointer;
+    transition:transform .15s ease, background .15s ease, color .15s ease;
+  }
+  .btn:hover{background:var(--ink);color:var(--paper);transform:translateY(-1px);}
+  .btn.primary{background:var(--ink);color:var(--paper);}
+  .btn.primary:hover{background:var(--brass-dark);border-color:var(--brass-dark);}
+
+  .legend{
+    display:flex;flex-wrap:wrap;gap:10px 18px;margin:18px 0 26px;
+    font-size:12.5px;color:var(--ink-soft);
+  }
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .legend i{width:12px;height:12px;border-radius:2px;display:inline-block;border:1px solid rgba(0,0,0,.25);}
+
+  /* ---- GRID ---- */
+  .table-scroll{overflow-x:auto;padding-bottom:8px;}
+  .ptable{
+    display:grid;
+    grid-template-columns:repeat(18, minmax(58px,1fr));
+    grid-auto-rows:minmax(58px,1fr);
+    gap:4px;
+    min-width:1080px;
+  }
+  .fblock-gap{grid-column:1/-1;height:10px;}
+
+  .tile{
+    position:relative;
+    border-radius:4px;
+    border:1px solid rgba(0,0,0,.18);
+    padding:4px 5px 3px;
+    cursor:pointer;
+    display:flex;flex-direction:column;justify-content:space-between;
+    color:#fff;
+    overflow:hidden;
+    transition:transform .15s ease, box-shadow .15s ease, z-index 0s;
+  }
+  .tile:hover{
+    transform:translateY(-3px) scale(1.05);
+    box-shadow:0 10px 18px -6px rgba(0,0,0,.35);
+    z-index:5;
+  }
+  .tile:focus-visible{outline:3px solid var(--brass-dark);outline-offset:2px;}
+  .tile .z{font-family:'IBM Plex Mono',monospace;font-size:10px;opacity:.9;}
+  .tile .sym{font-family:'Fraunces',serif;font-weight:700;font-size:19px;line-height:1;}
+  .tile .nm{font-size:8.5px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .tile .wt{font-family:'IBM Plex Mono',monospace;font-size:8px;opacity:.85;}
+
+  .tile.placeholder{
+    background:repeating-linear-gradient(135deg, rgba(0,0,0,.05) 0 6px, rgba(0,0,0,.09) 6px 12px);
+    color:var(--ink-soft);
+    align-items:center;justify-content:center;text-align:center;
+    font-size:10.5px;cursor:default;
+  }
+  .tile.placeholder:hover{transform:none;box-shadow:none;}
+
+  .cat-alk{background:var(--c-alk);}
+  .cat-alkt{background:var(--c-alkt);}
+  .cat-trans{background:var(--c-trans); color:#2A2107;}
+  .cat-pblock{background:var(--c-pblock);}
+  .cat-metaloide{background:var(--c-metaloide);}
+  .cat-nometal{background:var(--c-nometal);}
+  .cat-halogeno{background:var(--c-halogeno);}
+  .cat-noble{background:var(--c-noble);}
+  .cat-lant{background:var(--c-lant);}
+  .cat-act{background:var(--c-act);}
+
+  footer.note{margin-top:30px;font-size:12.5px;color:var(--ink-soft);max-width:70ch;}
+  footer.note a{color:var(--brass-dark);}
+
+  /* ---- MODAL ---- */
+  .overlay{
+    position:fixed;inset:0;background:rgba(20,18,10,.55);
+    display:none;align-items:center;justify-content:center;padding:20px;z-index:100;
+    backdrop-filter:blur(2px);
+  }
+  .overlay.open{display:flex;}
+  .modal{
+    background:var(--paper);
+    border-radius:10px;
+    border:1px solid var(--line);
+    width:min(880px, 96vw);
+    max-height:92vh;overflow-y:auto;
+    box-shadow:0 30px 60px -15px rgba(0,0,0,.5);
+  }
+  .modal-head{
+    display:flex;justify-content:space-between;align-items:flex-start;
+    padding:22px 24px 0;
+  }
+  .modal-close{
+    background:none;border:none;font-size:22px;cursor:pointer;color:var(--ink-soft);
+    line-height:1;padding:4px;
+  }
+  .modal-close:hover{color:var(--ink);}
+
+  .modal-body{padding:6px 24px 26px;display:grid;grid-template-columns:260px 1fr;gap:26px;}
+  @media (max-width:640px){.modal-body{grid-template-columns:1fr;}}
+
+  .atom-stage{
+    perspective:700px;
+    height:230px;position:relative;
+    display:flex;align-items:center;justify-content:center;
+    margin-top:6px;
+  }
+  .atom3d{position:relative;transform-style:preserve-3d;}
+  .nucleus{
+    position:absolute;top:50%;left:50%;
+    width:46px;height:46px;margin:-23px 0 0 -23px;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif;font-weight:700;color:#fff;font-size:16px;
+    box-shadow:0 0 24px 6px rgba(0,0,0,.25) inset, 0 0 26px rgba(0,0,0,.25);
+  }
+  .ring{
+    position:absolute;top:50%;left:50%;
+    border:1.5px solid rgba(90,70,20,.55);
+    border-radius:50%;
+    transform-style:preserve-3d;
+  }
+  .ring-spin{
+    position:absolute;inset:0;
+    animation:spin linear infinite;
+    transform-style:preserve-3d;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .electron{
+    position:absolute;top:-4px;left:50%;
+    width:8px;height:8px;margin-left:-4px;
+    border-radius:50%;
+    background:var(--brass);
+    box-shadow:0 0 8px 2px rgba(169,131,43,.9);
+  }
+
+  .elem-meta{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft);text-align:center;margin-top:4px;}
+
+  .modal-info h2{
+    font-family:'Fraunces',serif;font-size:28px;margin:0 0 2px;
+  }
+  .modal-info .cat-tag{
+    display:inline-block;font-size:11.5px;font-weight:600;color:#fff;
+    padding:3px 10px;border-radius:20px;margin-bottom:14px;
+  }
+  .fact-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;margin-bottom:16px;
+  }
+  .fact{border-top:1px solid var(--line);padding-top:6px;}
+  .fact .k{font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.03em;}
+  .fact .v{font-family:'IBM Plex Mono',monospace;font-size:14.5px;margin-top:2px;}
+
+  .chat-box{
+    margin-top:8px;border-top:2px solid var(--ink);padding-top:14px;
+  }
+  .chat-box h3{font-family:'Fraunces',serif;font-size:16px;margin:0 0 4px;}
+  .chat-box p.hint{font-size:12px;color:var(--ink-soft);margin:0 0 10px;}
+  .chat-row{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
+  .chat-row input, .chat-row textarea{
+    font-family:'IBM Plex Sans',sans-serif;font-size:13px;
+    border:1.5px solid var(--line);border-radius:5px;padding:8px 10px;
+    background:#fff;flex:1;min-width:160px;
+  }
+  .chat-row textarea{resize:vertical;min-height:38px;}
+  .chat-log{
+    background:#fff;border:1px solid var(--line);border-radius:6px;
+    padding:10px;max-height:180px;overflow-y:auto;font-size:13px;margin-top:6px;
+  }
+  .chat-log .msg{margin-bottom:8px;}
+  .chat-log .msg b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--brass-dark);}
+  .chat-log .empty{color:var(--ink-soft);font-style:italic;}
+
+  .status-pill{
+    font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:20px;
+    display:inline-flex;align-items:center;gap:6px;
+  }
+  .status-pill::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor;}
+  .status-out{background:#F1E7D2;color:#9A6A1E;}
+  .status-in{background:#E1EEE3;color:#2E6B3E;}
+
+  @media print{
+    .hero-actions, .legend, footer.note, .overlay{display:none !important;}
+    body{background:#fff;}
+    .tile{color:#111 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <div class="title-block">
+      <h1>Tabla Periódica Interactiva</h1>
+      <p>Los 118 elementos, tal cual se ven en la tabla clásica — pero cada casilla se abre en un módulo con su átomo animado y una conexión directa a Claude para preguntar lo que quieras.</p>
+    </div>
+    <div class="hero-actions">
+      <button class="btn" onclick="window.print()">Imprimir / Guardar como PDF</button>
+      <button class="btn primary" id="btnHowTo">Cómo funciona</button>
+    </div>
+  </header>
+
+  <div class="legend" id="legend"></div>
+
+  <div class="table-scroll">
+    <div class="ptable" id="ptable"></div>
+  </div>
+
+  <footer class="note">
+    Peso atómico en <b>u</b> (masa atómica relativa). Las capas electrónicas del átomo animado usan el modelo simplificado de Bohr (2, 8, 8, 18, 18, 32, 32) con fines ilustrativos, no la configuración cuántica exacta. El asistente conversacional corre por <a href="https://developer.puter.com" target="_blank" rel="noopener">Puter.js</a> — gratis, sin claves de API incrustadas — inspirado en el proyecto <a href="https://github.com/djklmr2025/Gemini-lab" target="_blank" rel="noopener">Gemini-lab / ARKAIOS</a>.
+  </footer>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head">
+      <div></div>
+      <button class="modal-close" id="modalClose" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <div class="atom-stage" id="atomStage"></div>
+        <div class="elem-meta" id="elemMeta"></div>
+      </div>
+      <div class="modal-info">
+        <span class="cat-tag" id="catTag"></span>
+        <h2 id="elemName"></h2>
+        <div class="fact-grid" id="factGrid"></div>
+
+        <div class="chat-box">
+          <h3>Preguntar a Claude</h3>
+          <p class="hint">Corre gratis en tu navegador vía <a href="https://developer.puter.com" target="_blank" rel="noopener">Puter.js</a> — sin clave de API. Inicia sesión gratis en Puter una sola vez para poder preguntar.</p>
+          <div class="chat-row" id="puterAuthRow">
+            <span id="puterStatus" class="status-pill status-out">No conectado a Puter</span>
+            <button class="btn" id="puterLoginBtn" type="button">Conectar con Puter</button>
+          </div>
+          <div class="chat-row">
+            <textarea id="arkQuestion" placeholder="Pregunta sobre este elemento..."></textarea>
+            <button class="btn primary" id="arkAsk">Preguntar</button>
+          </div>
+          <div class="chat-log" id="arkLog"><div class="empty">La respuesta de Claude aparecerá aquí.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const ELEMENTS = [{"z": 1, "sym": "H", "name": "Hidrógeno", "w": 1.008, "cat": "nometal", "period": 1, "group": 1, "year": 1766, "disc": "Henry Cavendish", "shells": [1]}, {"z": 2, "sym": "He", "name": "Helio", "w": 4.003, "cat": "noble", "period": 1, "group": 18, "year": 1868, "disc": "Janssen y Lockyer", "shells": [2]}, {"z": 3, "sym": "Li", "name": "Litio", "w": 6.941, "cat": "alk", "period": 2, "group": 1, "year": 1817, "disc": "Johan A. Arfwedson", "shells": [2, 1]}, {"z": 4, "sym": "Be", "name": "Berilio", "w": 9.012, "cat": "alkt", "period": 2, "group": 2, "year": 1798, "disc": "Louis N. Vauquelin", "shells": [2, 2]}, {"z": 5, "sym": "B", "name": "Boro", "w": 10.811, "cat": "metaloide", "period": 2, "group": 13, "year": 1808, "disc": "Davy, Gay-Lussac y Thénard", "shells": [2, 3]}, {"z": 6, "sym": "C", "name": "Carbono", "w": 12.011, "cat": "nometal", "period": 2, "group": 14, "year": -3750, "disc": "Conocido desde la Antigüedad", "shells": [2, 4]}, {"z": 7, "sym": "N", "name": "Nitrógeno", "w": 14.007, "cat": "nometal", "period": 2, "group": 15, "year": 1772, "disc": "Daniel Rutherford", "shells": [2, 5]}, {"z": 8, "sym": "O", "name": "Oxígeno", "w": 15.999, "cat": "nometal", "period": 2, "group": 16, "year": 1774, "disc": "Priestley y Scheele", "shells": [2, 6]}, {"z": 9, "sym": "F", "name": "Flúor", "w": 18.998, "cat": "halogeno", "period": 2, "group": 17, "year": 1886, "disc": "Henri Moissan", "shells": [2, 7]}, {"z": 10, "sym": "Ne", "name": "Neón", "w": 20.18, "cat": "noble", "period": 2, "group": 18, "year": 1898, "disc": "Ramsay y Travers", "shells": [2, 8]}, {"z": 11, "sym": "Na", "name": "Sodio", "w": 22.99, "cat": "alk", "period": 3, "group": 1, "year": 1807, "disc": "Humphry Davy", "shells": [2, 8, 1]}, {"z": 12, "sym": "Mg", "name": "Magnesio", "w": 24.305, "cat": "alkt", "period": 3, "group": 2, "year": 1755, "disc": "Joseph Black", "shells": [2, 8, 2]}, {"z": 13, "sym": "Al", "name": "Aluminio", "w": 26.982, "cat": "pblock", "period": 3, "group": 13, "year": 1825, "disc": "Hans C. Ørsted", "shells": [2, 8, 3]}, {"z": 14, "sym": "Si", "name": "Silicio", "w": 28.086, "cat": "metaloide", "period": 3, "group": 14, "year": 1824, "disc": "Jöns J. Berzelius", "shells": [2, 8, 4]}, {"z": 15, "sym": "P", "name": "Fósforo", "w": 30.974, "cat": "nometal", "period": 3, "group": 15, "year": 1669, "disc": "Hennig Brand", "shells": [2, 8, 5]}, {"z": 16, "sym": "S", "name": "Azufre", "w": 32.066, "cat": "nometal", "period": 3, "group": 16, "year": -2000, "disc": "Conocido desde la Antigüedad", "shells": [2, 8, 6]}, {"z": 17, "sym": "Cl", "name": "Cloro", "w": 35.453, "cat": "halogeno", "period": 3, "group": 17, "year": 1774, "disc": "Carl W. Scheele", "shells": [2, 8, 7]}, {"z": 18, "sym": "Ar", "name": "Argón", "w": 39.948, "cat": "noble", "period": 3, "group": 18, "year": 1894, "disc": "Rayleigh y Ramsay", "shells": [2, 8, 8]}, {"z": 19, "sym": "K", "name": "Potasio", "w": 39.098, "cat": "alk", "period": 4, "group": 1, "year": 1807, "disc": "Humphry Davy", "shells": [2, 8, 8, 1]}, {"z": 20, "sym": "Ca", "name": "Calcio", "w": 40.078, "cat": "alkt", "period": 4, "group": 2, "year": 1808, "disc": "Humphry Davy", "shells": [2, 8, 8, 2]}, {"z": 21, "sym": "Sc", "name": "Escandio", "w": 44.956, "cat": "trans", "period": 4, "group": 3, "year": 1879, "disc": "Lars F. Nilson", "shells": [2, 8, 8, 3]}, {"z": 22, "sym": "Ti", "name": "Titanio", "w": 47.867, "cat": "trans", "period": 4, "group": 4, "year": 1791, "disc": "William Gregor", "shells": [2, 8, 8, 4]}, {"z": 23, "sym": "V", "name": "Vanadio", "w": 50.942, "cat": "trans", "period": 4, "group": 5, "year": 1801, "disc": "Andrés M. del Río", "shells": [2, 8, 8, 5]}, {"z": 24, "sym": "Cr", "name": "Cromo", "w": 51.996, "cat": "trans", "period": 4, "group": 6, "year": 1797, "disc": "Louis N. Vauquelin", "shells": [2, 8, 8, 6]}, {"z": 25, "sym": "Mn", "name": "Manganeso", "w": 54.938, "cat": "trans", "period": 4, "group": 7, "year": 1774, "disc": "Johan G. Gahn", "shells": [2, 8, 8, 7]}, {"z": 26, "sym": "Fe", "name": "Hierro", "w": 55.845, "cat": "trans", "period": 4, "group": 8, "year": -5000, "disc": "Conocido desde la Antigüedad", "shells": [2, 8, 8, 8]}, {"z": 27, "sym": "Co", "name": "Cobalto", "w": 58.933, "cat": "trans", "period": 4, "group": 9, "year": 1735, "disc": "Georg Brandt", "shells": [2, 8, 8, 9]}, {"z": 28, "sym": "Ni", "name": "Níquel", "w": 58.693, "cat": "trans", "period": 4, "group": 10, "year": 1751, "disc": "Axel F. Cronstedt", "shells": [2, 8, 8, 10]}, {"z": 29, "sym": "Cu", "name": "Cobre", "w": 63.546, "cat": "trans", "period": 4, "group": 11, "year": -9000, "disc": "Conocido desde la Antigüedad", "shells": [2, 8, 8, 11]}, {"z": 30, "sym": "Zn", "name": "Zinc", "w": 65.38, "cat": "trans", "period": 4, "group": 12, "year": 1746, "disc": "Andreas S. Marggraf", "shells": [2, 8, 8, 12]}, {"z": 31, "sym": "Ga", "name": "Galio", "w": 69.723, "cat": "pblock", "period": 4, "group": 13, "year": 1875, "disc": "Paul-Émile Lecoq de Boisbaudran", "shells": [2, 8, 8, 13]}, {"z": 32, "sym": "Ge", "name": "Germanio", "w": 72.631, "cat": "metaloide", "period": 4, "group": 14, "year": 1886, "disc": "Clemens Winkler", "shells": [2, 8, 8, 14]}, {"z": 33, "sym": "As", "name": "Arsénico", "w": 74.922, "cat": "metaloide", "period": 4, "group": 15, "year": 1250, "disc": "Alberto Magno", "shells": [2, 8, 8, 15]}, {"z": 34, "sym": "Se", "name": "Selenio", "w": 78.971, "cat": "nometal", "period": 4, "group": 16, "year": 1817, "disc": "Jöns J. Berzelius", "shells": [2, 8, 8, 16]}, {"z": 35, "sym": "Br", "name": "Bromo", "w": 79.904, "cat": "halogeno", "period": 4, "group": 17, "year": 1826, "disc": "Antoine J. Balard", "shells": [2, 8, 8, 17]}, {"z": 36, "sym": "Kr", "name": "Kriptón", "w": 84.798, "cat": "noble", "period": 4, "group": 18, "year": 1898, "disc": "Ramsay y Travers", "shells": [2, 8, 8, 18]}, {"z": 37, "sym": "Rb", "name": "Rubidio", "w": 84.468, "cat": "alk", "period": 5, "group": 1, "year": 1861, "disc": "Bunsen y Kirchhoff", "shells": [2, 8, 8, 18, 1]}, {"z": 38, "sym": "Sr", "name": "Estroncio", "w": 87.62, "cat": "alkt", "period": 5, "group": 2, "year": 1790, "disc": "Adair Crawford", "shells": [2, 8, 8, 18, 2]}, {"z": 39, "sym": "Y", "name": "Itrio", "w": 88.906, "cat": "trans", "period": 5, "group": 3, "year": 1794, "disc": "Johan Gadolin", "shells": [2, 8, 8, 18, 3]}, {"z": 40, "sym": "Zr", "name": "Circonio", "w": 91.224, "cat": "trans", "period": 5, "group": 4, "year": 1789, "disc": "Martin H. Klaproth", "shells": [2, 8, 8, 18, 4]}, {"z": 41, "sym": "Nb", "name": "Niobio", "w": 92.906, "cat": "trans", "period": 5, "group": 5, "year": 1801, "disc": "Charles Hatchett", "shells": [2, 8, 8, 18, 5]}, {"z": 42, "sym": "Mo", "name": "Molibdeno", "w": 95.95, "cat": "trans", "period": 5, "group": 6, "year": 1778, "disc": "Carl W. Scheele", "shells": [2, 8, 8, 18, 6]}, {"z": 43, "sym": "Tc", "name": "Tecnecio", "w": 98.907, "cat": "trans", "period": 5, "group": 7, "year": 1937, "disc": "Perrier y Segrè", "shells": [2, 8, 8, 18, 7]}, {"z": 44, "sym": "Ru", "name": "Rutenio", "w": 101.07, "cat": "trans", "period": 5, "group": 8, "year": 1844, "disc": "Karl E. Claus", "shells": [2, 8, 8, 18, 8]}, {"z": 45, "sym": "Rh", "name": "Rodio", "w": 102.906, "cat": "trans", "period": 5, "group": 9, "year": 1803, "disc": "William H. Wollaston", "shells": [2, 8, 8, 18, 9]}, {"z": 46, "sym": "Pd", "name": "Paladio", "w": 106.42, "cat": "trans", "period": 5, "group": 10, "year": 1803, "disc": "William H. Wollaston", "shells": [2, 8, 8, 18, 10]}, {"z": 47, "sym": "Ag", "name": "Plata", "w": 107.868, "cat": "trans", "period": 5, "group": 11, "year": -3000, "disc": "Conocido desde la Antigüedad", "shells": [2, 8, 8, 18, 11]}, {"z": 48, "sym": "Cd", "name": "Cadmio", "w": 112.414, "cat": "trans", "period": 5, "group": 12, "year": 1817, "disc": "Friedrich Stromeyer", "shells": [2, 8, 8, 18, 12]}, {"z": 49, "sym": "In", "name": "Indio", "w": 114.818, "cat": "pblock", "period": 5, "group": 13, "year": 1863, "disc": "Reich y Richter", "shells": [2, 8, 8, 18, 13]}, {"z": 50, "sym": "Sn", "name": "Estaño", "w": 118.711, "cat": "pblock", "period": 5, "group": 14, "year": -3500, "disc": "Conocido desde la Antigüedad", "shells": [2, 8, 8, 18, 14]}, {"z": 51, "sym": "Sb", "name": "Antimonio", "w": 121.76, "cat": "metaloide", "period": 5, "group": 15, "year": -3000, "disc": "Conocido desde la Antigüedad", "shells": [2, 8, 8, 18, 15]}, {"z": 52, "sym": "Te", "name": "Telurio", "w": 127.6, "cat": "metaloide", "period": 5, "group": 16, "year": 1782, "disc": "Franz-Joseph Müller von Reichenstein", "shells": [2, 8, 8, 18, 16]}, {"z": 53, "sym": "I", "name": "Yodo", "w": 126.904, "cat": "halogeno", "period": 5, "group": 17, "year": 1811, "disc": "Bernard Courtois", "shells": [2, 8, 8, 18, 17]}, {"z": 54, "sym": "Xe", "name": "Xenón", "w": 131.294, "cat": "noble", "period": 5, "group": 18, "year": 1898, "disc": "Ramsay y Travers", "shells": [2, 8, 8, 18, 18]}, {"z": 55, "sym": "Cs", "name": "Cesio", "w": 132.905, "cat": "alk", "period": 6, "group": 1, "year": 1860, "disc": "Bunsen y Kirchhoff", "shells": [2, 8, 8, 18, 18, 1]}, {"z": 56, "sym": "Ba", "name": "Bario", "w": 137.328, "cat": "alkt", "period": 6, "group": 2, "year": 1808, "disc": "Humphry Davy", "shells": [2, 8, 8, 18, 18, 2]}, {"z": 57, "sym": "La", "name": "Lantano", "w": 138.905, "cat": "lant", "period": 6, "group": 3, "year": 1839, "disc": "Carl G. Mosander", "shells": [2, 8, 8, 18, 18, 3]}, {"z": 58, "sym": "Ce", "name": "Cerio", "w": 140.116, "cat": "lant", "period": 6, "group": 3, "year": 1803, "disc": "Berzelius e Hisinger", "shells": [2, 8, 8, 18, 18, 4]}, {"z": 59, "sym": "Pr", "name": "Praseodimio", "w": 140.908, "cat": "lant", "period": 6, "group": 3, "year": 1885, "disc": "Carl A. von Welsbach", "shells": [2, 8, 8, 18, 18, 5]}, {"z": 60, "sym": "Nd", "name": "Neodimio", "w": 144.243, "cat": "lant", "period": 6, "group": 3, "year": 1885, "disc": "Carl A. von Welsbach", "shells": [2, 8, 8, 18, 18, 6]}, {"z": 61, "sym": "Pm", "name": "Prometio", "w": 144.913, "cat": "lant", "period": 6, "group": 3, "year": 1945, "disc": "Marinsky, Glendenin y Coryell", "shells": [2, 8, 8, 18, 18, 7]}, {"z": 62, "sym": "Sm", "name": "Samario", "w": 150.36, "cat": "lant", "period": 6, "group": 3, "year": 1879, "disc": "Paul-Émile Lecoq de Boisbaudran", "shells": [2, 8, 8, 18, 18, 8]}, {"z": 63, "sym": "Eu", "name": "Europio", "w": 151.964, "cat": "lant", "period": 6, "group": 3, "year": 1901, "disc": "Eugène-Anatole Demarçay", "shells": [2, 8, 8, 18, 18, 9]}, {"z": 64, "sym": "Gd", "name": "Gadolinio", "w": 157.25, "cat": "lant", "period": 6, "group": 3, "year": 1880, "disc": "Jean C. de Marignac", "shells": [2, 8, 8, 18, 18, 10]}, {"z": 65, "sym": "Tb", "name": "Terbio", "w": 158.925, "cat": "lant", "period": 6, "group": 3, "year": 1843, "disc": "Carl G. Mosander", "shells": [2, 8, 8, 18, 18, 11]}, {"z": 66, "sym": "Dy", "name": "Disprosio", "w": 162.5, "cat": "lant", "period": 6, "group": 3, "year": 1886, "disc": "Paul-Émile Lecoq de Boisbaudran", "shells": [2, 8, 8, 18, 18, 12]}, {"z": 67, "sym": "Ho", "name": "Holmio", "w": 164.93, "cat": "lant", "period": 6, "group": 3, "year": 1878, "disc": "Delafontaine y Soret", "shells": [2, 8, 8, 18, 18, 13]}, {"z": 68, "sym": "Er", "name": "Erbio", "w": 167.259, "cat": "lant", "period": 6, "group": 3, "year": 1843, "disc": "Carl G. Mosander", "shells": [2, 8, 8, 18, 18, 14]}, {"z": 69, "sym": "Tm", "name": "Tulio", "w": 168.934, "cat": "lant", "period": 6, "group": 3, "year": 1879, "disc": "Per T. Cleve", "shells": [2, 8, 8, 18, 18, 15]}, {"z": 70, "sym": "Yb", "name": "Iterbio", "w": 173.055, "cat": "lant", "period": 6, "group": 3, "year": 1878, "disc": "Jean C. de Marignac", "shells": [2, 8, 8, 18, 18, 16]}, {"z": 71, "sym": "Lu", "name": "Lutecio", "w": 174.967, "cat": "lant", "period": 6, "group": 3, "year": 1907, "disc": "Georges Urbain", "shells": [2, 8, 8, 18, 18, 17]}, {"z": 72, "sym": "Hf", "name": "Hafnio", "w": 178.49, "cat": "trans", "period": 6, "group": 4, "year": 1923, "disc": "Coster y Hevesy", "shells": [2, 8, 8, 18, 18, 18]}, {"z": 73, "sym": "Ta", "name": "Tantalio", "w": 180.948, "cat": "trans", "period": 6, "group": 5, "year": 1802, "disc": "Anders G. Ekeberg", "shells": [2, 8, 8, 18, 18, 19]}, {"z": 74, "sym": "W", "name": "Wolframio", "w": 183.84, "cat": "trans", "period": 6, "group": 6, "year": 1783, "disc": "Hermanos Elhuyar", "shells": [2, 8, 8, 18, 18, 20]}, {"z": 75, "sym": "Re", "name": "Renio", "w": 186.207, "cat": "trans", "period": 6, "group": 7, "year": 1925, "disc": "Noddack, Tacke y Berg", "shells": [2, 8, 8, 18, 18, 21]}, {"z": 76, "sym": "Os", "name": "Osmio", "w": 190.23, "cat": "trans", "period": 6, "group": 8, "year": 1803, "disc": "Smithson Tennant", "shells": [2, 8, 8, 18, 18, 22]}, {"z": 77, "sym": "Ir", "name": "Iridio", "w": 192.217, "cat": "trans", "period": 6, "group": 9, "year": 1803, "disc": "Smithson Tennant", "shells": [2, 8, 8, 18, 18, 23]}, {"z": 78, "sym": "Pt", "name": "Platino", "w": 195.085, "cat": "trans", "period": 6, "group": 10, "year": 1735, "disc": "Antonio de Ulloa", "shells": [2, 8, 8, 18, 18, 24]}, {"z": 79, "sym": "Au", "name": "Oro", "w": 196.967, "cat": "trans", "period": 6, "group": 11, "year": -4000, "disc": "Conocido desde la Antigüedad", "shells": [2, 8, 8, 18, 18, 25]}, {"z": 80, "sym": "Hg", "name": "Mercurio", "w": 200.592, "cat": "trans", "period": 6, "group": 12, "year": -1500, "disc": "Conocido desde la Antigüedad", "shells": [2, 8, 8, 18, 18, 26]}, {"z": 81, "sym": "Tl", "name": "Talio", "w": 204.383, "cat": "pblock", "period": 6, "group": 13, "year": 1861, "disc": "William Crookes", "shells": [2, 8, 8, 18, 18, 27]}, {"z": 82, "sym": "Pb", "name": "Plomo", "w": 207.2, "cat": "pblock", "period": 6, "group": 14, "year": -7000, "disc": "Conocido desde la Antigüedad", "shells": [2, 8, 8, 18, 18, 28]}, {"z": 83, "sym": "Bi", "name": "Bismuto", "w": 208.98, "cat": "pblock", "period": 6, "group": 15, "year": 1753, "disc": "Claude-François Geoffroy", "shells": [2, 8, 8, 18, 18, 29]}, {"z": 84, "sym": "Po", "name": "Polonio", "w": 208.982, "cat": "metaloide", "period": 6, "group": 16, "year": 1898, "disc": "Marie Curie", "shells": [2, 8, 8, 18, 18, 30]}, {"z": 85, "sym": "At", "name": "Astato", "w": 209.987, "cat": "halogeno", "period": 6, "group": 17, "year": 1940, "disc": "Corson, MacKenzie y Segrè", "shells": [2, 8, 8, 18, 18, 31]}, {"z": 86, "sym": "Rn", "name": "Radón", "w": 222.018, "cat": "noble", "period": 6, "group": 18, "year": 1900, "disc": "Friedrich E. Dorn", "shells": [2, 8, 8, 18, 18, 32]}, {"z": 87, "sym": "Fr", "name": "Francio", "w": 223.02, "cat": "alk", "period": 7, "group": 1, "year": 1939, "disc": "Marguerite Perey", "shells": [2, 8, 8, 18, 18, 32, 1]}, {"z": 88, "sym": "Ra", "name": "Radio", "w": 226.025, "cat": "alkt", "period": 7, "group": 2, "year": 1898, "disc": "Marie y Pierre Curie", "shells": [2, 8, 8, 18, 18, 32, 2]}, {"z": 89, "sym": "Ac", "name": "Actinio", "w": 227.028, "cat": "act", "period": 7, "group": 3, "year": 1899, "disc": "André-Louis Debierne", "shells": [2, 8, 8, 18, 18, 32, 3]}, {"z": 90, "sym": "Th", "name": "Torio", "w": 232.038, "cat": "act", "period": 7, "group": 3, "year": 1828, "disc": "Jöns J. Berzelius", "shells": [2, 8, 8, 18, 18, 32, 4]}, {"z": 91, "sym": "Pa", "name": "Protactinio", "w": 231.036, "cat": "act", "period": 7, "group": 3, "year": 1913, "disc": "Fajans y Göhring", "shells": [2, 8, 8, 18, 18, 32, 5]}, {"z": 92, "sym": "U", "name": "Uranio", "w": 238.029, "cat": "act", "period": 7, "group": 3, "year": 1789, "disc": "Martin H. Klaproth", "shells": [2, 8, 8, 18, 18, 32, 6]}, {"z": 93, "sym": "Np", "name": "Neptunio", "w": 237.048, "cat": "act", "period": 7, "group": 3, "year": 1940, "disc": "McMillan y Abelson", "shells": [2, 8, 8, 18, 18, 32, 7]}, {"z": 94, "sym": "Pu", "name": "Plutonio", "w": 244.064, "cat": "act", "period": 7, "group": 3, "year": 1940, "disc": "Equipo de Glenn Seaborg", "shells": [2, 8, 8, 18, 18, 32, 8]}, {"z": 95, "sym": "Am", "name": "Americio", "w": 243.061, "cat": "act", "period": 7, "group": 3, "year": 1944, "disc": "Equipo de Glenn Seaborg", "shells": [2, 8, 8, 18, 18, 32, 9]}, {"z": 96, "sym": "Cm", "name": "Curio", "w": 247.07, "cat": "act", "period": 7, "group": 3, "year": 1944, "disc": "Equipo de Glenn Seaborg", "shells": [2, 8, 8, 18, 18, 32, 10]}, {"z": 97, "sym": "Bk", "name": "Berkelio", "w": 247.07, "cat": "act", "period": 7, "group": 3, "year": 1949, "disc": "Equipo de Glenn Seaborg", "shells": [2, 8, 8, 18, 18, 32, 11]}, {"z": 98, "sym": "Cf", "name": "Californio", "w": 251.08, "cat": "act", "period": 7, "group": 3, "year": 1950, "disc": "Equipo de Glenn Seaborg", "shells": [2, 8, 8, 18, 18, 32, 12]}, {"z": 99, "sym": "Es", "name": "Einstenio", "w": 254, "cat": "act", "period": 7, "group": 3, "year": 1952, "disc": "Equipo de Ghiorso", "shells": [2, 8, 8, 18, 18, 32, 13]}, {"z": 100, "sym": "Fm", "name": "Fermio", "w": 257.095, "cat": "act", "period": 7, "group": 3, "year": 1952, "disc": "Equipo de Ghiorso", "shells": [2, 8, 8, 18, 18, 32, 14]}, {"z": 101, "sym": "Md", "name": "Mendelevio", "w": 258.1, "cat": "act", "period": 7, "group": 3, "year": 1955, "disc": "Equipo de Ghiorso", "shells": [2, 8, 8, 18, 18, 32, 15]}, {"z": 102, "sym": "No", "name": "Nobelio", "w": 259.101, "cat": "act", "period": 7, "group": 3, "year": 1966, "disc": "Instituto Conjunto de Dubná", "shells": [2, 8, 8, 18, 18, 32, 16]}, {"z": 103, "sym": "Lr", "name": "Laurencio", "w": 262, "cat": "act", "period": 7, "group": 3, "year": 1961, "disc": "Laboratorio de Berkeley", "shells": [2, 8, 8, 18, 18, 32, 17]}, {"z": 104, "sym": "Rf", "name": "Rutherfordio", "w": 261, "cat": "trans", "period": 7, "group": 4, "year": 1964, "disc": "Dubná / Berkeley", "shells": [2, 8, 8, 18, 18, 32, 18]}, {"z": 105, "sym": "Db", "name": "Dubnio", "w": 262, "cat": "trans", "period": 7, "group": 5, "year": 1970, "disc": "Laboratorio de Berkeley", "shells": [2, 8, 8, 18, 18, 32, 19]}, {"z": 106, "sym": "Sg", "name": "Seaborgio", "w": 266, "cat": "trans", "period": 7, "group": 6, "year": 1974, "disc": "Berkeley / Dubná", "shells": [2, 8, 8, 18, 18, 32, 20]}, {"z": 107, "sym": "Bh", "name": "Bohrio", "w": 264, "cat": "trans", "period": 7, "group": 7, "year": 1981, "disc": "GSI Darmstadt", "shells": [2, 8, 8, 18, 18, 32, 21]}, {"z": 108, "sym": "Hs", "name": "Hassio", "w": 269, "cat": "trans", "period": 7, "group": 8, "year": 1984, "disc": "GSI Darmstadt", "shells": [2, 8, 8, 18, 18, 32, 22]}, {"z": 109, "sym": "Mt", "name": "Meitnerio", "w": 268, "cat": "trans", "period": 7, "group": 9, "year": 1982, "disc": "GSI Darmstadt", "shells": [2, 8, 8, 18, 18, 32, 23]}, {"z": 110, "sym": "Ds", "name": "Darmstadtio", "w": 269, "cat": "trans", "period": 7, "group": 10, "year": 1994, "disc": "GSI Darmstadt", "shells": [2, 8, 8, 18, 18, 32, 24]}, {"z": 111, "sym": "Rg", "name": "Roentgenio", "w": 272, "cat": "trans", "period": 7, "group": 11, "year": 1994, "disc": "GSI Darmstadt", "shells": [2, 8, 8, 18, 18, 32, 25]}, {"z": 112, "sym": "Cn", "name": "Copernicio", "w": 277, "cat": "trans", "period": 7, "group": 12, "year": 1996, "disc": "GSI Darmstadt", "shells": [2, 8, 8, 18, 18, 32, 26]}, {"z": 113, "sym": "Nh", "name": "Nihonio", "w": 286, "cat": "pblock", "period": 7, "group": 13, "year": 2004, "disc": "RIKEN, Japón", "shells": [2, 8, 8, 18, 18, 32, 27]}, {"z": 114, "sym": "Fl", "name": "Flerovio", "w": 289, "cat": "pblock", "period": 7, "group": 14, "year": 1998, "disc": "Instituto Conjunto de Dubná", "shells": [2, 8, 8, 18, 18, 32, 28]}, {"z": 115, "sym": "Mc", "name": "Moscovio", "w": 290, "cat": "pblock", "period": 7, "group": 15, "year": 2003, "disc": "Dubná / Oak Ridge", "shells": [2, 8, 8, 18, 18, 32, 29]}, {"z": 116, "sym": "Lv", "name": "Livermorio", "w": 293, "cat": "pblock", "period": 7, "group": 16, "year": 2000, "disc": "Dubná / Livermore", "shells": [2, 8, 8, 18, 18, 32, 30]}, {"z": 117, "sym": "Ts", "name": "Teneso", "w": 294, "cat": "halogeno", "period": 7, "group": 17, "year": 2010, "disc": "Dubná / Oak Ridge / Vanderbilt", "shells": [2, 8, 8, 18, 18, 32, 31]}, {"z": 118, "sym": "Og", "name": "Oganesón", "w": 294, "cat": "noble", "period": 7, "group": 18, "year": 2002, "disc": "Instituto Conjunto de Dubná", "shells": [2, 8, 8, 18, 18, 32, 32]}];
+
+const CAT_LABEL = {
+  alk:"Alcalino", alkt:"Alcalinotérreo", trans:"Metal de transición",
+  pblock:"Metales del bloque p", metaloide:"Metaloide", nometal:"No metal",
+  halogeno:"Halógeno", noble:"Gas noble", lant:"Lantánido", act:"Actínido"
+};
+const CAT_VAR = {
+  alk:"--c-alk", alkt:"--c-alkt", trans:"--c-trans", pblock:"--c-pblock",
+  metaloide:"--c-metaloide", nometal:"--c-nometal", halogeno:"--c-halogeno",
+  noble:"--c-noble", lant:"--c-lant", act:"--c-act"
+};
+
+// ---------- build legend ----------
+const legendEl = document.getElementById('legend');
+Object.keys(CAT_LABEL).forEach(k=>{
+  const s = document.createElement('span');
+  s.innerHTML = `<i style="background:var(${CAT_VAR[k]})"></i>${CAT_LABEL[k]}`;
+  legendEl.appendChild(s);
+});
+
+// ---------- build grid ----------
+const grid = document.getElementById('ptable');
+const byZ = {};
+ELEMENTS.forEach(e=> byZ[e.z]=e);
+
+function makeTile(e){
+  const d = document.createElement('div');
+  d.className = 'tile cat-'+e.cat;
+  d.style.gridColumn = e.group;
+  d.style.gridRow = e.period;
+  d.tabIndex = 0;
+  d.setAttribute('role','button');
+  d.setAttribute('aria-label', e.name+', elemento '+e.z);
+  d.innerHTML = `<span class="z">${e.z}</span><span class="sym">${e.sym}</span><span class="nm">${e.name}</span><span class="wt">${e.w}</span>`;
+  d.addEventListener('click', ()=>openElement(e.z));
+  d.addEventListener('keydown', ev=>{ if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); openElement(e.z);} });
+  return d;
+}
+
+// main grid: periods 1-7, groups 1-18 ; lanthanides/actinides get a placeholder row cell
+ELEMENTS.forEach(e=>{
+  const isLant = e.z>=57 && e.z<=71;
+  const isAct = e.z>=89 && e.z<=103;
+  if(isLant || isAct) return; // placed below
+  grid.appendChild(makeTile(e));
+});
+
+// placeholders in main grid
+function makePlaceholder(label, period){
+  const d = document.createElement('div');
+  d.className = 'tile placeholder';
+  d.style.gridColumn = 3;
+  d.style.gridRow = period;
+  d.textContent = label;
+  return d;
+}
+grid.appendChild(makePlaceholder('57–71', 6));
+grid.appendChild(makePlaceholder('89–103', 7));
+
+// gap row
+const gap = document.createElement('div');
+gap.className='fblock-gap';
+gap.style.gridRow = 8;
+grid.appendChild(gap);
+
+// lanthanide row (visual row 9), actinide row (visual row 10), columns 4..18
+ELEMENTS.filter(e=>e.z>=57&&e.z<=71).forEach((e,i)=>{
+  const t = makeTile(e);
+  t.style.gridColumn = 4+i;
+  t.style.gridRow = 9;
+  grid.appendChild(t);
+});
+ELEMENTS.filter(e=>e.z>=89&&e.z<=103).forEach((e,i)=>{
+  const t = makeTile(e);
+  t.style.gridColumn = 4+i;
+  t.style.gridRow = 10;
+  grid.appendChild(t);
+});
+
+// ---------- modal / atom animation ----------
+const overlay = document.getElementById('overlay');
+const atomStage = document.getElementById('atomStage');
+const elemMeta = document.getElementById('elemMeta');
+const elemName = document.getElementById('elemName');
+const catTag = document.getElementById('catTag');
+const factGrid = document.getElementById('factGrid');
+const arkLog = document.getElementById('arkLog');
+let currentEl = null;
+
+function yearLabel(y){
+  if(y<0) return Math.abs(y)+' a.C. (aprox.)';
+  return String(y);
+}
+
+function buildAtom(e){
+  atomStage.innerHTML = '';
+  const stage = document.createElement('div');
+  stage.className = 'atom3d';
+  const size = 200;
+  stage.style.width = size+'px';
+  stage.style.height = size+'px';
+
+  const nucleus = document.createElement('div');
+  nucleus.className = 'nucleus';
+  nucleus.style.background = `var(${CAT_VAR[e.cat]})`;
+  nucleus.textContent = e.sym;
+  stage.appendChild(nucleus);
+
+  const shells = e.shells;
+  const maxShells = shells.length;
+  shells.forEach((count, i)=>{
+    const radius = 26 + (i+1) * (size/2 - 26) / maxShells;
+    const ring = document.createElement('div');
+    ring.className = 'ring';
+    ring.style.width = (radius*2)+'px';
+    ring.style.height = (radius*2)+'px';
+    ring.style.marginLeft = (-radius)+'px';
+    ring.style.marginTop = (-radius)+'px';
+    ring.style.transform = `rotateX(72deg) rotateZ(${i*23}deg)`;
+
+    const spinner = document.createElement('div');
+    spinner.className = 'ring-spin';
+    spinner.style.animationDuration = (4 + i*2.4)+'s';
+
+    for(let j=0;j<count;j++){
+      const el = document.createElement('div');
+      el.className = 'electron';
+      const delay = -((j/count) * (4+i*2.4));
+      el.style.animation = `spin ${4+i*2.4}s linear infinite`;
+      el.style.animationDelay = delay+'s';
+      el.style.transformOrigin = `4px ${radius}px`;
+      spinner.appendChild(el);
+    }
+    ring.appendChild(spinner);
+    stage.appendChild(ring);
+  });
+
+  atomStage.appendChild(stage);
+}
+
+function openElement(z){
+  const e = byZ[z];
+  currentEl = e;
+  buildAtom(e);
+  elemMeta.textContent = `Z=${e.z} · capas: ${e.shells.join('-')}`;
+  elemName.textContent = `${e.name} (${e.sym})`;
+  catTag.textContent = CAT_LABEL[e.cat];
+  catTag.style.background = `var(${CAT_VAR[e.cat]})`;
+
+  factGrid.innerHTML = `
+    <div class="fact"><div class="k">Número atómico</div><div class="v">${e.z}</div></div>
+    <div class="fact"><div class="k">Peso atómico</div><div class="v">${e.w} u</div></div>
+    <div class="fact"><div class="k">Categoría</div><div class="v">${CAT_LABEL[e.cat]}</div></div>
+    <div class="fact"><div class="k">Período / Grupo</div><div class="v">${e.period} / ${e.group}</div></div>
+    <div class="fact"><div class="k">Descubrimiento</div><div class="v">${yearLabel(e.year)}</div></div>
+    <div class="fact"><div class="k">Atribuido a</div><div class="v" style="font-size:12.5px">${e.disc}</div></div>
+  `;
+
+  document.getElementById('arkQuestion').value =
+    `Cuéntame sobre el ${e.name} (${e.sym}, Z=${e.z}): su historia de descubrimiento, su peso atómico y algún compuesto derivado interesante.`;
+  arkLog.innerHTML = '<div class="empty">La respuesta de Claude aparecerá aquí.</div>';
+  refreshPuterAuthUI();
+
+  overlay.classList.add('open');
+}
+
+document.getElementById('modalClose').addEventListener('click', closeModal);
+overlay.addEventListener('click', (ev)=>{ if(ev.target===overlay) closeModal(); });
+document.addEventListener('keydown', ev=>{ if(ev.key==='Escape') closeModal(); });
+function closeModal(){
+  overlay.classList.remove('open');
+}
+
+document.getElementById('btnHowTo').addEventListener('click', ()=>{
+  alert(
+"Cómo usar esta tabla:\n\n"+
+"1. Haz clic en cualquier casilla para abrir el elemento.\n"+
+"2. Verás su átomo animado (modelo de capas simplificado) flotando sobre la ficha.\n"+
+"3. Debajo hay un cuadro para preguntarle a Claude sobre ese elemento — conéctate a Puter una vez (gratis) y ya puedes preguntar.\n"+
+"4. El botón 'Imprimir / Guardar como PDF' te da la tabla clásica lista para descargar o imprimir."
+  );
+});
+
+// ---------- ARKAIOS integration (Claude vía Puter.js — sin API key) ----------
+function logMsg(from, text){
+  const empty = arkLog.querySelector('.empty');
+  if(empty) empty.remove();
+  const div = document.createElement('div');
+  div.className = 'msg';
+  div.innerHTML = `<b>${from}</b>${text}`;
+  arkLog.appendChild(div);
+  arkLog.scrollTop = arkLog.scrollHeight;
+  return div;
+}
+
+const puterStatus = document.getElementById('puterStatus');
+const puterLoginBtn = document.getElementById('puterLoginBtn');
+
+async function refreshPuterAuthUI(){
+  try{
+    const signedIn = window.puter && puter.auth && puter.auth.isSignedIn ? puter.auth.isSignedIn() : false;
+    if(signedIn){
+      puterStatus.textContent = 'Conectado a Puter';
+      puterStatus.className = 'status-pill status-in';
+      puterLoginBtn.textContent = 'Cambiar de cuenta';
+    }else{
+      puterStatus.textContent = 'No conectado a Puter';
+      puterStatus.className = 'status-pill status-out';
+      puterLoginBtn.textContent = 'Conectar con Puter';
+    }
+  }catch(err){ /* puter.js aún no cargó */ }
+}
+
+puterLoginBtn.addEventListener('click', async ()=>{
+  puterLoginBtn.disabled = true;
+  try{
+    await puter.auth.signIn(); // abre la ventana emergente de login de Puter
+    await refreshPuterAuthUI();
+    logMsg('Sistema', 'Sesión de Puter conectada. Ya puedes preguntar.');
+  }catch(err){
+    logMsg('Sistema', 'No se completó el inicio de sesión de Puter: '+err.message);
+  }finally{
+    puterLoginBtn.disabled = false;
+  }
+});
+
+function extractReply(response){
+  if(typeof response === 'string') return response;
+  if(response && response.message && typeof response.message.content === 'string') return response.message.content;
+  if(response && Array.isArray(response.message && response.message.content)){
+    return response.message.content.map(c=>c.text || '').join(' ');
+  }
+  if(response && typeof response.text === 'string') return response.text;
+  if(response && typeof response.toString === 'function' && response.toString() !== '[object Object]') return response.toString();
+  return JSON.stringify(response);
+}
+
+document.getElementById('arkAsk').addEventListener('click', async ()=>{
+  const question = document.getElementById('arkQuestion').value.trim();
+  if(!question){ return; }
+  logMsg('Tú', question);
+
+  if(!(window.puter && puter.auth)){
+    logMsg('Sistema', 'Puter.js todavía no ha cargado. Espera un segundo y vuelve a intentar.');
+    return;
+  }
+
+  const thinkingDiv = logMsg('Claude', 'Pensando…');
+
+  try{
+    // Si el visitante aún no inició sesión en Puter, esto abre el login automáticamente.
+    const response = await puter.ai.chat(question, { model: 'anthropic/claude-sonnet-5' });
+    await refreshPuterAuthUI();
+    thinkingDiv.innerHTML = `<b>Claude</b>${extractReply(response)}`;
+  }catch(err){
+    thinkingDiv.remove();
+    logMsg('Sistema', 'No se pudo obtener respuesta de Claude. Detalle: '+err.message);
+  }
+});
+
+refreshPuterAuthUI();
+document.addEventListener('DOMContentLoaded', refreshPuterAuthUI);
+</script>
+</body>
+</html>
