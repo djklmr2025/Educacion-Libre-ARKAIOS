@@ -2482,29 +2482,46 @@ Ejemplo:
             try {
                 btn.disabled = true;
                 statusDiv.style.display = 'block';
-                statusDiv.textContent = '⏳ Transmitiendo tarea al Demonio de Agentes...';
+                statusDiv.textContent = '⏳ Conectando con Gemini-Lab Omni en Vercel...';
 
-                const response = await fetch('http://localhost:8788/api/bridge/publish', {
+                const targetUrl = window.location.origin.includes('vercel.app') 
+                    ? '/api/bridge' 
+                    : 'https://gemini-lab-nine.vercel.app/api/edu-agent';
+
+                const response = await fetch(targetUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        from: 'plantillero',
-                        to: 'geminiLab',
-                        type: 'TASK_DELEGATED',
-                        payload: {
-                            request: promptInput,
-                            currentTemplate: typeof currentTemplate !== 'undefined' ? currentTemplate : ''
-                        }
+                        request: promptInput,
+                        currentTemplate: typeof currentTemplate !== 'undefined' ? currentTemplate : ''
                     })
                 });
 
-                if (response.ok) {
-                    statusDiv.textContent = '✅ Tarea enviada exitosamente a Gemini-Lab Omni. Esperando respuesta...';
+                const data = await response.json();
+
+                if (response.ok && (data.ok || data.templateUrl)) {
+                    statusDiv.textContent = '✅ ¡Conectado con éxito a Gemini-Lab Online!';
+                    
+                    const result = data.geminiLabResult || data;
+                    if (result.templateFile) {
+                        loadTemplate(result.templateFile);
+                    }
+                    if (result.images && Array.isArray(result.images)) {
+                        const iframe = document.getElementById('plantillaFrame');
+                        setTimeout(() => {
+                            if (iframe && iframe.contentDocument) {
+                                const imgs = iframe.contentDocument.querySelectorAll('img');
+                                result.images.forEach((imgObj, i) => {
+                                    if (imgs[i]) imgs[i].src = imgObj.url || imgObj;
+                                });
+                            }
+                        }, 1000);
+                    }
                 } else {
-                    statusDiv.textContent = '⚠️ Demonio no detectado en puerto 8788. Asegúrate de ejecutar node daemon/arkaios-agent-bridge-daemon.js';
+                    statusDiv.textContent = '⚠️ ' + (data.error || 'Error al comunicarse con Gemini-Lab Online');
                 }
             } catch (err) {
-                statusDiv.textContent = 'ℹ️ Tarea en cola. Inicia el demonio inter-agentes (puerto 8788) para sincronización.';
+                statusDiv.textContent = '❌ Error de conexión online: ' + (err.message || err);
             } finally {
                 btn.disabled = false;
             }
