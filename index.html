@@ -2356,6 +2356,7 @@ Ejemplo:
             <button class="puter-ai-tab active" onclick="switchPuterTab('autofill')">🪄 Auto-Rellenar</button>
             <button class="puter-ai-tab" onclick="switchPuterTab('image')">🎨 Generar Imagen</button>
             <button class="puter-ai-tab" onclick="switchPuterTab('chat')">💬 Consultas IA</button>
+            <button class="puter-ai-tab" onclick="switchPuterTab('coagent')">🤝 Gemini-Lab</button>
         </div>
 
         <div class="puter-ai-body" id="puterTabAutofill">
@@ -2413,7 +2414,102 @@ Ejemplo:
                 <button class="puter-ai-send" onclick="sendPuterChatMessage()">Enviar</button>
             </div>
         </div>
+
+        <div class="puter-ai-body" id="puterTabCoagent" style="display:none;">
+            <div style="font-size:12px; color:#475569; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
+                <strong style="color:#2563eb;">🤝 Co-Agente Gemini-Lab Omni (AETHYR)</strong>
+                <br><span style="font-size:11px; opacity:0.8;">Solicita tareas complejas, investigación o medios en tiempo real entre ambos agentes.</span>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <label style="font-size:12px; font-weight:600; color:#334155;">Delegar Tarea a Gemini-Lab:</label>
+                <textarea id="coagentTaskPrompt" placeholder="Ej: Busca 9 imágenes en Pexels de volcanes y prepara los datos para la plantilla activa..." style="width:100%; height:80px; padding:10px; border-radius:8px; border:1px solid #cbd5e1; font-size:12px; resize:none;"></textarea>
+            </div>
+
+            <button class="btn-premium btn-primary" onclick="delegateTaskToGeminiLab()" id="btnDelegateGeminiLab" style="width:100%; margin-top:8px;">
+                <span>📡</span>
+                <span>Enviar a Gemini-Lab Omni</span>
+            </button>
+
+            <div id="coagentStatus" style="font-size:11px; color:#64748b; text-align:center; display:none; margin-top:8px;"></div>
+        </div>
     </div>
+
+    <script>
+        // ===== CONEXIÓN AL DEMONIO DE AGENTES (ARKAIOS BRIDGE DAEMON) =====
+        (function initAgentDaemonBridge() {
+            const DAEMON_URL = 'http://localhost:8788';
+            
+            try {
+                const eventSource = new EventSource(`${DAEMON_URL}/api/bridge/events`);
+                
+                eventSource.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        console.log('🤖 [Bridge Daemon Event]:', data);
+                        
+                        if (data.type === 'TEMPLATE_AUTOFILL' || data.type === 'MEDIA_RESULT') {
+                            if (data.payload && data.payload.fields) {
+                                const iframe = document.getElementById('plantillaFrame');
+                                if (iframe && iframe.style.display !== 'none') {
+                                    const doc = iframe.contentDocument || iframe.contentWindow.document;
+                                    Object.entries(data.payload.fields).forEach(([key, val]) => {
+                                        const el = doc.getElementById(key) || doc.querySelector(`[name="${key}"]`);
+                                        if (el) {
+                                            el.value = val;
+                                            el.dispatchEvent(new Event('input', { bubbles: true }));
+                                            el.dispatchEvent(new Event('change', { bubbles: true }));
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    } catch (e) {}
+                };
+            } catch (err) {}
+        })();
+
+        async function delegateTaskToGeminiLab() {
+            const promptInput = document.getElementById('coagentTaskPrompt').value.trim();
+            const statusDiv = document.getElementById('coagentStatus');
+            const btn = document.getElementById('btnDelegateGeminiLab');
+
+            if (!promptInput) {
+                alert('Escribe una instrucción para delegar a Gemini-Lab.');
+                return;
+            }
+
+            try {
+                btn.disabled = true;
+                statusDiv.style.display = 'block';
+                statusDiv.textContent = '⏳ Transmitiendo tarea al Demonio de Agentes...';
+
+                const response = await fetch('http://localhost:8788/api/bridge/publish', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        from: 'plantillero',
+                        to: 'geminiLab',
+                        type: 'TASK_DELEGATED',
+                        payload: {
+                            request: promptInput,
+                            currentTemplate: typeof currentTemplate !== 'undefined' ? currentTemplate : ''
+                        }
+                    })
+                });
+
+                if (response.ok) {
+                    statusDiv.textContent = '✅ Tarea enviada exitosamente a Gemini-Lab Omni. Esperando respuesta...';
+                } else {
+                    statusDiv.textContent = '⚠️ Demonio no detectado en puerto 8788. Asegúrate de ejecutar node daemon/arkaios-agent-bridge-daemon.js';
+                }
+            } catch (err) {
+                statusDiv.textContent = 'ℹ️ Tarea en cola. Inicia el demonio inter-agentes (puerto 8788) para sincronización.';
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
 
 </body>
 
