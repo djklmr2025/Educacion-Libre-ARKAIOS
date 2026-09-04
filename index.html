@@ -832,6 +832,189 @@
                 gap: 8px;
             }
         }
+
+        /* ========== ASISTENTE IA GLOBAL (PUTER / CLAUDE) ========== */
+        .puter-ai-trigger {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 9999;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: #ffffff;
+            border: none;
+            border-radius: 30px;
+            padding: 12px 20px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .puter-ai-trigger:hover {
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 15px 30px -5px rgba(37, 99, 235, 0.7);
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+        }
+        .puter-ai-drawer {
+            position: fixed;
+            bottom: 85px;
+            right: 24px;
+            width: 420px;
+            max-width: calc(100vw - 32px);
+            height: 560px;
+            max-height: calc(100vh - 120px);
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+            border: 1px solid var(--border-color);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(20px) scale(0.95);
+        }
+        .puter-ai-drawer.open {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0) scale(1);
+        }
+        .puter-ai-header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: #ffffff;
+            padding: 14px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .puter-ai-header h3 {
+            font-size: 15px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+        }
+        .puter-ai-close {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .puter-ai-tabs {
+            display: flex;
+            background: #f1f5f9;
+            padding: 4px;
+            gap: 4px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .puter-ai-tab {
+            flex: 1;
+            padding: 8px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-radius: 8px;
+            color: #64748b;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .puter-ai-tab.active {
+            background: #ffffff;
+            color: #2563eb;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .puter-ai-body {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .puter-ai-chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 200px;
+        }
+        .msg {
+            max-width: 85%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        .msg.user {
+            align-self: flex-end;
+            background: #2563eb;
+            color: #ffffff;
+            border-bottom-right-radius: 2px;
+        }
+        .msg.ai {
+            align-self: flex-start;
+            background: #f1f5f9;
+            color: #1e293b;
+            border-bottom-left-radius: 2px;
+        }
+        .puter-ai-footer {
+            padding: 12px 16px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            gap: 8px;
+            background: #ffffff;
+        }
+        .puter-ai-input {
+            flex: 1;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            font-size: 13px;
+            outline: none;
+        }
+        .puter-ai-input:focus {
+            border-color: #2563eb;
+        }
+        .puter-ai-send {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .quick-actions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+        .quick-btn {
+            background: #e0e7ff;
+            color: #3730a3;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .quick-btn:hover {
+            background: #c7d2fe;
+        }
     </style>
 </head>
 
@@ -1694,6 +1877,11 @@
             document.querySelectorAll('.btn[data-target]').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.target === target);
             });
+
+            // Actualiza el escáner del Asistente IA
+            setTimeout(() => {
+                if (typeof scanActiveTemplate === 'function') scanActiveTemplate();
+            }, 600);
         }
 
         // ===== WORKSPACE =====
@@ -1938,8 +2126,296 @@ if (saveBtn) {
     }
   });
 }
+
+        // ===== ASISTENTE IA GLOBAL (PUTER / CLAUDE) =====
+        function togglePuterAiDrawer() {
+            const drawer = document.getElementById('puterAiDrawer');
+            drawer.classList.toggle('open');
+            if (drawer.classList.contains('open')) {
+                scanActiveTemplate();
+            }
+        }
+
+        function switchPuterTab(tabName) {
+            document.querySelectorAll('.puter-ai-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('puterTabAutofill').style.display = 'none';
+            document.getElementById('puterTabImage').style.display = 'none';
+            document.getElementById('puterTabChat').style.display = 'none';
+
+            if (tabName === 'autofill') {
+                document.querySelector('[onclick="switchPuterTab(\'autofill\')"]').classList.add('active');
+                document.getElementById('puterTabAutofill').style.display = 'flex';
+                scanActiveTemplate();
+            } else if (tabName === 'image') {
+                document.querySelector('[onclick="switchPuterTab(\'image\')"]').classList.add('active');
+                document.getElementById('puterTabImage').style.display = 'flex';
+            } else if (tabName === 'chat') {
+                document.querySelector('[onclick="switchPuterTab(\'chat\')"]').classList.add('active');
+                document.getElementById('puterTabChat').style.display = 'flex';
+            }
+        }
+
+        function setQuickPrompt(promptText) {
+            document.getElementById('aiAutofillPrompt').value = promptText;
+        }
+
+        function scanActiveTemplate() {
+            const display = document.getElementById('currentTemplateNameDisplay');
+            const countDisplay = document.getElementById('currentTemplateFieldsCount');
+            const iframe = document.getElementById('plantillaFrame');
+
+            if (!iframe || iframe.style.display === 'none') {
+                display.textContent = 'Menú Principal (Dashboard)';
+                countDisplay.textContent = 'Selecciona un módulo .html en el menú para comenzar';
+                return;
+            }
+
+            display.textContent = currentTemplate || 'Plantilla Activa';
+
+            try {
+                const doc = iframe.contentDocument || iframe.contentWindow.document;
+                if (!doc) {
+                    countDisplay.textContent = 'Esperando a que la plantilla cargue...';
+                    return;
+                }
+
+                const inputs = doc.querySelectorAll('input:not([type="hidden"]):not([type="button"]):not([type="submit"]), textarea, select, [contenteditable="true"]');
+                countDisplay.textContent = `Campos editables detectados: ${inputs.length}`;
+            } catch (e) {
+                countDisplay.textContent = 'Acceso a plantilla activo';
+            }
+        }
+
+        async function runPuterAutoFill() {
+            const promptInput = document.getElementById('aiAutofillPrompt').value.trim();
+            const statusDiv = document.getElementById('autofillStatus');
+            const btn = document.getElementById('btnPuterAutoFill');
+            const iframe = document.getElementById('plantillaFrame');
+
+            if (!promptInput) {
+                alert('Por favor escribe un tema o instrucción para la plantilla.');
+                return;
+            }
+
+            if (!iframe || iframe.style.display === 'none') {
+                alert('Por favor abre primero un módulo o plantilla .html desde el menú.');
+                return;
+            }
+
+            try {
+                btn.disabled = true;
+                statusDiv.style.display = 'block';
+                statusDiv.textContent = '⏳ Escaneando plantilla y consultando a Claude vía Puter AI...';
+
+                const doc = iframe.contentDocument || iframe.contentWindow.document;
+                const inputs = Array.from(doc.querySelectorAll('input:not([type="hidden"]):not([type="button"]):not([type="submit"]), textarea, [contenteditable="true"]'));
+
+                if (inputs.length === 0) {
+                    statusDiv.textContent = '⚠️ No se encontraron campos editables estándar en la plantilla actual.';
+                    btn.disabled = false;
+                    return;
+                }
+
+                const fieldsMeta = inputs.map((inp, idx) => {
+                    const label = inp.labels?.[0]?.textContent || inp.placeholder || inp.name || inp.id || `campo_${idx + 1}`;
+                    return { index: idx, id: inp.id || `field_${idx}`, label: label.trim() };
+                });
+
+                const systemPrompt = `Eres un asistente educativo profesional de ARKAIOS. El usuario quiere rellenar la plantilla escolar "${currentTemplate}" sobre el siguiente tema: "${promptInput}".
+
+Aquí está la lista de campos de la plantilla:
+${JSON.stringify(fieldsMeta)}
+
+RESPONDE EXCLUSIVAMENTE EN FORMATO JSON VÁLIDO (un objeto donde la clave es el id o el index y el valor es el texto para ese campo).
+Ejemplo:
+{
+  "0": "Valor para el primer campo",
+  "1": "Valor para el segundo campo"
+}`;
+
+                const aiResponse = await puter.ai.chat(systemPrompt, { model: 'claude-3-5-sonnet' });
+                const aiText = typeof aiResponse === 'string' ? aiResponse : (aiResponse.message?.content || aiResponse.text || JSON.stringify(aiResponse));
+
+                const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    const dataObj = JSON.parse(jsonMatch[0]);
+                    let filledCount = 0;
+
+                    inputs.forEach((inp, idx) => {
+                        const key = inp.id && dataObj[inp.id] ? inp.id : String(idx);
+                        if (dataObj[key] !== undefined) {
+                            if (inp.isContentEditable) {
+                                inp.textContent = dataObj[key];
+                            } else {
+                                inp.value = dataObj[key];
+                            }
+                            inp.dispatchEvent(new Event('input', { bubbles: true }));
+                            inp.dispatchEvent(new Event('change', { bubbles: true }));
+                            filledCount++;
+                        }
+                    });
+
+                    statusDiv.textContent = `✅ ¡Listo! Se rellenaron ${filledCount} campos automáticamente.`;
+                } else {
+                    statusDiv.textContent = 'ℹ️ Generación completada. Revisa el chat para ver la respuesta.';
+                }
+            } catch (err) {
+                console.error('Error en Puter AutoFill:', err);
+                statusDiv.textContent = '❌ Error al autocompletar: ' + (err.message || err);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function runPuterImageGen() {
+            const promptInput = document.getElementById('aiImagePrompt').value.trim();
+            const btn = document.getElementById('btnPuterImageGen');
+            const previewDiv = document.getElementById('imageGenPreview');
+            const previewImg = document.getElementById('generatedImgResult');
+            const iframe = document.getElementById('plantillaFrame');
+
+            if (!promptInput) {
+                alert('Escribe una descripción para la imagen.');
+                return;
+            }
+
+            try {
+                btn.disabled = true;
+                btn.textContent = '⏳ Generando imagen...';
+
+                const imageElement = await puter.ai.txt2img(promptInput);
+                const imgSrc = imageElement.src;
+
+                previewImg.src = imgSrc;
+                previewDiv.style.display = 'block';
+
+                if (iframe && iframe.style.display !== 'none') {
+                    const doc = iframe.contentDocument || iframe.contentWindow.document;
+                    const targetImg = doc.querySelector('img.editable-img, img.preview-img, img[data-ai-slot], .photo-placeholder img, #previewImg') || doc.querySelector('img');
+                    if (targetImg) {
+                        targetImg.src = imgSrc;
+                        alert('🎨 Imagen generada e inyectada exitosamente en la plantilla.');
+                    } else {
+                        alert('🎨 Imagen generada con éxito (se muestra la vista previa).');
+                    }
+                }
+            } catch (err) {
+                console.error('Error generando imagen:', err);
+                alert('❌ Error al generar imagen: ' + (err.message || err));
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🎨 Generar e Inyectar Imagen';
+            }
+        }
+
+        async function sendPuterChatMessage() {
+            const input = document.getElementById('puterChatInput');
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            const messagesDiv = document.getElementById('puterChatMessages');
+
+            const userMsgEl = document.createElement('div');
+            userMsgEl.className = 'msg user';
+            userMsgEl.textContent = msg;
+            messagesDiv.appendChild(userMsgEl);
+            input.value = '';
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            const aiMsgEl = document.createElement('div');
+            aiMsgEl.className = 'msg ai';
+            aiMsgEl.textContent = 'Pensando...';
+            messagesDiv.appendChild(aiMsgEl);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            try {
+                const fullPrompt = `Contexto: El usuario está viendo la plantilla escolar "${currentTemplate}". Pregunta: ${msg}`;
+                const response = await puter.ai.chat(fullPrompt, { model: 'claude-3-5-sonnet' });
+                const answer = typeof response === 'string' ? response : (response.message?.content || response.text || 'Sin respuesta');
+                aiMsgEl.textContent = answer;
+            } catch (err) {
+                aiMsgEl.textContent = '❌ Error de conexión: ' + (err.message || err);
+            }
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
     </script>
+
+    <!-- WIDGET ASISTENTE IA GLOBAL (PUTER / CLAUDE) -->
+    <button class="puter-ai-trigger" id="puterAiToggleBtn" onclick="togglePuterAiDrawer()">
+        <span>🤖</span>
+        <span>Asistente IA ARKAIOS</span>
+    </button>
+
+    <div class="puter-ai-drawer" id="puterAiDrawer">
+        <div class="puter-ai-header">
+            <h3>🤖 Copiloto IA Educativo <span style="font-size:10px; opacity:0.8; font-weight:normal;">(Puter/Claude)</span></h3>
+            <button class="puter-ai-close" onclick="togglePuterAiDrawer()">×</button>
+        </div>
+
+        <div class="puter-ai-tabs">
+            <button class="puter-ai-tab active" onclick="switchPuterTab('autofill')">🪄 Auto-Rellenar</button>
+            <button class="puter-ai-tab" onclick="switchPuterTab('image')">🎨 Generar Imagen</button>
+            <button class="puter-ai-tab" onclick="switchPuterTab('chat')">💬 Consultas IA</button>
+        </div>
+
+        <div class="puter-ai-body" id="puterTabAutofill">
+            <div style="font-size:12px; color:#475569; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
+                <strong style="color:#2563eb;">📌 Plantilla Detectada:</strong> <span id="currentTemplateNameDisplay">Ninguna seleccionada</span>
+                <br><span id="currentTemplateFieldsCount" style="font-size:11px; opacity:0.8;">Campos detectados: 0</span>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <label style="font-size:12px; font-weight:600; color:#334155;">Tema o Instrucción para la Plantilla:</label>
+                <textarea id="aiAutofillPrompt" placeholder="Ej: Rellena esta plantilla con información sobre la Revolución Mexicana, o los datos del elemento Titanio..." style="width:100%; height:80px; padding:10px; border-radius:8px; border:1px solid #cbd5e1; font-size:12px; resize:none;"></textarea>
+            </div>
+
+            <div class="quick-actions">
+                <button class="quick-btn" onclick="setQuickPrompt('Rellena la plantilla con contenido sobre Ciencias Naturales para primaria')">🔬 Ciencias</button>
+                <button class="quick-btn" onclick="setQuickPrompt('Genera datos históricos detallados para esta plantilla')">📜 Historia</button>
+                <button class="quick-btn" onclick="setQuickPrompt('Rellena con un ejercicio práctico de matemáticas')">📐 Matemáticas</button>
+            </div>
+
+            <button class="btn-premium btn-primary" onclick="runPuterAutoFill()" id="btnPuterAutoFill" style="width:100%; margin-top:8px;">
+                <span>🪄</span>
+                <span>Generar y Rellenar Plantilla</span>
+            </button>
+
+            <div id="autofillStatus" style="font-size:11px; color:#64748b; text-align:center; display:none;"></div>
+        </div>
+
+        <div class="puter-ai-body" id="puterTabImage" style="display:none;">
+            <div style="font-size:12px; color:#475569; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
+                <strong style="color:#2563eb;">🎨 Generador de Imágenes IA (Puter)</strong>
+                <br><span style="font-size:11px; opacity:0.8;">Crea ilustraciones educativas para insertar en tus documentos.</span>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <label style="font-size:12px; font-weight:600; color:#334155;">Descripción de la Imagen:</label>
+                <textarea id="aiImagePrompt" placeholder="Ej: Un átomo brillante estilo acuarela educativa, o un mapa antiguo..." style="width:100%; height:80px; padding:10px; border-radius:8px; border:1px solid #cbd5e1; font-size:12px; resize:none;"></textarea>
+            </div>
+
+            <button class="btn-premium btn-primary" onclick="runPuterImageGen()" id="btnPuterImageGen" style="width:100%; margin-top:8px;">
+                <span>🎨</span>
+                <span>Generar e Inyectar Imagen</span>
+            </button>
+
+            <div id="imageGenPreview" style="margin-top:10px; text-align:center; display:none;">
+                <img id="generatedImgResult" style="max-width:100%; max-height:160px; border-radius:8px; border:1px solid #e2e8f0;">
+            </div>
+        </div>
+
+        <div class="puter-ai-body" id="puterTabChat" style="display:none;">
+            <div class="puter-ai-chat-messages" id="puterChatMessages">
+                <div class="msg ai">Hola 👋 Soy el Asistente IA de ARKAIOS. ¿En qué te ayudo con esta plantilla?</div>
+            </div>
+            <div class="puter-ai-footer">
+                <input type="text" class="puter-ai-input" id="puterChatInput" placeholder="Hazme una pregunta pedagógica..." onkeydown="if(event.key==='Enter') sendPuterChatMessage()">
+                <button class="puter-ai-send" onclick="sendPuterChatMessage()">Enviar</button>
+            </div>
+        </div>
+    </div>
 
 </body>
 
 </html>
+
