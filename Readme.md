@@ -23,6 +23,7 @@ El **Centro de Plantillas Educativas ARKAIOS** es una plataforma web de código 
 
 | Recurso | Descripción | Aplicación Pedagógica |
 |:---:|---|---|
+| ⚛️ **Tabla Periódica Interactiva** | Módulo interactivo de 118 elementos con órbitas de electrones, fichas informativas y consulta IA (Puter / Claude). | Química, ciencias naturales, laboratorio escolar e investigación. |
 | 📄 **Carta MX** | Formato académico con áreas editables e índice automático. | Ensayos, reportes y tareas formales. |
 | 🗺️ **Croquis Animado** | Ruta animada en mapa interactivo (OSRM/OSM), bitácora en vivo y exportación a PDF. | Geografía, orientación espacial, croquis casa-escuela. |
 | 👶 **Fotos Infantiles** | Generador de grillas (2.5×3cm) con control posicional por renglón. | Identificaciones y registros escolares. |
@@ -33,6 +34,10 @@ El **Centro de Plantillas Educativas ARKAIOS** es una plataforma web de código 
 | 🏷️ **Etiquetas para Libretas y Cuadernos** | Constructor libre de etiquetas profesionales sobre hoja carta: campos de texto que se agregan, quitan y arrastran a donde se necesiten, caja de datos para llenar a mano, e imagen decorativa en PNG con tamaño/posición/opacidad ajustables. | Rotular cuadernos, libretas y libros de texto con diseño propio. |
 
 ---
+
+<p align="center">
+  <img src="https://github.com/djklmr2025/Eduacion-Libre-Proyecto-ARKAIOS/blob/MAIN/tabla-periodica-demo.png?raw=true" width="900" alt="Tabla Periódica Interactiva e Integración Puter AI">
+</p>
 
 <p align="center">
   <img src="https://github.com/djklmr2025/Eduacion-Libre-Proyecto-ARKAIOS/blob/MAIN/ejemplo%20de%20archivo%20resultante.png?raw=true" width="800" height="600" alt="Ejemplo de archivo resultante">
