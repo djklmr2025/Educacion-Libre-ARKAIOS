@@ -2,13 +2,13 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-ark-api-key');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const grokKey = process.env.VITE_GROK_API_KEY || process.env.GROK_API_KEY;
-  const googleKey = process.env.GOOGLE_API_KEY || process.env.VITE_GOOGLE_API_KEY;
+  // Las credenciales de proveedores se aceptan solo desde variables server-side.\n  const grokKey = process.env.GROK_API_KEY;
+  const googleKey = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
 
   // Decidir qué backend usar: Grok (xAI) si hay key, si no Gemini
   const useGrok = !!grokKey;
@@ -73,7 +73,7 @@ export default async function handler(req, res) {
     } else {
       // Ruta Gemini (fallback de producción)
       const geminiResp = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${googleKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(process.env.GEMINI_MODEL || 'gemini-2.0-flash')}:generateContent?key=${encodeURIComponent(googleKey)}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
