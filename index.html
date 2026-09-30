@@ -2,7 +2,8 @@
 <html lang="es">
 
 <head>
-    <!-- ARKAIOS EDU — Auth Guard -->
+    <!-- ARKAIOS EDU — SDK de Cobro Amerio & Auth/Membership Guard -->
+    <script src="https://genimi44-by-wix-app44.web.app/sdk/arkaios-pay.js"></script>
     <script type="module">
       import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
       import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
@@ -13,10 +14,34 @@
         appId: "1:502663599735:web:d702f5242ff9672e9c9872"
       });
       const auth = getAuth(app);
+
+      // Verificación de Parámetro de Autorización en URL
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('auth')) {
+        localStorage.setItem('ark_edu_membership', JSON.stringify({
+          status: 'ACTIVE',
+          tier: 'LIFETIME_NON_COMMERCIAL',
+          amount: 100,
+          currency: 'AMR-IO',
+          authorizationCode: params.get('auth'),
+          activatedAt: new Date().toISOString()
+        }));
+      }
+
       onAuthStateChanged(auth, (user) => {
         if (!user && !sessionStorage.getItem('ark_user')) {
           window.location.href = '/login.html';
-        } else if (user) {
+          return;
+        }
+
+        // Validación de Membresía de Donación Vitalicia ($100 AMR-IO)
+        const membership = localStorage.getItem('ark_edu_membership');
+        if (!membership) {
+          window.location.href = '/login.html?notice=membership_required';
+          return;
+        }
+
+        if (user) {
           // Make user info available globally
           const stored = sessionStorage.getItem('ark_user');
           if (!stored) {
@@ -1054,6 +1079,11 @@
         </div>
 
         <div class="header-actions">
+            <!-- Badge Membresía Vitalicia No Comercial -->
+            <div id="eduMembershipBadge" style="display:flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:20px;font-size:12px;font-weight:700;color:#059669;cursor:pointer;" title="Donación $100 AMR-IO • Licencia de uso no comercial sin vigencia" onclick="alert('🎓 Licencia Escolar No Comercial Vitalicia Activa.\n\nDonación mínima de reconocimiento: $100 AMR-IO ($100 MXN).\nUso de plataforma, archivos, generadores y la IA interna sin vencimiento de por medio.')">
+                <span>🎓</span>
+                <span>Membresía Vitalicia ($100 AMR)</span>
+            </div>
             <button class="btn-premium btn-secondary" onclick="window.location.reload()">
                 <span>🔄</span>
                 <span>Actualizar</span>
@@ -2128,6 +2158,50 @@ if (saveBtn) {
 }
 
         // ===== ASISTENTE IA GLOBAL (PUTER / CLAUDE) =====
+        // Modelo preferido con fallback automático si el principal está deprecado
+        const PUTER_AI_MODELS_PRIORITY = [
+            'claude-sonnet-4-5',
+            'claude-3-7-sonnet',
+            'claude-3-5-sonnet-20241022',
+            'claude-3-5-haiku',
+            'claude-3-haiku',
+            'gpt-4o-mini',
+            'gpt-4o'
+        ];
+        let _cachedAIModel = null;
+
+        async function getAIModel() {
+            if (_cachedAIModel) return _cachedAIModel;
+            try {
+                const available = await puter.ai.listModels();
+                const availableIds = (available || []).map(m => (typeof m === 'string' ? m : m.id || m.name || '')).filter(Boolean);
+                for (const candidate of PUTER_AI_MODELS_PRIORITY) {
+                    if (availableIds.some(id => id.toLowerCase().includes(candidate.toLowerCase()) || candidate.toLowerCase().includes(id.toLowerCase()))) {
+                        _cachedAIModel = candidate;
+                        console.log('[ARKAIOS AI] Modelo seleccionado:', candidate);
+                        return candidate;
+                    }
+                }
+            } catch (e) {
+                console.warn('[ARKAIOS AI] No se pudo consultar listModels, usando fallback:', e.message);
+            }
+            // Fallback: prueba en orden hasta que uno funcione
+            _cachedAIModel = PUTER_AI_MODELS_PRIORITY[0];
+            return _cachedAIModel;
+        }
+
+        function parsePuterResponse(response) {
+            if (typeof response === 'string') return response;
+            if (response?.message?.content) {
+                const c = response.message.content;
+                if (Array.isArray(c)) return c.map(b => b.text || '').join('');
+                return c;
+            }
+            if (response?.text) return response.text;
+            if (response?.content) return response.content;
+            if (response?.choices?.[0]?.message?.content) return response.choices[0].message.content;
+            return JSON.stringify(response);
+        }
         function togglePuterAiDrawer() {
             const drawer = document.getElementById('puterAiDrawer');
             drawer.classList.toggle('open');
@@ -2205,7 +2279,8 @@ if (saveBtn) {
             try {
                 btn.disabled = true;
                 statusDiv.style.display = 'block';
-                statusDiv.textContent = '⏳ Escaneando plantilla y consultando a Claude vía Puter AI...';
+                const selectedModel = await getAIModel();
+                statusDiv.textContent = `⏳ Consultando ${selectedModel} vía Puter AI...`;
 
                 const doc = iframe.contentDocument || iframe.contentWindow.document;
                 const inputs = Array.from(doc.querySelectorAll('input:not([type="hidden"]):not([type="button"]):not([type="submit"]), textarea, [contenteditable="true"]'));
@@ -2233,8 +2308,8 @@ Ejemplo:
   "1": "Valor para el segundo campo"
 }`;
 
-                const aiResponse = await puter.ai.chat(systemPrompt, { model: 'claude-3-5-sonnet' });
-                const aiText = typeof aiResponse === 'string' ? aiResponse : (aiResponse.message?.content || aiResponse.text || JSON.stringify(aiResponse));
+                const aiResponse = await puter.ai.chat(systemPrompt, { model: selectedModel });
+                const aiText = parsePuterResponse(aiResponse);
 
                 const jsonMatch = aiText.match(/\{[\s\S]*\}/);
                 if (jsonMatch) {
@@ -2330,8 +2405,9 @@ Ejemplo:
 
             try {
                 const fullPrompt = `Contexto: El usuario está viendo la plantilla escolar "${currentTemplate}". Pregunta: ${msg}`;
-                const response = await puter.ai.chat(fullPrompt, { model: 'claude-3-5-sonnet' });
-                const answer = typeof response === 'string' ? response : (response.message?.content || response.text || 'Sin respuesta');
+                const chatModel = await getAIModel();
+                const response = await puter.ai.chat(fullPrompt, { model: chatModel });
+                const answer = parsePuterResponse(response) || 'Sin respuesta';
                 aiMsgEl.textContent = answer;
             } catch (err) {
                 aiMsgEl.textContent = '❌ Error de conexión: ' + (err.message || err);
@@ -2348,7 +2424,7 @@ Ejemplo:
 
     <div class="puter-ai-drawer" id="puterAiDrawer">
         <div class="puter-ai-header">
-            <h3>🤖 Copiloto IA Educativo <span style="font-size:10px; opacity:0.8; font-weight:normal;">(Puter/Claude)</span></h3>
+            <h3>🤖 Copiloto IA Educativo <span style="font-size:10px; opacity:0.8; font-weight:normal;">(Puter AI — Auto-Modelo)</span></h3>
             <button class="puter-ai-close" onclick="togglePuterAiDrawer()">×</button>
         </div>
 
