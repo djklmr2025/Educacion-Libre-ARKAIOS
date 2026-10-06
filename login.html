@@ -478,6 +478,16 @@
     const apiKey = generateApiKey(user.uid, user.email);
     document.getElementById('u-apikey').textContent = apiKey;
 
+    if (user.email === 'djklmr2024@gmail.com' || user.email === 'arkaios2026@gmail.com') {
+      const adminMembership = {
+        status: 'ACTIVE',
+        tier: 'ADMIN_ACCESS',
+        amount: 0,
+        authorizationCode: 'ARK-ADMIN-BYPASS',
+      };
+      localStorage.setItem('ark_edu_membership', JSON.stringify(adminMembership));
+    }
+
     sessionStorage.setItem('ark_user', JSON.stringify({
       uid: user.uid,
       name: user.displayName,
