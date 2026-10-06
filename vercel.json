@@ -30,6 +30,26 @@
     {
       "source": "/api/apikey",
       "destination": "/api/apikey.js"
+    },
+    {
+      "source": "/api/pos-login",
+      "destination": "/api/pos?__op=pos-login"
+    },
+    {
+      "source": "/api/client-login",
+      "destination": "/api/pos?__op=client-login"
+    },
+    {
+      "source": "/api/pos-accounts",
+      "destination": "/api/pos?__op=pos-accounts"
+    },
+    {
+      "source": "/api/bridge",
+      "destination": "/api/bridges?__op=bridge"
+    },
+    {
+      "source": "/api/elemia-bridge",
+      "destination": "/api/bridges?__op=elemia-bridge"
     }
   ]
 }

@@ -63,3 +63,11 @@
 - Verifica localmente el preflight, un caso válido, un `400`, un `401/403` aplicable y un `405`.
 - Riesgo actual: `js/main.js` llama `/api/pixabay`, `/api/freepik` y `/api/grok`, pero no existen handlers homónimos en `api/`.
 - Riesgo actual: `apikey.js` contiene una credencial de respaldo en código; elimínala o rótala sin copiarla a documentación.
+
+## Límite de funciones de Vercel
+
+- El plan actual de Vercel despliega como máximo 12 funciones: cada `api/*.js` sin guion bajo inicial cuenta como una. Con 13 o más el despliegue falla.
+- Hoy hay exactamente 12. Para agregar un endpoint nuevo, fusiónalo en una función existente en lugar de crear otra.
+- `pos.js` despacha `pos-login`, `client-login` y `pos-accounts`; `bridges.js` despacha `bridge` y `elemia-bridge`. Los módulos reales viven en `api/_*.js` (el guion bajo evita que cuenten como función).
+- Las URLs públicas anteriores se conservan con rewrites en `vercel.json` que añaden `?__op=<nombre>`.
+
