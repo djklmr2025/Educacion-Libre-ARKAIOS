@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plantillas para kínder · Frutas</title>
+<style>
+:root{--card:#e3ebb9;--ink:#111;--panel:#fbfaf3;--line:#d8d6c6;--acc:#2f7d3b}
+*{box-sizing:border-box}
+body{margin:0;background:#e9e8dd;font-family:"Trebuchet MS",Verdana,sans-serif;color:var(--ink)}
+.bar{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line);padding:12px 16px;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.bar label{display:flex;flex-direction:column;font-size:12px;gap:4px}
+.bar textarea{width:min(380px,90vw);height:62px;font:inherit;padding:6px;border:1px solid var(--line);border-radius:8px}
+.bar input,.bar select{font:inherit;padding:6px;border:1px solid var(--line);border-radius:8px}
+.bar input[type=color]{padding:0;height:34px;width:48px}
+button{font:inherit;cursor:pointer;border:0;border-radius:8px;padding:9px 14px;background:var(--acc);color:#fff}
+button.sec{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.hint{width:100%;font-size:12px;color:#555}
+#pages{display:flex;flex-direction:column;align-items:center;gap:20px;padding:20px}
+.page{width:8.5in;height:11in;background:#fff;padding:.45in .6in;display:flex;flex-direction:column;gap:.25in;box-shadow:0 2px 12px #0003;page-break-after:always;break-after:page}
+.title{background:var(--card);border-radius:36px;text-align:center;font:900 54px/1 Impact,"Arial Black",sans-serif;padding:.22in 0;outline:none;text-transform:uppercase;letter-spacing:1px}
+.grid{flex:1;display:grid;gap:.22in;grid-template-columns:repeat(var(--cols),1fr);grid-template-rows:repeat(var(--rows),1fr)}
+.cell{position:relative;background:var(--card);border-radius:34px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:.14in .1in .12in;cursor:grab}
+.cell.empty{background:transparent;border:2px dashed var(--line)}
+.cell.over{outline:4px solid var(--acc)}
+.cell .pic{flex:1;width:100%;min-height:0;display:flex;align-items:center;justify-content:center}
+.cell .pic svg,.cell .pic img{max-width:78%;max-height:100%;pointer-events:none}
+.cell .pic .q{font:900 80px Impact,sans-serif;opacity:.35}
+.name{font:900 28px/1.1 Impact,"Arial Black",sans-serif;text-transform:uppercase;text-align:center;outline:none;padding-top:6px;max-width:100%}
+.tools{position:absolute;top:8px;right:10px;display:none;gap:4px}
+.cell:hover .tools{display:flex}
+.tools button{padding:3px 8px;background:#fff;color:#111;border:1px solid var(--line);font-size:13px}
+.num{text-align:center;font-size:11px;color:#888;margin-top:-10px}
+#bankp{background:var(--panel);border-bottom:1px solid var(--line);padding:10px 16px;display:flex;flex-wrap:wrap;gap:10px;font-size:12px}
+#bankp[hidden]{display:none}
+.b{position:relative;width:84px;text-align:center}
+.b img{width:84px;height:84px;object-fit:contain;background:#fff;border:1px solid var(--line);border-radius:8px}
+.b button{position:absolute;top:2px;right:2px;padding:0 6px;background:#fff;color:#111;border:1px solid var(--line)}
+@page{size:letter;margin:0}
+@media print{
+ body{background:#fff}.bar,.tools,.num,#bankp{display:none!important}
+ #pages{padding:0;gap:0;display:block}
+ .page{box-shadow:none;margin:0}
+ .cell.empty{border:0}.cell{cursor:auto}
+}
+</style>
+</head>
+<body>
+<div class="bar">
+ <label>¿Qué frutas necesitas? (separadas por coma, línea o "manzana x3")
+  <textarea id="txt" placeholder="manzana, plátano, fresa, uvas, mango x2"></textarea></label>
+ <button id="fill">Llenar plantillas</button>
+ <button class="sec" id="add">Añadir al final</button>
+ <label>Título<input id="ttl" value="Las frutas"></label>
+ <label>Por hoja<select id="per"><option>4</option><option>6</option><option selected>9</option></select></label>
+ <label>Color<input type="color" id="col" value="#e3ebb9"></label>
+ <button class="sec" id="all">Todas las frutas</button>
+ <button id="print">Imprimir / Guardar PDF</button>
+ <button class="sec" id="bank">Mi banco</button>
+ <button class="sec" id="bake" title="Descarga este mismo HTML con tus imágenes incluidas">Guardar HTML con banco</button>
+ <button class="sec" id="exp">Exportar banco</button>
+ <button class="sec" id="imp">Importar banco</button>
+ <div class="hint">Arrastra una tarjeta sobre otra para intercambiarlas, aun entre hojas. En cada tarjeta: ✎ cambia el nombre o la fruta, 🔄 cambia entre versiones del dibujo, 🖼 sube tu propia imagen (o suelta un archivo encima) y se guarda en "Mi banco" (en el sitio desplegado, también en el repositorio) para usarla después con solo escribir el nombre, ✕ quita la tarjeta. El nombre también se edita con un clic. En el diálogo de impresión elige "Guardar como PDF".</div>
+</div>
+<div id="bankp" hidden></div>
+<div id="pages"></div>
+
+<script>
+// ---------- Banco interno de imágenes (SVG, viewBox 100x100) ----------
+const S={
+manzana:'<path d="M50 30C30 16 12 36 21 62c6 20 20 28 29 24 9 4 23-4 29-24C88 36 70 16 50 30z" fill="#d93a45"/><path d="M50 30c0-8 2-14 6-18" stroke="#6b4a2b" stroke-width="3" fill="none"/><path d="M52 20c8-10 22-8 24-6-2 10-14 14-24 6z" fill="#2e9e3e"/>',
+platano:'<path d="M24 14c0 40 22 66 58 62-6 8-20 10-34 2C28 66 16 40 18 16z" fill="#f4c430"/><path d="M24 14c2 36 20 56 50 62" stroke="#d9a21c" stroke-width="2" fill="none"/><path d="M17 16l6-8 5 7z" fill="#6b4a2b"/>',
+fresa:'<path d="M50 26C24 20 14 36 22 58c8 22 24 34 28 34s20-12 28-34c8-22-2-38-28-32z" fill="#d6283a"/><path d="M50 28L34 18l12 1 4-9 4 9 12-1z" fill="#2e9e3e"/><g fill="#6e1220"><ellipse cx="38" cy="46" rx="1.6" ry="3"/><ellipse cx="58" cy="44" rx="1.6" ry="3"/><ellipse cx="48" cy="58" rx="1.6" ry="3"/><ellipse cx="34" cy="64" rx="1.6" ry="3"/><ellipse cx="62" cy="62" rx="1.6" ry="3"/><ellipse cx="48" cy="76" rx="1.6" ry="3"/></g>',
+uvas:'<path d="M52 8c-2 10-2 14-6 22" stroke="#6b4a2b" stroke-width="3" fill="none"/><g fill="#8ac34a" stroke="#4e8f2a" stroke-width="1.5"><circle cx="34" cy="38" r="9"/><circle cx="52" cy="36" r="9"/><circle cx="68" cy="40" r="9"/><circle cx="40" cy="54" r="9"/><circle cx="58" cy="54" r="9"/><circle cx="48" cy="70" r="9"/><circle cx="66" cy="68" r="8"/><circle cx="50" cy="86" r="8"/></g>',
+mandarina:'<circle cx="50" cy="58" r="32" fill="#f9962f"/><path d="M50 26c-2-8-2-12 0-18" stroke="#4e6b2a" stroke-width="3" fill="none"/><path d="M52 14c10-8 26-6 30-2-8 10-22 10-30 2z" fill="#2e9e3e"/>',
+pera:'<path d="M50 14c8 0 10 10 12 18 4 14 20 20 18 40-2 14-16 20-30 20s-28-6-30-20c-2-20 14-26 18-40 2-8 4-18 12-18z" fill="#5cbb3a"/><path d="M50 14c0-6 2-9 6-11" stroke="#6b4a2b" stroke-width="3" fill="none"/>',
+naranja:'<circle cx="50" cy="54" r="38" fill="#ff7a2f"/><circle cx="50" cy="18" r="2.5" fill="#6b4a2b"/><path d="M50 20c8-8 18-8 22-6-6 8-16 10-22 6z" fill="#2e9e3e"/>',
+sandia:'<path d="M8 30a42 42 0 0 0 84 0z" fill="#2e8b3e"/><path d="M14 30a36 36 0 0 0 72 0z" fill="#e8505b"/><g fill="#1a1a1a"><ellipse cx="34" cy="44" rx="2" ry="3.4"/><ellipse cx="50" cy="52" rx="2" ry="3.4"/><ellipse cx="66" cy="44" rx="2" ry="3.4"/><ellipse cx="50" cy="38" rx="2" ry="3.4"/><ellipse cx="42" cy="62" rx="2" ry="3.4"/><ellipse cx="60" cy="62" rx="2" ry="3.4"/></g>',
+kiwi:'<ellipse cx="50" cy="52" rx="42" ry="34" fill="#a36a2f"/><ellipse cx="50" cy="52" rx="38" ry="30" fill="#2fb34a"/><ellipse cx="50" cy="52" rx="14" ry="10" fill="#d8f3d0"/><g fill="#222"><circle cx="50" cy="36" r="1.5"/><circle cx="64" cy="40" r="1.5"/><circle cx="70" cy="52" r="1.5"/><circle cx="64" cy="66" r="1.5"/><circle cx="50" cy="70" r="1.5"/><circle cx="36" cy="66" r="1.5"/><circle cx="30" cy="52" r="1.5"/><circle cx="36" cy="40" r="1.5"/></g>',
+durazno:'<circle cx="50" cy="54" r="38" fill="#f7a24a"/><path d="M50 18c-10 18-10 52 0 72" stroke="#e5702a" stroke-width="3" fill="none"/><path d="M52 18c8-10 22-8 24-6-2 10-14 14-24 6z" fill="#2e9e3e"/>',
+higo:'<path d="M50 90C24 90 20 60 38 38c6-8 8-16 12-26 4 10 6 18 12 26 18 22 14 52-12 52z" fill="#7a3b6e"/><path d="M50 12v6" stroke="#4a2a3a" stroke-width="4"/><path d="M50 40c-12 8-14 28-2 40 14 0 22-24 2-40z" fill="#d35468" opacity=".8"/>',
+aguacate:'<path d="M50 6c14 0 18 22 26 38 12 24 6 48-26 48S12 68 24 44C32 28 36 6 50 6z" fill="#3b7d2a"/><path d="M50 12c10 0 14 20 22 36 10 20 4 38-22 38S18 68 28 48C36 32 40 12 50 12z" fill="#b9d86a"/><circle cx="50" cy="62" r="15" fill="#7a4a2a"/>',
+cereza:'<path d="M32 62C36 40 44 22 52 8M70 62C66 40 60 22 52 8" stroke="#2e7a3a" stroke-width="3" fill="none"/><circle cx="30" cy="72" r="16" fill="#d6283a"/><circle cx="70" cy="72" r="16" fill="#e8372f"/>',
+ciruela:'<circle cx="52" cy="58" r="34" fill="#6d3a6e"/><path d="M52 24c-2-8-2-12 0-16" stroke="#4e6b2a" stroke-width="3" fill="none"/><path d="M50 14C40 6 26 8 24 12c8 10 22 8 26 2z" fill="#2fb34a"/>',
+limon:'<circle cx="50" cy="50" r="42" fill="#2fa84a"/><circle cx="50" cy="50" r="36" fill="#9be07a"/><g stroke="#e9ffe0" stroke-width="3"><path d="M50 50V16M50 50l26-18M50 50l30 8M50 50l-18 28M50 50l-30 6M50 50L26 30M50 50l12 32"/></g>',
+toronja:'<circle cx="50" cy="50" r="42" fill="#ff9a2e"/><circle cx="50" cy="50" r="36" fill="#ff5a5f"/><g stroke="#fff" stroke-width="3"><path d="M50 50V16M50 50l26-18M50 50l30 8M50 50l-18 28M50 50l-30 6M50 50L26 30M50 50l12 32M50 50l28 24"/></g>',
+mango:'<path d="M54 10c20 6 38 30 34 56-4 22-26 28-44 20C20 76 14 48 30 28 38 18 44 10 54 10z" fill="#f08a4b"/><path d="M60 20c14 10 22 30 14 52-8 12-20 10-28 2 24-6 28-34 14-54z" fill="#e5484d" opacity=".7"/><path d="M56 10c4-4 8-4 10-2" stroke="#4e6b2a" stroke-width="3" fill="none"/>',
+papaya:'<path d="M50 6c18 6 32 30 30 54-2 22-14 34-30 34S22 82 20 60C18 36 32 12 50 6z" fill="#3b8f2a"/><path d="M50 14c14 6 24 26 22 46-2 18-10 28-22 28S30 78 28 60C26 40 36 20 50 14z" fill="#ff9a2e"/><g fill="#222"><circle cx="46" cy="50" r="3"/><circle cx="54" cy="46" r="3"/><circle cx="52" cy="58" r="3"/><circle cx="44" cy="62" r="3"/><circle cx="58" cy="66" r="3"/><circle cx="48" cy="72" r="3"/></g>',
+pina:'<ellipse cx="50" cy="62" rx="28" ry="32" fill="#f4b928"/><path d="M26 44l48 36M74 44L26 80" stroke="#c98a12" stroke-width="2"/><path d="M50 32C40 16 36 10 30 8c6 10 10 14 16 22M50 32c10-16 14-22 20-24-6 10-10 14-16 22M50 32c0-12 0-20 0-28" fill="#2e9e3e" stroke="#2e9e3e" stroke-width="5" stroke-linecap="round"/>',
+melon:'<circle cx="50" cy="52" r="38" fill="#cfe48a"/><g stroke="#a9c25e" stroke-width="2.5" fill="none"><path d="M50 14v76M30 20c-8 20-8 44 0 64M70 20c8 20 8 44 0 64"/></g><path d="M50 14c0-6 2-8 6-10" stroke="#6b4a2b" stroke-width="3" fill="none"/>',
+coco:'<circle cx="50" cy="52" r="38" fill="#6b4a2b"/><circle cx="38" cy="46" r="4" fill="#3b2a18"/><circle cx="52" cy="40" r="4" fill="#3b2a18"/><circle cx="46" cy="58" r="4" fill="#3b2a18"/>'
+};
+let LIB={};const BAKED=/*B*/{}/*E*/;
+const has=k=>S[k]||(LIB[k]&&LIB[k].length);
+const cap=s=>s[0].toUpperCase()+s.slice(1);
+const vlist=k=>(S[k]?[{svg:S[k]}]:[]).concat((LIB[k]||[]).map(img=>({img})));
+const ALIAS={banana:'platano',platanos:'platano',melocoton:'durazno',palta:'aguacate',lima:'limon',pomelo:'toronja',ananas:'pina',ananá:'pina',guayaba:'mango'};
+const LABEL={platano:'Plátano',limon:'Limón',sandia:'Sandía',pina:'Piña'};
+const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+function keyOf(n){let k=norm(n);if(ALIAS[k])k=ALIAS[k];if(has(k))return k;
+ for(const t of [k.replace(/e?s$/,''),k.replace(/s$/,'')]){const a=ALIAS[t]||t;if(has(a))return a}return null}
+const pretty=k=>LABEL[k]||k[0].toUpperCase()+k.slice(1);
+
+// ---------- Estado ----------
+let items=[]; // {name,key,img}
+const $=id=>document.getElementById(id);
+const per=()=>+$('per').value;
+function mk(name){name=name.trim();const key=keyOf(name);return{name:key&&S[key]?pretty(key):cap(name),key,v:0}}
+function parse(t){const out=[];t.split(/[,\n;]+/).forEach(p=>{p=p.trim();if(!p)return;
+ const m=p.match(/^(.*?)\s*(?:x|×)\s*(\d+)$/i)||p.match(/^(\d+)\s+(.*)$/);let n=1,nm=p;
+ if(m){if(/^\d+$/.test(m[1])){n=+m[1];nm=m[2]}else{nm=m[1];n=+m[2]}}
+ for(let i=0;i<Math.min(n,60);i++)out.push(mk(nm))});return out}
+
+// ---------- Render ----------
+function render(){
+ const P=per(),cols=P==9?3:2,rows=P==4?2:3,pages=Math.max(1,Math.ceil(items.length/P));
+ $('pages').innerHTML='';
+ for(let p=0;p<pages;p++){
+  const pg=document.createElement('div');pg.className='page';pg.style.setProperty('--cols',cols);pg.style.setProperty('--rows',rows);
+  const t=document.createElement('div');t.className='title';t.textContent=$('ttl').value;t.contentEditable=true;
+  t.oninput=()=>$('ttl').value=t.textContent;pg.appendChild(t);
+  const g=document.createElement('div');g.className='grid';
+  for(let s=0;s<P;s++){const i=p*P+s,it=items[i];
+   const c=document.createElement('div');c.className='cell'+(it?'':' empty');c.dataset.i=i;
+   if(it){c.draggable=true;
+    c.innerHTML='<div class="tools"><button title="Cambiar fruta/nombre" data-a="ren">✎</button><button title="Otra versión del dibujo" data-a="var">🔄</button><button title="Subir imagen (se guarda en el banco)" data-a="img">🖼</button><button title="Quitar" data-a="del">✕</button></div><div class="pic"></div><div class="name" contenteditable="true" spellcheck="false"></div>';
+    const pic=c.querySelector('.pic'),L=it.key?vlist(it.key):[],cur=L[(it.v||0)%(L.length||1)];
+    if(cur&&cur.img)pic.innerHTML='<img src="'+cur.img+'">';
+    else if(cur)pic.innerHTML='<svg viewBox="0 0 100 100">'+cur.svg+'</svg>';
+    else pic.innerHTML='<span class="q">?</span>';
+    const nm=c.querySelector('.name');nm.textContent=it.name;
+    nm.onblur=()=>{it.name=nm.textContent.trim()||it.name;const k=keyOf(it.name);if(k&&k!==it.key){it.key=k;it.v=0;render()}};
+    nm.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();nm.blur()}};
+    c.onclick=e=>{const a=e.target.dataset.a;if(!a)return;
+     if(a==='del'){items.splice(i,1);render()}
+     if(a==='ren'){const v=prompt('Nombre o fruta (ej. mango):',it.name);if(v){const n=mk(v);items[i]={name:n.name,key:n.key,v:0};render()}}
+     if(a==='var'){const L=it.key?vlist(it.key):[];if(L.length>1){it.v=((it.v||0)+1)%L.length;render()}}
+     if(a==='img')pick(i)};
+    c.ondragstart=e=>{e.dataTransfer.setData('text/plain',i);e.dataTransfer.effectAllowed='move'};
+   }
+   c.ondragover=e=>{e.preventDefault();c.classList.add('over')};
+   c.ondragleave=()=>c.classList.remove('over');
+   c.ondrop=e=>{e.preventDefault();c.classList.remove('over');
+    const f=e.dataTransfer.files&&e.dataTransfer.files[0];
+    if(f&&f.type.startsWith('image/')&&items[i]){read(f,i);return}
+    const from=e.dataTransfer.getData('text/plain');if(from==='')return;
+    const a=+from,b=i;if(a===b||!items[a])return;
+    if(b>=items.length){items.push(items.splice(a,1)[0])}else{[items[a],items[b]]=[items[b],items[a]]}
+    render()};
+   g.appendChild(c)}
+  pg.appendChild(g);
+  const n=document.createElement('div');n.className='num';n.textContent='Hoja '+(p+1)+' de '+pages;pg.appendChild(n);
+  $('pages').appendChild(pg)}
+ document.documentElement.style.setProperty('--card',$('col').value);
+}
+function read(f,i){const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{
+ const s=Math.min(1,480/Math.max(im.width,im.height)),cv=document.createElement('canvas');cv.width=im.width*s;cv.height=im.height*s;
+ cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);
+ const it=items[i],k=it.key||keyOf(it.name)||norm(it.name),url=cv.toDataURL('image/png');
+ (LIB[k]=LIB[k]||[]).push(url);it.key=k;it.v=vlist(k).length-1;save();render();bankr();up(k,url)};im.src=r.result};r.readAsDataURL(f)}
+const API='/api/banco-frutas',REMOTE=/^https?:$/.test(location.protocol);let CLOUD=false;
+const hdr=()=>{const h={'Content-Type':'application/json'},k=localStorage.getItem('ARKAIOS_SAVE_KEY');if(k)h['x-arkaios-key']=k;return h};
+const furl=f=>API+'?img='+encodeURIComponent(f);
+async function pull(){if(!REMOTE)return;try{const r=await fetch(API);if(!r.ok)return;const o=await r.json();CLOUD=true;
+ for(const k in o.items||{})for(const f of o.items[k]){LIB[k]=LIB[k]||[];if(!LIB[k].includes(furl(f)))LIB[k].push(furl(f))}}catch(e){}}
+async function up(k,u){if(!REMOTE||!CLOUD||!u||!u.startsWith('data:'))return;
+ try{const r=await fetch(API,{method:'POST',headers:hdr(),body:JSON.stringify({key:k,dataUrl:u})});
+  if(r.status===401){const v=prompt('Clave de guardado del proyecto (ARKAIOS_SAVE_KEY):');if(v){localStorage.setItem('ARKAIOS_SAVE_KEY',v);return up(k,u)}return}
+  const o=await r.json();if(!o.ok||!o.file)return;const L=LIB[k]||[],j=L.indexOf(u);
+  if(j>=0){if(L.includes(furl(o.file)))L.splice(j,1);else L[j]=furl(o.file);save();bankr();render()}}catch(e){}}
+async function syncAll(){for(const k in LIB)for(const u of [...LIB[k]])await up(k,u)}
+function merge(o){for(const k in o)for(const u of o[k]){LIB[k]=LIB[k]||[];if(!LIB[k].includes(u))LIB[k].push(u)}}
+const idb=()=>new Promise((res,rej)=>{const r=indexedDB.open('frutas-banco',1);r.onupgradeneeded=()=>r.result.createObjectStore('k');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+async function load(){try{const d=await idb();return await new Promise(r=>{const q=d.transaction('k').objectStore('k').get('lib');q.onsuccess=()=>r(q.result||{});q.onerror=()=>r({})})}catch(e){return{}}}
+async function save(){try{const d=await idb();d.transaction('k','readwrite').objectStore('k').put(LIB,'lib')}catch(e){}}
+function bankr(){const P=$('bankp');if(P.hidden)return;P.innerHTML='';const ks=Object.keys(LIB).filter(k=>LIB[k].length);
+ const st=document.createElement('div');st.style.width='100%';
+ st.textContent=!REMOTE?'Abierto como archivo local: las imágenes se guardan solo en este navegador. Desde el sitio desplegado se guardan en el repositorio.':CLOUD?'☁️ Conectado al repositorio: lo que subas queda guardado en GitHub y no depende del caché del navegador.':'Sin conexión con el servidor de guardado: por ahora solo en este navegador. Usa "Guardar HTML con banco" o "Exportar banco" como respaldo.';
+ P.appendChild(st);
+ if(!ks.length){st.textContent+=' Tu banco está vacío: sube una imagen con 🖼 en cualquier tarjeta y quedará aquí.';return}
+ ks.forEach(k=>LIB[k].forEach((u,j)=>{const d=document.createElement('div');d.className='b';d.innerHTML='<img src="'+u+'"><button title="Borrar del banco">✕</button><div>'+cap(k)+'</div>';
+  d.querySelector('button').onclick=()=>{const u=LIB[k][j];LIB[k].splice(j,1);if(!LIB[k].length)delete LIB[k];if(u.startsWith(API+'?img='))fetch(u,{method:'DELETE',headers:hdr()}).catch(()=>{});save();bankr();render()};P.appendChild(d)}))}
+function dl(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click()}
+$('bank').onclick=()=>{$('bankp').hidden=!$('bankp').hidden;bankr()};
+$('exp').onclick=()=>dl('banco-frutas.json',JSON.stringify(LIB),'application/json');
+$('imp').onclick=()=>{const i=document.createElement('input');i.type='file';i.accept='.json';i.onchange=async()=>{try{merge(JSON.parse(await i.files[0].text()));save();bankr();render()}catch(e){alert('Archivo no válido')}};i.click()};
+$('bake').onclick=()=>{const c=document.documentElement.cloneNode(true);c.querySelector('#pages').innerHTML='';c.querySelector('#bankp').innerHTML='';c.querySelector('#bankp').hidden=true;
+ let h='<!DOCTYPE html>\n'+c.outerHTML;h=h.replace(/\/\*B\*\/[\s\S]*?\/\*E\*\//,()=>'/*B*/'+JSON.stringify(LIB)+'/*E*/');dl('plantillas-frutas.html',h,'text/html')};
+function pick(i){const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.onchange=()=>inp.files[0]&&read(inp.files[0],i);inp.click()}
+
+$('fill').onclick=()=>{items=parse($('txt').value);render()};
+$('add').onclick=()=>{items=items.concat(parse($('txt').value));render()};
+$('all').onclick=()=>{items=[...new Set([...Object.keys(S),...Object.keys(LIB)])].filter(has).map(k=>mk(k));render()};
+$('print').onclick=()=>window.print();
+['per','col'].forEach(id=>$(id).oninput=render);
+$('ttl').oninput=render;
+$('txt').value='manzana, plátano, fresa, uvas, mandarina, pera, naranja, sandía, kiwi, durazno, higo, aguacate, cereza, ciruela, limón, toronja, mango, papaya';
+(async()=>{merge(BAKED);merge(await load());await pull();save();items=parse($('txt').value);render();syncAll()})();
+</script>
+</body>
+</html>

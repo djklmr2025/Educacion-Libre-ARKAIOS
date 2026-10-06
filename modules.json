@@ -73,6 +73,11 @@
           "target": "plantilla_circulos_jack.html"
         },
         {
+          "label": "Plantilla Cuadros Frutas Kinder",
+          "icon": "🖼️",
+          "target": "plantilla-cuadros-frutas-kinder.html"
+        },
+        {
           "label": "Plantilla Cuadros Imagenes V2",
           "icon": "🖼️",
           "target": "plantilla-cuadros-imagenes-v2.html"

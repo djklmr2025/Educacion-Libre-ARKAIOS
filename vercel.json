@@ -12,6 +12,9 @@
     "api/arkaios-orquestador.js": {
       "maxDuration": 60
     },
+    "api/banco-frutas.js": {
+      "maxDuration": 30
+    },
     "api/publish-template.js": {
       "maxDuration": 60
     },
