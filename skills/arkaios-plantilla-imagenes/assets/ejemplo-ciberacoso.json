@@ -1,0 +1,107 @@
+{
+  "title": "Ciberacoso: qué es, por qué surge y cómo evitarlo",
+  "size_cm": 5,
+  "page": "letter",
+  "cards": [
+    {
+      "caption": "Ciberacoso: maltrato por internet",
+      "group": "Qué es",
+      "icon": "phone"
+    },
+    {
+      "caption": "Mensajes que hieren",
+      "group": "Qué es",
+      "icon": "chat"
+    },
+    {
+      "caption": "Burlas en redes sociales",
+      "group": "Qué es",
+      "icon": "globe"
+    },
+    {
+      "caption": "Fotos o videos sin permiso",
+      "group": "Qué es",
+      "icon": "camera"
+    },
+    {
+      "caption": "Perfiles falsos",
+      "group": "Qué es",
+      "icon": "person"
+    },
+    {
+      "caption": "Se esconden en el anonimato",
+      "group": "Por qué surge",
+      "icon": "eye-off"
+    },
+    {
+      "caption": "Falta de empatía",
+      "group": "Por qué surge",
+      "icon": "sad"
+    },
+    {
+      "caption": "Presión del grupo",
+      "group": "Por qué surge",
+      "icon": "people"
+    },
+    {
+      "caption": "Poca supervisión en línea",
+      "group": "Por qué surge",
+      "icon": "clock"
+    },
+    {
+      "caption": "Enojo, envidia o broma que se pasa",
+      "group": "Por qué surge",
+      "icon": "warning"
+    },
+    {
+      "caption": "Piensa antes de publicar",
+      "group": "Cómo evitarlo",
+      "icon": "bulb"
+    },
+    {
+      "caption": "Contraseñas seguras",
+      "group": "Cómo evitarlo",
+      "icon": "key"
+    },
+    {
+      "caption": "Perfil privado",
+      "group": "Cómo evitarlo",
+      "icon": "lock"
+    },
+    {
+      "caption": "No compartas datos personales",
+      "group": "Cómo evitarlo",
+      "icon": "shield"
+    },
+    {
+      "caption": "Bloquea a quien te molesta",
+      "group": "Cómo evitarlo",
+      "icon": "block"
+    },
+    {
+      "caption": "Respeto también en línea",
+      "group": "Cómo evitarlo",
+      "icon": "heart"
+    },
+    {
+      "caption": "Guarda evidencias",
+      "group": "Qué hacer",
+      "icon": "search"
+    },
+    {
+      "caption": "Reporta la cuenta",
+      "group": "Qué hacer",
+      "icon": "flag"
+    },
+    {
+      "caption": "Cuéntaselo a un adulto de confianza",
+      "group": "Qué hacer",
+      "icon": "people"
+    },
+    {
+      "caption": "Pide ayuda, no estás solo",
+      "group": "Qué hacer",
+      "icon": "megaphone"
+    }
+  ]
+}
