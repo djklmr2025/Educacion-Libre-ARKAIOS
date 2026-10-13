@@ -64,6 +64,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="js/arkaios-paste-bridge.js" defer></script>
 
     <!-- FUENTES PROFESIONALES -->
     <link
@@ -2238,6 +2239,31 @@ if (saveBtn) {
             document.getElementById('aiAutofillPrompt').value = promptText;
         }
 
+        // Campos rellenables de la plantilla activa (mismo criterio para contar y para rellenar)
+        const ARK_FIELD_SELECTOR = 'input:not([type="hidden"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="image"]), textarea, select, [contenteditable="true"], [contenteditable=""]';
+        function getTemplateFields(doc) {
+            return Array.from(doc.querySelectorAll(ARK_FIELD_SELECTOR)).filter(el =>
+                !el.disabled && !el.readOnly && (el.offsetWidth || el.offsetHeight || el.getClientRects().length));
+        }
+        function setTemplateField(el, value) {
+            const win = el.ownerDocument.defaultView;
+            const text = value == null ? '' : String(value);
+            if (el.tagName === 'SELECT') {
+                const v = text.trim().toLowerCase();
+                const opt = Array.from(el.options).find(o => o.value.toLowerCase() === v || o.textContent.trim().toLowerCase() === v);
+                if (!opt) return false;
+                el.value = opt.value;
+            } else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                const proto = el.tagName === 'INPUT' ? win.HTMLInputElement.prototype : win.HTMLTextAreaElement.prototype;
+                Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, text);
+            } else {
+                el.innerText = text;
+            }
+            el.dispatchEvent(new win.Event('input', { bubbles: true }));
+            el.dispatchEvent(new win.Event('change', { bubbles: true }));
+            return true;
+        }
+
         function scanActiveTemplate() {
             const display = document.getElementById('currentTemplateNameDisplay');
             const countDisplay = document.getElementById('currentTemplateFieldsCount');
@@ -2258,7 +2284,7 @@ if (saveBtn) {
                     return;
                 }
 
-                const inputs = doc.querySelectorAll('input:not([type="hidden"]):not([type="button"]):not([type="submit"]), textarea, select, [contenteditable="true"]');
+                const inputs = getTemplateFields(doc);
                 countDisplay.textContent = `Campos editables detectados: ${inputs.length}`;
             } catch (e) {
                 countDisplay.textContent = 'Acceso a plantilla activo';
@@ -2288,7 +2314,7 @@ if (saveBtn) {
                 statusDiv.textContent = `⏳ Consultando ${selectedModel} vía Puter AI...`;
 
                 const doc = iframe.contentDocument || iframe.contentWindow.document;
-                const inputs = Array.from(doc.querySelectorAll('input:not([type="hidden"]):not([type="button"]):not([type="submit"]), textarea, [contenteditable="true"]'));
+                const inputs = getTemplateFields(doc);
 
                 if (inputs.length === 0) {
                     statusDiv.textContent = '⚠️ No se encontraron campos editables estándar en la plantilla actual.';
@@ -2298,7 +2324,9 @@ if (saveBtn) {
 
                 const fieldsMeta = inputs.map((inp, idx) => {
                     const label = inp.labels?.[0]?.textContent || inp.placeholder || inp.name || inp.id || `campo_${idx + 1}`;
-                    return { index: idx, id: inp.id || `field_${idx}`, label: label.trim() };
+                    const meta = { index: idx, id: inp.id || `field_${idx}`, label: label.trim() };
+                    if (inp.tagName === 'SELECT') meta.options = Array.from(inp.options).map(o => o.textContent.trim());
+                    return meta;
                 });
 
                 const systemPrompt = `Eres un asistente educativo profesional de ARKAIOS. El usuario quiere rellenar la plantilla escolar "${currentTemplate}" sobre el siguiente tema: "${promptInput}".
@@ -2322,17 +2350,8 @@ Ejemplo:
                     let filledCount = 0;
 
                     inputs.forEach((inp, idx) => {
-                        const key = inp.id && dataObj[inp.id] ? inp.id : String(idx);
-                        if (dataObj[key] !== undefined) {
-                            if (inp.isContentEditable) {
-                                inp.textContent = dataObj[key];
-                            } else {
-                                inp.value = dataObj[key];
-                            }
-                            inp.dispatchEvent(new Event('input', { bubbles: true }));
-                            inp.dispatchEvent(new Event('change', { bubbles: true }));
-                            filledCount++;
-                        }
+                        const key = inp.id && dataObj[inp.id] !== undefined ? inp.id : String(idx);
+                        if (dataObj[key] !== undefined && setTemplateField(inp, dataObj[key])) filledCount++;
                     });
 
                     statusDiv.textContent = `✅ ¡Listo! Se rellenaron ${filledCount} campos automáticamente.`;
