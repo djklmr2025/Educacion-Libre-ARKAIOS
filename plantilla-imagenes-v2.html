@@ -469,6 +469,7 @@
                 const items = e.clipboardData.items;
                 for (let item of items) {
                     if (item.type.indexOf('image') !== -1) {
+                        e.preventDefault();
                         const file = item.getAsFile();
                         handleFiles([file]);
                     }
