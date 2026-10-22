@@ -3,10 +3,14 @@
 // que añaden ?__op=<nombre>.
 import bridge from "./_bridge.js";
 import elemiaBridge from "./_elemia-bridge.js";
+import arkaiosFeed from "./_arkaios-feed.js";
+import forumBridge from "./_forum.js";
 
 const routes = {
   bridge,
-  "elemia-bridge": elemiaBridge
+  "elemia-bridge": elemiaBridge,
+  "arkaios-feed": arkaiosFeed,
+  forum: forumBridge
 };
 
 export default async function handler(req, res) {

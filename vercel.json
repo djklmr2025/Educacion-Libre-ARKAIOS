@@ -50,6 +50,18 @@
     {
       "source": "/api/elemia-bridge",
       "destination": "/api/bridges?__op=elemia-bridge"
+    },
+    {
+      "source": "/api/arkaios-feed",
+      "destination": "/api/bridges?__op=arkaios-feed"
+    },
+    {
+      "source": "/forum",
+      "destination": "/forum.html"
+    },
+    {
+      "source": "/api/v1/:path*",
+      "destination": "/api/bridges?__op=forum"
     }
   ]
 }
