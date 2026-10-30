@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Plantilla 20 instituciones — Vida libre de violencia | ARKAIOS</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#eef1f5;font-family:Arial,sans-serif;color:#253247}
+.toolbar{max-width:980px;margin:18px auto;padding:16px;background:#fff;border-radius:12px;box-shadow:0 4px 18px #0001}
+.toolbar h1{font-size:20px;margin:0 0 8px}.toolbar p{margin:6px 0;font-size:14px;line-height:1.4}
+button{border:0;border-radius:7px;padding:10px 15px;background:#586fe0;color:white;font-weight:bold;cursor:pointer;margin:4px}
+.sheet{width:21.59cm;height:27.94cm;background:#fff;margin:18px auto;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 18px #0002}
+.grid{width:20cm;height:25cm;display:grid;grid-template-columns:repeat(4,5cm);grid-template-rows:repeat(5,5cm)}
+.tile{width:5cm;height:5cm;border:1px dashed #9db5d5;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:7mm 3mm 5mm;text-align:center;overflow:hidden;background:#fff}
+.num{position:absolute;top:4px;left:4px;background:#7188e8;color:white;border-radius:3px;padding:2px 5px;font-size:9px;font-weight:bold}
+.mark{width:1.8cm;height:1.8cm;border:1.2px solid #aab9d1;border-radius:50%;background:#f2f5fa;display:flex;align-items:center;justify-content:center;color:#344a70;font-weight:800;font-size:12px;margin-bottom:5px}
+.name{font-size:7.4pt;font-weight:bold;line-height:1.12;max-width:100%}
+.hint{position:absolute;bottom:3px;font-size:6pt;color:#64748b}
+.tile img{max-width:100%;max-height:2.1cm;object-fit:contain;margin-bottom:4px}
+.tile.has-image .mark{display:none}
+@page{size:letter;margin:0}
+@media print{body{background:white}.toolbar{display:none!important}.sheet{margin:0;box-shadow:none;width:21.59cm;height:27.94cm;page-break-after:avoid}.tile{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+</style></head><body>
+<section class="toolbar"><h1>Plantilla: Organizaciones e instituciones por una vida libre de violencia — México</h1>
+<p>20 espacios de 5 × 5 cm · 4 columnas × 5 filas · hoja carta vertical. Haz clic en un espacio para cargar un logotipo o imagen desde tu computadora. Puedes cambiar el nombre de cada institución.</p>
+<button onclick="document.getElementById('allFiles').click()">Cargar imágenes (selección múltiple)</button>
+<input id="allFiles" type="file" accept="image/*" multiple hidden>
+<button onclick="window.print()">Imprimir / Guardar como PDF</button>
+<button onclick="resetAll()">Restablecer plantilla</button></section>
+<main class="sheet"><div class="grid" id="grid"></div></main>
+<script>
+const data=[["MUJERES","Secretaría de las Mujeres"],["SEGOB","Secretaría de Gobernación"],["BIENESTAR","Secretaría de Bienestar"],["SSPC","Seguridad y Protección Ciudadana"],["FGR","Fiscalía General de la República"],["SEP","Secretaría de Educación Pública"],["CULTURA","Secretaría de Cultura"],["SALUD","Secretaría de Salud"],["STPS","Trabajo y Previsión Social"],["SEDATU","Desarrollo Agrario, Territorial y Urbano"],["CONAPRED","Consejo Nacional para la No Discriminación"],["DIF","Sistema Nacional DIF"],["INPI","Instituto Nacional de los Pueblos Indígenas"],["INE","Instituto Nacional Electoral"],["CEAV","Comisión Ejecutiva de Atención a Víctimas"],["CNDH","Comisión Nacional de los Derechos Humanos"],["CONAVIM","Comisión Nacional para Prevenir y Erradicar la Violencia contra las Mujeres"],["SIPINNA","Sistema Nacional de Protección de Niñas, Niños y Adolescentes"],["CJM","Centros de Justicia para las Mujeres"],["ONU MUJERES","ONU Mujeres"]];
+const grid=document.getElementById('grid');
+function build(){grid.innerHTML='';data.forEach((d,i)=>{const el=document.createElement('div');el.className='tile';el.innerHTML='<span class="num">'+(i+1)+'</span><div class="mark">'+d[0]+'</div><div class="name" contenteditable="true">'+d[1]+'</div><span class="hint">LOGOTIPO / IMAGEN</span><input type="file" accept="image/*" hidden>';el.addEventListener('click',e=>{if(e.target.closest('[contenteditable]'))return;el.querySelector('input').click()});el.querySelector('input').addEventListener('change',e=>putImage(el,e.target.files[0]));grid.appendChild(el);});}
+function putImage(el,file){if(!file)return;const reader=new FileReader();reader.onload=()=>{let img=el.querySelector('img');if(!img){img=document.createElement('img');el.insertBefore(img,el.querySelector('.name'));}img.src=reader.result;el.classList.add('has-image');};reader.readAsDataURL(file);}
+document.getElementById('allFiles').addEventListener('change',e=>{[...e.target.files].slice(0,20).forEach((f,i)=>putImage(grid.children[i],f));});
+function resetAll(){build();}build();
+</script></body></html>
