@@ -771,6 +771,62 @@
         };
         window.rellenarConPixabay = window.applyExternalImages;
 
+        // ===== GUARDAR / RESTAURAR (Comunidad ARKAIOS y agentes) =====
+        // Sin esto, la Comunidad solo vería 1 tarjeta vacía: guarda cantidad, forma, color y foto+nombre de cada tarjeta.
+        const BIO_MAX_CARDS = 9;
+        const BIO_SHAPES = ['circular', 'rectangular'];
+        const BIO_COLORS = ['sky', 'navy', 'black'];
+        const BIO_SAFE_IMG = /^(data:image\/(png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=]+|https:\/\/[^\s"'<>]+)$/i;
+        const BIO_MAX_NAME = 80;
+
+        function markActive(selector, attr, value) {
+            document.querySelectorAll(selector).forEach(btn => btn.classList.toggle('active', btn.dataset[attr] === String(value)));
+        }
+
+        window.ARKAIOS_getData = function() {
+            return {
+                v: 1,
+                count: currentBioCount,
+                shape: currentShape,
+                color: currentColor,
+                cards: [...document.querySelectorAll('.bio-card')].map(card => ({
+                    img: card.querySelector('.photo-container img')?.getAttribute('src') || '',
+                    name: card.querySelector('.name-field')?.value || ''
+                }))
+            };
+        };
+
+        window.ARKAIOS_setData = function(data) {
+            if (!data || !Array.isArray(data.cards)) return;
+            const count = Math.min(Math.max(parseInt(data.count, 10) || data.cards.length || 1, 1), BIO_MAX_CARDS);
+            currentBioCount = count;
+            if (BIO_SHAPES.includes(data.shape)) currentShape = data.shape;
+            if (BIO_COLORS.includes(data.color)) currentColor = data.color;
+            markActive('[data-count]', 'count', currentBioCount);
+            markActive('.shape-btn', 'shape', currentShape);
+            markActive('.color-btn', 'color', currentColor);
+            updateBioLayout();
+
+            document.querySelectorAll('.bio-card').forEach((card, i) => {
+                const saved = data.cards[i];
+                if (!saved) return;
+                const src = String(saved.img || '');
+                if (BIO_SAFE_IMG.test(src)) {
+                    const container = card.querySelector('.photo-container');
+                    const img = document.createElement('img');
+                    img.src = src;
+                    img.alt = String(saved.name || 'Foto').slice(0, BIO_MAX_NAME);
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.objectFit = 'cover';
+                    container.innerHTML = '';
+                    container.appendChild(img);
+                }
+                const nameField = card.querySelector('.name-field');
+                if (nameField) nameField.value = String(saved.name || '').slice(0, BIO_MAX_NAME);
+            });
+        };
+
         // Función para preparar e imprimir
         function prepareAndPrint() {
             // Asegurar que todos los estilos de color se mantengan
