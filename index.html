@@ -2364,12 +2364,10 @@
         // ===== ASISTENTE IA GLOBAL (PUTER / CLAUDE) =====
         // Modelo preferido con fallback automático si el principal está deprecado
         const PUTER_AI_MODELS_PRIORITY = [
-            'claude-sonnet-4-5',
-            'claude-3-7-sonnet',
-            'claude-3-5-sonnet-20241022',
-            'claude-3-5-haiku',
-            'claude-3-haiku',
+            'claude-3-5-sonnet',
             'gpt-4o-mini',
+            'claude-3-haiku',
+            'deepseek-chat',
             'gpt-4o'
         ];
         let _cachedAIModel = null;
@@ -2390,7 +2388,7 @@
                 console.warn('[ARKAIOS AI] No se pudo consultar listModels, usando fallback:', e.message);
             }
             // Fallback: prueba en orden hasta que uno funcione
-            _cachedAIModel = PUTER_AI_MODELS_PRIORITY[0];
+            _cachedAIModel = 'gpt-4o-mini';
             return _cachedAIModel;
         }
 
@@ -2545,16 +2543,33 @@
 
         /** Respaldo sin IA: quita muletillas de la petici\u00F3n para quedarse con el tema. */
         function extractTopicHeuristic(promptInput) {
-            const topic = promptInput
-                .replace(/me puedes regalar|puedes|podr\u00EDas|generar|genera|crear|descargar|obtener|copiar|pegar|imagenes|im\u00E1genes|fotos|foto|la foto de|las fotos de|del tema|sobre|porfa|por favor|repetir|repetirla|veces|copias|\d+/gi, '')
-                .replace(/['":]/g, '')
+            let topic = promptInput
+                .replace(/me puedes regalar|puedes|podr\u00EDas|generar|genera|crear|descargar|obtener|copiar|pegar|imagenes|im\u00E1genes|fotos|foto|la foto de|las fotos de|del tema|sobre|porfa|por favor|copias|\d+/gi, ' ')
+                .replace(/repetir(la|lo|las|los)?|veces/gi, ' ')
+                .replace(/\b(de|del|la|el|los|las|un|una|unos|unas|y|o|en|con|para|por)\b/gi, ' ')
+                .replace(/['":?¿!¡]/g, '')
+                .replace(/\s+/g, ' ')
                 .trim();
             return topic.length >= 2 ? topic : 'educacion tecnologia';
         }
 
         /** Pide a Puter AI que clasifique la petici\u00F3n. Si falla o tarda, usa el respaldo sin IA. */
         async function classifyImageRequest(promptInput, fallbackTopic) {
-            const fallback = { tipo: 'mundo_real', sujeto: fallbackTopic, etiqueta: fallbackTopic, busqueda: fallbackTopic, prompt_ia: fallbackTopic };
+            const iframe = document.getElementById('plantillaFrame');
+            const isBio = (typeof currentTemplate === 'string' && (currentTemplate.includes('biografia') || currentTemplate.includes('bio'))) ||
+                          Boolean(iframe?.contentDocument?.querySelector('.bio-card, .name-field')) ||
+                          /(escritor|autor|cientifico|cient\u00EDfico|presidente|biografia|biograf\u00EDa|procer|pr\u00F3cer|personaje|poeta|pintor|filosofo|fil\u00F3sofo)/i.test(promptInput) ||
+                          /^[A-ZÁÉÍÓÚ][a-záéíóú]+\s+[A-ZÁÉÍÓÚ][a-záéíóú]+/i.test(fallbackTopic);
+
+            const defaultTipo = isBio ? 'persona_real' : 'mundo_real';
+            const fallback = {
+                tipo: defaultTipo,
+                sujeto: fallbackTopic,
+                etiqueta: fallbackTopic,
+                busqueda: fallbackTopic,
+                prompt_ia: isBio ? `Historical portrait of ${fallbackTopic}, educational oil painting style` : fallbackTopic
+            };
+
             if (typeof puter === 'undefined' || !puter.ai?.chat) return fallback;
             const instruction = `Clasifica esta petici\u00F3n de im\u00E1genes para material escolar. Responde SOLO un objeto JSON v\u00E1lido, sin texto extra:
 {"tipo":"persona_real|ficcion|mundo_real","sujeto":"nombre limpio de la persona o tema","etiqueta":"r\u00F3tulo corto en espa\u00F1ol para mostrar en la plantilla","busqueda":"t\u00E9rminos de b\u00FAsqueda en ingl\u00E9s para un banco de fotos","prompt_ia":"descripci\u00F3n en ingl\u00E9s para generar la imagen como ilustraci\u00F3n educativa"}
@@ -2563,8 +2578,11 @@
 - mundo_real: animales, lugares, objetos, fen\u00F3menos o ciencia que se pueden fotografiar.
 Petici\u00F3n: """${promptInput}"""`;
             try {
-                const ask = async () => puter.ai.chat(instruction, { model: await getAIModel() });
-                const raw = parsePuterResponse(await withTimeout(ask(), IMAGE_ROUTER_TIMEOUT_MS));
+                const ask = async () => {
+                    const m = await getAIModel();
+                    return puter.ai.chat(instruction, m ? { model: m } : undefined);
+                };
+                const raw = parsePuterResponse(await withTimeout(ask(), 5000));
                 const json = JSON.parse(String(raw).match(/\{[\s\S]*\}/)?.[0] || '');
                 if (!IMAGE_KINDS.includes(json.tipo)) return fallback;
                 const clean = (value, fallbackValue) => (typeof value === 'string' && value.trim() ? value.trim().slice(0, 160) : fallbackValue);
@@ -2637,9 +2655,9 @@ Petici\u00F3n: """${promptInput}"""`;
             const wikimedia = (q) => ['Wikimedia Commons', () => fetchWikimediaImages(q, count)];
             const ai = ['IA generativa', () => generateAiImages(plan.prompt_ia, count)];
             const routes = {
-                persona_real: [wikimedia(`${plan.sujeto} portrait`), ai],
+                persona_real: [wikimedia(`${plan.sujeto} portrait`), wikimedia(plan.sujeto), ai],
                 ficcion: [ai, wikimedia(plan.sujeto)],
-                mundo_real: [['Pexels', () => fetchPexelsImages(plan.busqueda, count)], wikimedia(plan.busqueda), ai],
+                mundo_real: [wikimedia(plan.busqueda), ['Pexels', () => fetchPexelsImages(plan.busqueda, count)], ai],
             };
             for (const [source, search] of routes[plan.tipo] || routes.mundo_real) {
                 setStatus(`\u23F3 Buscando "${plan.etiqueta}" en ${source}...`);
@@ -2650,8 +2668,11 @@ Petici\u00F3n: """${promptInput}"""`;
         }
 
         /** Repite las im\u00E1genes encontradas hasta llenar los espacios que pidi\u00F3 la plantilla. */
-        function fillToCount(urls, count) {
+        function fillToCount(urls, count, wantsRepeat = false) {
             if (urls.length === 0) return [];
+            if (wantsRepeat && urls.length > 0) {
+                return Array(count).fill(urls[0]);
+            }
             return Array.from({ length: count }, (_, i) => urls[i % urls.length]);
         }
 
@@ -2689,10 +2710,11 @@ Petici\u00F3n: """${promptInput}"""`;
                     const targetCount = countMatch ? Math.min(parseInt(countMatch[1]), MAX_IMAGES) : 12;
 
                     statusDiv.textContent = '🧠 Entendiendo qué imágenes necesitas...';
+                    const wantsRepeat = /(repetir|repetirla|repetirlo|veces|mismo personaje|misma foto)/i.test(promptInput);
                     const plan = await classifyImageRequest(promptInput, extractTopicHeuristic(promptInput));
                     const queryTopic = plan.etiqueta;
                     const found = await findImagesForRequest(plan, targetCount, (msg) => { statusDiv.textContent = msg; });
-                    const imageUrls = fillToCount(found.urls, targetCount);
+                    const imageUrls = fillToCount(found.urls, targetCount, wantsRepeat);
 
                     if (imageUrls.length > 0) {
                         let injected = false;
