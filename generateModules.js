@@ -19,7 +19,10 @@ const EXCLUDE = new Set([
   "pdf-manager.html",
   "CODIGO_PARA_INDEX.html",
   "login.html",
-  "portal-empresarial.html"
+  "portal-empresarial.html",
+  "buscador-imagenes-educativo.html",
+  "generador-ia-imagenes.html",
+  "pixabay-descargador-lote.html"
 ]);
 
 function prettifyName(file) {

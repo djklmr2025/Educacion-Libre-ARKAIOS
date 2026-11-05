@@ -107,6 +107,21 @@
   .close { position: absolute; top: 18px; right: 18px; width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--surface); color: var(--ink); font-size: 20px; box-shadow: var(--shadow); }
   :focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 60%, transparent); outline-offset: 2px; }
 
+  .agents { column-span: all; max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
+  .card h3 { font-family: 'Poppins', sans-serif; font-size: 18px; margin-bottom: 6px; }
+  .card p { color: var(--ink-2); font-size: 13.5px; line-height: 1.55; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+  .row input { flex: 1 1 200px; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); padding: 0 14px; font-size: 14px; }
+  .key { margin-top: 14px; padding: 14px; border-radius: 12px; background: var(--free-bg); border: 1px solid color-mix(in srgb, var(--free) 35%, transparent); font-size: 13px; }
+  .key code { display: block; margin: 8px 0; padding: 10px; border-radius: 8px; background: var(--bg); font-size: 12.5px; word-break: break-all; user-select: all; }
+  .agent { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+  .agent:first-child { border-top: 0; }
+  .agent div { flex: 1; min-width: 0; }
+  .agent b { display: block; }
+  .agent small { color: var(--ink-3); font-size: 12px; }
+  .agent.off { opacity: .5; }
+
   @media (max-width: 760px) {
     .bar { flex-wrap: wrap; padding: 10px 16px; }
     .brand small, .go-app span { display: none; }
@@ -137,6 +152,7 @@
     <button class="tab on" data-tab="explorar">Explorar</button>
     <button class="tab" data-tab="mios">Mis materiales</button>
     <button class="tab" data-tab="guardados">Guardados</button>
+    <button class="tab" data-tab="agentes" id="tabAgentes" hidden>🤖 Agentes</button>
     <span class="sep"></span>
     <span id="chips"></span>
   </nav>
@@ -212,6 +228,7 @@
 
   async function load(reset) {
     if (reset) { view.pageToken = null; view.done = false; view.loading = false; items.clear(); wall.innerHTML = ''; view.seq++; }
+    if (view.tab === 'agentes') { if (reset) renderAgents(); return; }
     if (view.loading || view.done) return;
     const seq = view.seq;
     view.loading = true;
@@ -241,6 +258,44 @@
       if (seq === view.seq) view.loading = false;
     }
   }
+
+  async function renderAgents() {
+    setState('⏳', 'Cargando agentes…');
+    let list;
+    try { list = (await ArkComunidad.agents()).agents; } catch (e) { setState('🔐', esc(e.message)); return; }
+    const rows = list.length ? list.slice().reverse().map((a) => `
+      <div class="agent ${a.revoked ? 'off' : ''}">
+        <span class="avatar">🤖</span>
+        <div><b>${esc(a.name)}</b><small>${esc(a.description || 'Sin descripción')} · creado ${new Date(a.createdAt).toLocaleDateString('es-MX')}${a.revoked ? ' · REVOCADO' : ''}</small></div>
+        ${a.revoked ? '' : `<button class="btn btn-del" data-revoke="${esc(a.id)}">Revocar</button>`}
+      </div>`).join('') : '<p>Aún no hay agentes registrados.</p>';
+    wall.innerHTML = `<section class="agents">
+      <div class="card">
+        <h3>🤖 Acceso para agentes de IA</h3>
+        <p>Crea una llave para que un agente (Claude, Gemini, ChatGPT…) publique, busque y reutilice materiales en la Comunidad usando el servidor MCP o el skill. Lo que publique aparece como «🤖 Nombre». Solo un administrador humano puede crear o revocar llaves.</p>
+        <div class="row"><input id="agName" maxlength="40" placeholder="Nombre del agente, ej. Claude Code"><input id="agDesc" maxlength="200" placeholder="Para qué lo usarás (opcional)"><button class="btn btn-use" id="agCreate">Crear llave</button></div>
+        <div id="agKey"></div>
+      </div>
+      <div class="card"><h3>Agentes registrados</h3>${rows}</div>
+    </section>`;
+  }
+
+  wall.addEventListener('click', async (e) => {
+    if (e.target.id === 'agCreate') {
+      const name = document.getElementById('agName').value.trim();
+      if (!name) { document.getElementById('agName').focus(); return; }
+      e.target.disabled = true;
+      try {
+        const r = await ArkComunidad.createAgent(name, document.getElementById('agDesc').value.trim());
+        await renderAgents();
+        document.getElementById('agKey').innerHTML = `<div class="key">🔑 <b>Llave de «${esc(r.agent.name)}»</b> — cópiala ahora, no se vuelve a mostrar:<code>${esc(r.key)}</code>Úsala como <code>ARKAIOS_EDU_AGENT_KEY</code> en el MCP, o como <code>Authorization: Bearer …</code> en la API.</div>`;
+      } catch (err) { alert(err.message); e.target.disabled = false; }
+    }
+    const rid = e.target.dataset?.revoke;
+    if (rid && confirm('¿Revocar este agente? Dejará de poder usar la Comunidad de inmediato.')) {
+      try { await ArkComunidad.revokeAgent(rid); renderAgents(); } catch (err) { alert(err.message); }
+    }
+  });
 
   async function toggleSave(id, btnEls) {
     try {
@@ -307,7 +362,7 @@
 
   window.addEventListener('ark-auth', async (e) => {
     if (!e.detail) { me = null; return; }
-    try { const r = await ArkComunidad.me(); me = r.user; r.saved.forEach((id) => savedIds.add(id)); wall.querySelectorAll('.pin').forEach((p) => { if (savedIds.has(p.dataset.id)) { const b = p.querySelector('.pin-save'); b.classList.add('done'); b.textContent = 'Guardado'; } }); }
+    try { const r = await ArkComunidad.me(); me = r.user; document.getElementById('tabAgentes').hidden = !me.isAdmin; r.saved.forEach((id) => savedIds.add(id)); wall.querySelectorAll('.pin').forEach((p) => { if (savedIds.has(p.dataset.id)) { const b = p.querySelector('.pin-save'); b.classList.add('done'); b.textContent = 'Guardado'; } }); }
     catch { me = null; }
   });
 

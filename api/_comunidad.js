@@ -1,6 +1,8 @@
 // Comunidad ARKAIOS EDU: materiales compartidos guardados en la nube ARKAIOS (Google Drive).
 // Drive es a la vez almacén de archivos y base de datos (appProperties). Cada usuario se
 // identifica con su cuenta Firebase (Google); los materiales publicados son visibles para todos.
+import crypto from "node:crypto";
+
 const DRIVE = "https://www.googleapis.com/drive/v3";
 const UPLOAD = "https://www.googleapis.com/upload/drive/v3/files";
 const FOLDERS = {
@@ -88,10 +90,94 @@ async function replaceContent(fileId, buffer, mimeType) {
 
 const quote = (s) => `'${String(s).replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
 
+// ---------- Agentes de IA (llaves emitidas por un admin; solo se guarda su hash) ----------
+const AGENT_PREFIX = "arkedu_ag_";
+const AGENTS_FILE = "agentes.json";
+const MAX_AGENTS = 50;
+let agentsCache = { at: 0, fileId: null, agents: [] };
+
+const sha256 = (s) => crypto.createHash("sha256").update(s).digest("hex");
+
+async function loadAgents(force = false) {
+  if (!force && Date.now() - agentsCache.at < 60_000) return agentsCache;
+  const q = encodeURIComponent(`name=${quote(AGENTS_FILE)} and ${quote(FOLDERS.usuarios)} in parents and trashed=false`);
+  const l = await drive(`/files?q=${q}&fields=files(id)&pageSize=1`);
+  const fileId = l.files?.[0]?.id || null;
+  let agents = [];
+  if (fileId) {
+    const r = await drive(`/files/${fileId}?alt=media`, { raw: true });
+    const j = r.ok ? await r.json().catch(() => ({})) : {};
+    agents = Array.isArray(j.agents) ? j.agents : [];
+  }
+  agentsCache = { at: Date.now(), fileId, agents };
+  return agentsCache;
+}
+
+async function saveAgents(agents) {
+  const { fileId } = await loadAgents(true);
+  const buffer = Buffer.from(JSON.stringify({ agents, updatedAt: new Date().toISOString() }, null, 2));
+  if (fileId) await replaceContent(fileId, buffer, "application/json");
+  else await uploadFile({ name: AGENTS_FILE, parent: FOLDERS.usuarios, mimeType: "application/json", buffer });
+  agentsCache = { at: 0, fileId: null, agents: [] };
+}
+
+async function agentFromKey(key) {
+  if (!/^arkedu_ag_[a-f0-9]{48}$/.test(key)) return null;
+  const hash = sha256(key);
+  const { agents } = await loadAgents();
+  const a = agents.find((x) => !x.revoked && x.hash.length === hash.length &&
+    crypto.timingSafeEqual(Buffer.from(x.hash), Buffer.from(hash)));
+  if (!a) return null;
+  return { uid: `agent_${a.id}`, email: "", name: `🤖 ${a.name}`, isAdmin: false, isAgent: true };
+}
+
+const publicAgent = ({ hash, ...rest }) => rest;
+
+async function listAgents() {
+  return { agents: (await loadAgents(true)).agents.map(publicAgent) };
+}
+
+async function createAgent(body, admin) {
+  const name = cleanText(body.name, 40);
+  if (!name) throw new HttpError(400, "Ponle un nombre al agente.");
+  const { agents } = await loadAgents(true);
+  if (agents.filter((a) => !a.revoked).length >= MAX_AGENTS) throw new HttpError(400, "Límite de agentes activos alcanzado.");
+  const key = AGENT_PREFIX + crypto.randomBytes(24).toString("hex");
+  const agent = {
+    id: crypto.randomBytes(6).toString("hex"),
+    name,
+    description: cleanText(body.description, 200),
+    hash: sha256(key),
+    createdBy: admin.email,
+    createdAt: new Date().toISOString(),
+    revoked: false
+  };
+  await saveAgents([...agents, agent]);
+  return { agent: publicAgent(agent), key, warning: "Guarda esta llave ahora: no se vuelve a mostrar." };
+}
+
+async function revokeAgent(body) {
+  const id = String(body.id || "");
+  const { agents } = await loadAgents(true);
+  if (!agents.some((a) => a.id === id)) throw new HttpError(404, "Agente no encontrado.");
+  await saveAgents(agents.map((a) => (a.id === id ? { ...a, revoked: true, revokedAt: new Date().toISOString() } : a)));
+  return { revoked: id };
+}
+
+function requireHumanAdmin(user) {
+  if (user.isAgent || !user.isAdmin) throw new HttpError(403, "Solo un administrador humano puede gestionar agentes.");
+  return user;
+}
+
 // ---------- Usuarios (Firebase Auth, validado por Google) ----------
 async function requireUser(req) {
   const m = /^Bearer\s+(.+)$/i.exec(String(req.headers.authorization || ""));
   if (!m) throw new HttpError(401, "Inicia sesión con tu cuenta para continuar.");
+  if (m[1].startsWith(AGENT_PREFIX)) {
+    const agent = await agentFromKey(m[1].trim());
+    if (!agent) throw new HttpError(401, "Llave de agente inválida o revocada.");
+    return agent;
+  }
   const r = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${FIREBASE_WEB_KEY}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -287,6 +373,7 @@ export default async function handler(req, res) {
         return res.status(200).json({ ok: true, user: { uid: user.uid, name: user.name, isAdmin: user.isAdmin }, saved: (await readSaved(user.uid)).saved });
       }
       if (action === "saved") return res.status(200).json({ ok: true, ...(await listSaved(await requireUser(req))) });
+      if (action === "agents") { requireHumanAdmin(await requireUser(req)); return res.status(200).json({ ok: true, ...(await listAgents()) }); }
       const user = req.query.owner === "me" ? await requireUser(req) : null;
       return res.status(200).json({ ok: true, ...(await listMaterials(req.query, user)) });
     }
@@ -297,6 +384,8 @@ export default async function handler(req, res) {
       if (action === "publish") return res.status(200).json({ ok: true, ...(await publish(body, user)) });
       if (action === "save") return res.status(200).json({ ok: true, ...(await toggleSave(body, user)) });
       if (action === "delete") return res.status(200).json({ ok: true, ...(await removeMaterial(body, user)) });
+      if (action === "agent-create") return res.status(200).json({ ok: true, ...(await createAgent(body, requireHumanAdmin(user))) });
+      if (action === "agent-revoke") { requireHumanAdmin(user); return res.status(200).json({ ok: true, ...(await revokeAgent(body)) }); }
     }
     return res.status(405).json({ ok: false, error: "Acción no permitida." });
   } catch (err) {

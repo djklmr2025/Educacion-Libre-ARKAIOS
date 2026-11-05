@@ -85,27 +85,6 @@
       ]
     },
     {
-      "title": "Buscar y Generar Imágenes",
-      "icon": "🔎",
-      "items": [
-        {
-          "label": "Buscador Imágenes Educativo",
-          "icon": "🎨",
-          "target": "buscador-imagenes-educativo.html"
-        },
-        {
-          "label": "Generador IA Imágenes",
-          "icon": "🤖",
-          "target": "generador-ia-imagenes.html"
-        },
-        {
-          "label": "Pixabay Descarga Lote",
-          "icon": "🌐",
-          "target": "pixabay-descargador-lote.html"
-        }
-      ]
-    },
-    {
       "title": "Biblioteca y Herramientas",
       "icon": "📚",
       "items": [
