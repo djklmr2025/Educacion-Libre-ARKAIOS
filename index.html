@@ -2533,41 +2533,126 @@
             }
         }
 
-        async function fetchImagesForTopic(query, count = 12) {
-            const cleanQuery = query.replace(/[^\w\s\u00C0-\u017F]/gi, ' ').trim() || 'educacion';
+        // ===== Copiloto de im\u00E1genes: entender la petici\u00F3n y elegir la fuente correcta =====
+        const IMAGE_ROUTER_TIMEOUT_MS = 12000;
+        const MAX_AI_IMAGES = 2;
+        const MAX_IMAGES = 30;
+        const IMAGE_KINDS = ['persona_real', 'ficcion', 'mundo_real'];
+
+        function withTimeout(promise, ms) {
+            return Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))]);
+        }
+
+        /** Respaldo sin IA: quita muletillas de la petici\u00F3n para quedarse con el tema. */
+        function extractTopicHeuristic(promptInput) {
+            const topic = promptInput
+                .replace(/me puedes regalar|puedes|podr\u00EDas|generar|genera|crear|descargar|obtener|copiar|pegar|imagenes|im\u00E1genes|fotos|foto|la foto de|las fotos de|del tema|sobre|porfa|por favor|repetir|repetirla|veces|copias|\d+/gi, '')
+                .replace(/['":]/g, '')
+                .trim();
+            return topic.length >= 2 ? topic : 'educacion tecnologia';
+        }
+
+        /** Pide a Puter AI que clasifique la petici\u00F3n. Si falla o tarda, usa el respaldo sin IA. */
+        async function classifyImageRequest(promptInput, fallbackTopic) {
+            const fallback = { tipo: 'mundo_real', sujeto: fallbackTopic, etiqueta: fallbackTopic, busqueda: fallbackTopic, prompt_ia: fallbackTopic };
+            if (typeof puter === 'undefined' || !puter.ai?.chat) return fallback;
+            const instruction = `Clasifica esta petici\u00F3n de im\u00E1genes para material escolar. Responde SOLO un objeto JSON v\u00E1lido, sin texto extra:
+{"tipo":"persona_real|ficcion|mundo_real","sujeto":"nombre limpio de la persona o tema","etiqueta":"r\u00F3tulo corto en espa\u00F1ol para mostrar en la plantilla","busqueda":"t\u00E9rminos de b\u00FAsqueda en ingl\u00E9s para un banco de fotos","prompt_ia":"descripci\u00F3n en ingl\u00E9s para generar la imagen como ilustraci\u00F3n educativa"}
+- persona_real: persona hist\u00F3rica o real (cient\u00EDficos, pr\u00F3ceres, escritores, artistas).
+- ficcion: personajes inventados, mitolog\u00EDa, fantas\u00EDa, o escenas y poses que no existen en fotos.
+- mundo_real: animales, lugares, objetos, fen\u00F3menos o ciencia que se pueden fotografiar.
+Petici\u00F3n: """${promptInput}"""`;
             try {
-                // 1. Intentar con proxy seguro de Pexels
+                const ask = async () => puter.ai.chat(instruction, { model: await getAIModel() });
+                const raw = parsePuterResponse(await withTimeout(ask(), IMAGE_ROUTER_TIMEOUT_MS));
+                const json = JSON.parse(String(raw).match(/\{[\s\S]*\}/)?.[0] || '');
+                if (!IMAGE_KINDS.includes(json.tipo)) return fallback;
+                const clean = (value, fallbackValue) => (typeof value === 'string' && value.trim() ? value.trim().slice(0, 160) : fallbackValue);
+                const sujeto = clean(json.sujeto, fallbackTopic);
+                return { tipo: json.tipo, sujeto, etiqueta: clean(json.etiqueta, sujeto), busqueda: clean(json.busqueda, sujeto), prompt_ia: clean(json.prompt_ia, sujeto) };
+            } catch (e) {
+                console.warn('Clasificaci\u00F3n de im\u00E1genes no disponible, uso respaldo:', e.message);
+                return fallback;
+            }
+        }
+
+        /** Pexels solo v\u00EDa el proxy del servidor: la llave nunca viaja al navegador. */
+        async function fetchPexelsImages(query, count) {
+            try {
                 const res = await fetch('/api/pexels', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ q: cleanQuery, per_page: Math.min(count, 30) })
+                    body: JSON.stringify({ q: query, per_page: Math.min(count, MAX_IMAGES) })
                 });
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.photos && data.photos.length > 0) {
-                        return data.photos.map(p => p.src?.large || p.src?.medium || p.src?.original);
-                    }
-                }
-            } catch(e) {
-                console.warn('Fallo Pexels API serverless:', e);
+                if (!res.ok) return [];
+                const data = await res.json();
+                return (data.photos || []).map(p => p.src?.large || p.src?.medium || p.src?.original).filter(Boolean);
+            } catch (e) {
+                console.warn('Pexels no disponible:', e.message);
+                return [];
             }
+        }
 
-            // 2. Fallback a clave directa de Pexels del proyecto educativo
+        /** Wikimedia Commons: im\u00E1genes reales y libres; ideal para retratos de personas hist\u00F3ricas. */
+        async function fetchWikimediaImages(query, count) {
+            const params = new URLSearchParams({
+                action: 'query', format: 'json', origin: '*',
+                generator: 'search', gsrsearch: `${query} filetype:bitmap`, gsrnamespace: '6', gsrlimit: String(Math.min(count * 2, 40)),
+                prop: 'imageinfo', iiprop: 'url|mime', iiurlwidth: '800'
+            });
             try {
-                const pexelsDirectRes = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(cleanQuery)}&per_page=${Math.min(count, 30)}`, {
-                    headers: { Authorization: '***REMOVIDA***' }
-                });
-                if (pexelsDirectRes.ok) {
-                    const pdata = await pexelsDirectRes.json();
-                    if (pdata.photos && pdata.photos.length > 0) {
-                        return pdata.photos.map(p => p.src?.large || p.src?.medium);
-                    }
-                }
-            } catch(e) {
-                console.warn('Fallo Pexels Direct:', e);
+                const res = await fetch(`https://commons.wikimedia.org/w/api.php?${params}`);
+                if (!res.ok) return [];
+                const data = await res.json();
+                return Object.values(data.query?.pages || {})
+                    .sort((a, b) => (a.index ?? 0) - (b.index ?? 0))
+                    .map(p => p.imageinfo?.[0])
+                    .filter(info => info && /^image\/(jpeg|png|webp)$/.test(info.mime))
+                    .map(info => info.thumburl || info.url)
+                    .slice(0, count);
+            } catch (e) {
+                console.warn('Wikimedia no disponible:', e.message);
+                return [];
             }
+        }
 
-            return [];
+        /** Genera pocas im\u00E1genes con IA (cuestan tiempo y cr\u00E9ditos); el resto se llena repiti\u00E9ndolas. */
+        async function generateAiImages(prompt, count) {
+            const urls = [];
+            if (typeof puter === 'undefined' || !puter.ai?.txt2img) return urls;
+            for (let i = 0; i < Math.min(count, MAX_AI_IMAGES); i++) {
+                try {
+                    const img = await puter.ai.txt2img(prompt);
+                    if (img?.src) urls.push(img.src);
+                } catch (e) {
+                    console.warn('Generaci\u00F3n con IA no disponible:', e.message);
+                    break;
+                }
+            }
+            return urls;
+        }
+
+        /** Orden de fuentes seg\u00FAn el tipo de petici\u00F3n; se detiene en la primera que devuelve im\u00E1genes. */
+        async function findImagesForRequest(plan, count, setStatus) {
+            const wikimedia = (q) => ['Wikimedia Commons', () => fetchWikimediaImages(q, count)];
+            const ai = ['IA generativa', () => generateAiImages(plan.prompt_ia, count)];
+            const routes = {
+                persona_real: [wikimedia(`${plan.sujeto} portrait`), ai],
+                ficcion: [ai, wikimedia(plan.sujeto)],
+                mundo_real: [['Pexels', () => fetchPexelsImages(plan.busqueda, count)], wikimedia(plan.busqueda), ai],
+            };
+            for (const [source, search] of routes[plan.tipo] || routes.mundo_real) {
+                setStatus(`\u23F3 Buscando "${plan.etiqueta}" en ${source}...`);
+                const urls = await search();
+                if (urls.length > 0) return { urls, source };
+            }
+            return { urls: [], source: null };
+        }
+
+        /** Repite las im\u00E1genes encontradas hasta llenar los espacios que pidi\u00F3 la plantilla. */
+        function fillToCount(urls, count) {
+            if (urls.length === 0) return [];
+            return Array.from({ length: count }, (_, i) => urls[i % urls.length]);
         }
 
         async function runPuterAutoFill() {
@@ -2601,34 +2686,13 @@
                     
                     // Extraer cantidad deseada del texto o usar 12 por defecto
                     const countMatch = promptInput.match(/(\d+)\s*(im[aá]genes|fotos|cuadros|veces|copias)?/i);
-                    const targetCount = countMatch ? Math.min(parseInt(countMatch[1]), 30) : 12;
+                    const targetCount = countMatch ? Math.min(parseInt(countMatch[1]), MAX_IMAGES) : 12;
 
-                    // Extraer tema clave
-                    let queryTopic = promptInput
-                        .replace(/me puedes regalar|puedes|podrías|generar|genera|crear|descargar|obtener|copiar|pegar|imagenes|imágenes|fotos|foto|la foto de|las fotos de|del tema|sobre|porfa|por favor|repetir|repetirla|veces|copias|\d+/gi, '')
-                        .replace(/['":]/g, '')
-                        .trim();
-                    if (!queryTopic || queryTopic.length < 2) queryTopic = 'educacion tecnologia';
-
-                    statusDiv.textContent = `⏳ Obteniendo imágenes sobre "${queryTopic}"...`;
-                    let imageUrls = await fetchImagesForTopic(queryTopic, targetCount);
-
-                    // Si no hubo suficientes fotos en Pexels, generar al menos una con Puter AI
-                    if (imageUrls.length === 0) {
-                        try {
-                            statusDiv.textContent = `🎨 Generando ilustración educativa con Puter AI para "${queryTopic}"...`;
-                            const genImg = await puter.ai.txt2img(queryTopic);
-                            if (genImg && genImg.src) imageUrls.push(genImg.src);
-                        } catch(genErr) {}
-                    }
-
-                    // Si el usuario pidió N fotos y obtuvimos menos (o pidió repetir), extender/duplicar el array de URLs
-                    if (imageUrls.length > 0 && imageUrls.length < targetCount && /(repetir|repetirla|veces|copias|todas|todos)/i.test(promptInput)) {
-                        const single = imageUrls[0];
-                        while (imageUrls.length < targetCount) {
-                            imageUrls.push(single);
-                        }
-                    }
+                    statusDiv.textContent = '🧠 Entendiendo qué imágenes necesitas...';
+                    const plan = await classifyImageRequest(promptInput, extractTopicHeuristic(promptInput));
+                    const queryTopic = plan.etiqueta;
+                    const found = await findImagesForRequest(plan, targetCount, (msg) => { statusDiv.textContent = msg; });
+                    const imageUrls = fillToCount(found.urls, targetCount);
 
                     if (imageUrls.length > 0) {
                         let injected = false;
@@ -2661,7 +2725,7 @@
                         }
 
                         if (injected) {
-                            statusDiv.textContent = `✅ ¡Listo! Se obtuvieron e insertaron ${imageUrls.length} imágenes reales de "${queryTopic}" en tu plantilla.`;
+                            statusDiv.textContent = `✅ ¡Listo! Se insertaron ${imageUrls.length} imágenes de "${queryTopic}" (fuente: ${found.source}).`;
                         } else {
                             statusDiv.textContent = `⚠️ Se obtuvieron las imágenes de "${queryTopic}", pero la plantilla actual no expuso un área visible para inyectarlas.`;
                         }
