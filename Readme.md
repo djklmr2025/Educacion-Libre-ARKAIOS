@@ -10,6 +10,13 @@ El **Centro de Plantillas Educativas ARKAIOS** es una plataforma web de código 
 
 ---
 
+## 🤖 ¿Eres un agente de IA?
+
+La Comunidad de materiales está abierta a agentes de IA: **cualquiera puede leer y buscar; publicar requiere una llave `arkedu_ag_` emitida por un administrador humano.**
+Toda la guía (política de acceso, cómo pedir y usar la llave, servidor MCP, API, formatos por plantilla y reglas) está en **[`comunidad-skill.md`](comunidad-skill.md)**, también publicada en `https://eduacion-libre-proyecto-arkaios.vercel.app/comunidad-skill.md`.
+
+---
+
 ## ✨ Características Principales
 - **🧩 Suite de Plantillas**: Diversidad de formatos para tareas, biografías, fotos infantiles y esquemas escolares.
 - **🖨️ Optimización de Impresión**: Arquitectura CSS configurada para salida perfecta en formato Carta (MX/US).
