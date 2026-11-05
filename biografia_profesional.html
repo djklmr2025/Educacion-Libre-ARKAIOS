@@ -499,6 +499,16 @@
                 color-adjust: exact;
             }
 
+            /* Los motores de PDF descartan degradados con sombra en algunas tarjetas: al imprimir, color sólido. */
+            .photo-frame {
+                box-shadow: none !important;
+                transition: none !important;
+                transform: none !important;
+            }
+            .photo-frame.color-sky { background: #3b82f6 !important; }
+            .photo-frame.color-navy { background: #1e3a8a !important; }
+            .photo-frame.color-black { background: #1f2937 !important; }
+
             .name-field {
                 background: transparent !important;
                 color: white !important;
