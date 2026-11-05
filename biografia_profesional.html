@@ -733,6 +733,44 @@
 
         updatePageCount();
 
+        // ===== INTEGRACIÓN CON ASISTENTES IA / MCP (ARKAIOS) =====
+        window.applyExternalImages = function(urls, sourceName) {
+            if (!urls || !urls.length) return;
+            const bioCards = document.querySelectorAll('.bio-card');
+            if (!bioCards.length) return;
+
+            const cleanLabel = (sourceName || '')
+                .replace(/Pexels:\s*|Pixabay:\s*|Freepik:\s*|Puter:\s*/gi, '')
+                .replace(/puedes|generar|la foto de|repetir|repetirla|veces/gi, '')
+                .trim()
+                .toUpperCase();
+
+            const shouldRepeatSingle = urls.length === 1 && bioCards.length > 1;
+
+            bioCards.forEach((card, index) => {
+                const url = shouldRepeatSingle ? urls[0] : (urls[index] || (index < urls.length ? urls[index] : null));
+                if (!url) return;
+
+                const container = card.querySelector('.photo-container');
+                if (container) {
+                    container.innerHTML = '';
+                    const img = document.createElement('img');
+                    img.src = url;
+                    img.alt = cleanLabel || 'Foto';
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.objectFit = 'cover';
+                    container.appendChild(img);
+                }
+
+                const nameField = card.querySelector('.name-field');
+                if (nameField && cleanLabel && (!nameField.value || nameField.value === 'NOMBRE COMPLETO')) {
+                    nameField.value = cleanLabel;
+                }
+            });
+        };
+        window.rellenarConPixabay = window.applyExternalImages;
+
         // Función para preparar e imprimir
         function prepareAndPrint() {
             // Asegurar que todos los estilos de color se mantengan

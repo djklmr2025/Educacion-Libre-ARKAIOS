@@ -2493,9 +2493,8 @@
                 return typeof win.applyExternalImages === 'function' ||
                        typeof win.rellenarConPixabay === 'function' ||
                        Array.isArray(win.imagenes) ||
-                       (currentTemplate && currentTemplate.includes('cuadro')) ||
-                       (currentTemplate && currentTemplate.includes('foto')) ||
-                       doc.querySelector('.celda-imagen, .arkaios-image-slot, #input-imagenes, #hojas-container') !== null;
+                       (currentTemplate && (currentTemplate.includes('cuadro') || currentTemplate.includes('foto') || currentTemplate.includes('biografia'))) ||
+                       doc.querySelector('.celda-imagen, .arkaios-image-slot, #input-imagenes, #hojas-container, .photo-container, .bio-card') !== null;
             } catch(e) {
                 return false;
             }
@@ -2601,17 +2600,17 @@
                     statusDiv.textContent = '🔍 Analizando petición y buscando imágenes educativas de alta calidad...';
                     
                     // Extraer cantidad deseada del texto o usar 12 por defecto
-                    const countMatch = promptInput.match(/(\d+)\s*(im[aá]genes|fotos|cuadros)?/i);
+                    const countMatch = promptInput.match(/(\d+)\s*(im[aá]genes|fotos|cuadros|veces|copias)?/i);
                     const targetCount = countMatch ? Math.min(parseInt(countMatch[1]), 30) : 12;
 
                     // Extraer tema clave
                     let queryTopic = promptInput
-                        .replace(/me puedes regalar|crear|descargar|obtener|copiar|pegar|imagenes|imágenes|fotos|del tema|sobre|porfa|por favor|\d+/gi, '')
+                        .replace(/me puedes regalar|puedes|podrías|generar|genera|crear|descargar|obtener|copiar|pegar|imagenes|imágenes|fotos|foto|la foto de|las fotos de|del tema|sobre|porfa|por favor|repetir|repetirla|veces|copias|\d+/gi, '')
                         .replace(/['":]/g, '')
                         .trim();
                     if (!queryTopic || queryTopic.length < 2) queryTopic = 'educacion tecnologia';
 
-                    statusDiv.textContent = `⏳ Obteniendo ${targetCount} imágenes sobre "${queryTopic}"...`;
+                    statusDiv.textContent = `⏳ Obteniendo imágenes sobre "${queryTopic}"...`;
                     let imageUrls = await fetchImagesForTopic(queryTopic, targetCount);
 
                     // Si no hubo suficientes fotos en Pexels, generar al menos una con Puter AI
@@ -2621,6 +2620,14 @@
                             const genImg = await puter.ai.txt2img(queryTopic);
                             if (genImg && genImg.src) imageUrls.push(genImg.src);
                         } catch(genErr) {}
+                    }
+
+                    // Si el usuario pidió N fotos y obtuvimos menos (o pidió repetir), extender/duplicar el array de URLs
+                    if (imageUrls.length > 0 && imageUrls.length < targetCount && /(repetir|repetirla|veces|copias|todas|todos)/i.test(promptInput)) {
+                        const single = imageUrls[0];
+                        while (imageUrls.length < targetCount) {
+                            imageUrls.push(single);
+                        }
                     }
 
                     if (imageUrls.length > 0) {
@@ -2636,13 +2643,28 @@
                             if (typeof win.generarPlantilla === 'function') win.generarPlantilla();
                             injected = true;
                         } else {
+                            // Fallback genérico para contenedores o etiquetas img
+                            const containers = doc.querySelectorAll('.photo-container, .photo-placeholder, .bio-card .photo-container');
+                            if (containers.length > 0) {
+                                containers.forEach((cnt, idx) => {
+                                    const u = imageUrls[idx] || (imageUrls.length === 1 ? imageUrls[0] : null);
+                                    if (u) {
+                                        cnt.innerHTML = `<img src="${u}" style="width:100%; height:100%; object-fit:cover; border-radius:inherit;" />`;
+                                        injected = true;
+                                    }
+                                });
+                            }
                             const domImgs = doc.querySelectorAll('img:not([src^="data:image/svg"])');
                             imageUrls.forEach((u, idx) => {
                                 if (domImgs[idx]) { domImgs[idx].src = u; injected = true; }
                             });
                         }
 
-                        statusDiv.textContent = `✅ ¡Listo! Se obtuvieron e insertaron ${imageUrls.length} imágenes reales de "${queryTopic}" en tu plantilla.`;
+                        if (injected) {
+                            statusDiv.textContent = `✅ ¡Listo! Se obtuvieron e insertaron ${imageUrls.length} imágenes reales de "${queryTopic}" en tu plantilla.`;
+                        } else {
+                            statusDiv.textContent = `⚠️ Se obtuvieron las imágenes de "${queryTopic}", pero la plantilla actual no expuso un área visible para inyectarlas.`;
+                        }
                         btn.disabled = false;
                         return;
                     }
@@ -2755,6 +2777,12 @@ Ejemplo:
                         if (targetImg) {
                             targetImg.src = imgSrc;
                             inyectada = true;
+                        } else {
+                            const placeholder = doc.querySelector('.photo-container, .photo-placeholder, .bio-card .photo-container');
+                            if (placeholder) {
+                                placeholder.innerHTML = `<img src="${imgSrc}" style="width:100%; height:100%; object-fit:cover; border-radius:inherit;" />`;
+                                inyectada = true;
+                            }
                         }
                     }
 
