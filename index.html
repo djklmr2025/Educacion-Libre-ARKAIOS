@@ -2559,7 +2559,7 @@
             const isBio = (typeof currentTemplate === 'string' && (currentTemplate.includes('biografia') || currentTemplate.includes('bio'))) ||
                           Boolean(iframe?.contentDocument?.querySelector('.bio-card, .name-field')) ||
                           /(escritor|autor|cientifico|cient\u00EDfico|presidente|biografia|biograf\u00EDa|procer|pr\u00F3cer|personaje|poeta|pintor|filosofo|fil\u00F3sofo)/i.test(promptInput) ||
-                          /^[A-ZÁÉÍÓÚ][a-záéíóú]+\s+[A-ZÁÉÍÓÚ][a-záéíóú]+/i.test(fallbackTopic);
+                          /^[A-ZÁÉÍÓÚÑ][a-záéíóúñü]+\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñü]+/.test(fallbackTopic);
 
             const defaultTipo = isBio ? 'persona_real' : 'mundo_real';
             const fallback = {
