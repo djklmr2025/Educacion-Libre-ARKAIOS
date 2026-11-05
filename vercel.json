@@ -60,6 +60,14 @@
       "destination": "/forum.html"
     },
     {
+      "source": "/comunidad",
+      "destination": "/comunidad.html"
+    },
+    {
+      "source": "/api/comunidad",
+      "destination": "/api/bridges?__op=comunidad"
+    },
+    {
       "source": "/api/v1/:path*",
       "destination": "/api/bridges?__op=forum"
     }

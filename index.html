@@ -2,8 +2,7 @@
 <html lang="es">
 
 <head>
-    <!-- ARKAIOS EDU — SDK de Cobro Amerio & Auth/Membership Guard -->
-    <script src="https://genimi44-by-wix-app44.web.app/sdk/arkaios-pay.js"></script>
+    <!-- ARKAIOS EDU — Auth Guard (Educación Libre: gratis por siempre) -->
     <script type="module">
       import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
       import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
@@ -14,30 +13,11 @@
         appId: "1:502663599735:web:d702f5242ff9672e9c9872"
       });
       const auth = getAuth(app);
-
-      // Verificación de Parámetro de Autorización en URL
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('auth')) {
-        localStorage.setItem('ark_edu_membership', JSON.stringify({
-          status: 'ACTIVE',
-          tier: 'LIFETIME_NON_COMMERCIAL',
-          amount: 100,
-          currency: 'AMR-IO',
-          authorizationCode: params.get('auth'),
-          activatedAt: new Date().toISOString()
-        }));
-      }
+      window.ARK_getIdToken = async () => { await auth.authStateReady(); return auth.currentUser ? auth.currentUser.getIdToken() : null; };
 
       onAuthStateChanged(auth, (user) => {
         if (!user && !sessionStorage.getItem('ark_user')) {
           window.location.href = '/login.html';
-          return;
-        }
-
-        // Validación de Membresía de Donación Vitalicia ($100 AMR-IO)
-        const membership = localStorage.getItem('ark_edu_membership');
-        if (!membership) {
-          window.location.href = '/login.html?notice=membership_required';
           return;
         }
 
@@ -65,6 +45,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="js/arkaios-paste-bridge.js" defer></script>
+    <script src="js/arkaios-comunidad.js" defer></script>
 
     <!-- FUENTES PROFESIONALES -->
     <link
@@ -940,11 +921,15 @@
             padding: 4px;
             gap: 4px;
             border-bottom: 1px solid #e2e8f0;
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: thin;
         }
         .puter-ai-tab {
             flex: 1;
+            min-width: fit-content;
             padding: 8px 10px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
             border: none;
             background: transparent;
@@ -958,6 +943,84 @@
             background: #ffffff;
             color: #2563eb;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .feed-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .feed-card:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 4px 12px rgba(59,130,246,0.1);
+        }
+        .feed-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .feed-card-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #1e293b;
+            line-height: 1.3;
+        }
+        .feed-card-badge {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+        .badge-video {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        .badge-post {
+            background: #e0f2fe;
+            color: #0284c7;
+        }
+        .feed-card-summary {
+            font-size: 11px;
+            color: #64748b;
+            line-height: 1.4;
+        }
+        .feed-card-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 4px;
+        }
+        .feed-btn {
+            font-size: 11px;
+            padding: 5px 8px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #334155;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .feed-btn:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+        .feed-btn-primary {
+            background: #2563eb;
+            color: #ffffff;
+            border-color: #2563eb;
+        }
+        .feed-btn-primary:hover {
+            background: #1d4ed8;
+            color: #ffffff;
         }
         .puter-ai-body {
             flex: 1;
@@ -1074,6 +1137,7 @@
                 <option value="plantilla-cuadros-imagenes-v2.html">🖼️ Cuadros Imágenes v2</option>
                 <option value="plantilla-imagenes-v2.html">🎨 Plantilla Imágenes v2</option>
                 <option value="plantilla-cuadros-frutas-kinder.html">🍎 Frutas Kínder (tarjetas)</option>
+                <option value="plantilla_20_instituciones_editable.html">🏛️ 20 Instituciones (logos editables)</option>
                 <option value="tiras-calcomanias-lapiz.html">✏️ Tiras de Calcomanías para Lápiz</option>
                 <option value="etiquetas-libretas.html">🏷️ Etiquetas para Libretas</option>
                 <option value="material-educativo-reutilizable.html">📖 Material Reutilizable</option>
@@ -1081,11 +1145,15 @@
         </div>
 
         <div class="header-actions">
-            <!-- Badge Membresía Vitalicia No Comercial -->
-            <div id="eduMembershipBadge" style="display:flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:20px;font-size:12px;font-weight:700;color:#059669;cursor:pointer;" title="Donación $100 AMR-IO • Licencia de uso no comercial sin vigencia" onclick="alert('🎓 Licencia Escolar No Comercial Vitalicia Activa.\n\nDonación mínima de reconocimiento: $100 AMR-IO ($100 MXN).\nUso de plataforma, archivos, generadores y la IA interna sin vencimiento de por medio.')">
+            <!-- Educación Libre: gratis por siempre -->
+            <div id="eduFreeBadge" style="display:flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:20px;font-size:12px;font-weight:700;color:#059669;cursor:pointer;" title="Gratis por siempre para la comunidad educativa" onclick="alert('🎓 Educación Libre ARKAIOS — Gratis por siempre.\n\nEstudiantes, niñas y niños, adultos que estudian, maestros, directivos y todo el personal escolar usan la plataforma sin ningún costo, sin membresías y sin vencimiento.\n\nLos costos reales de operación (tokens de IA, internet, luz, adaptaciones y demás gastos) se cubren al 100% por el ecosistema autosustentable ARKAIOS, que desde su creación trabaja para ayudar, apoyar e impulsar la verdadera educación.')">
                 <span>🎓</span>
-                <span>Membresía Vitalicia ($100 AMR)</span>
+                <span>Gratis por siempre</span>
             </div>
+            <a class="btn-premium btn-primary" href="/comunidad.html" style="text-decoration:none;" title="Materiales compartidos por toda la comunidad educativa">
+                <span>📌</span>
+                <span>Comunidad</span>
+            </a>
             <button class="btn-premium btn-secondary" onclick="window.location.reload()">
                 <span>🔄</span>
                 <span>Actualizar</span>
@@ -1156,6 +1224,10 @@
                     <button class="btn" data-target="plantilla-cuadros-frutas-kinder.html">
                         <span class="btn-icon">🍎</span>
                         <span>Frutas Kínder (tarjetas)</span>
+                    </button>
+                    <button class="btn" data-target="plantilla_20_instituciones_editable.html">
+                        <span class="btn-icon">🏛️</span>
+                        <span>20 Instituciones (logos editables)</span>
                     </button>
                     <button class="btn" data-target="plantilla-imagenes-v2.html">
                         <span class="btn-icon">🎨</span>
@@ -1250,7 +1322,20 @@
 	            <div class="form-row">
 	                <div class="form-label">Tipo de Plantilla (actual)</div>
 	                <select class="form-input form-select" id="saveModalTemplate" disabled></select>
-	                <div class="form-help">Se guarda en este navegador (localStorage).</div>
+	                <div class="form-help">Siempre se guarda en este navegador.</div>
+	            </div>
+
+	            <div class="form-row">
+	                <div class="form-label">Etiquetas (opcional)</div>
+	                <input class="form-input" id="saveModalTags" type="text" placeholder="Ej. primaria, historia, día de la madre" />
+	                <div class="form-help">Separadas por comas. Ayudan a que otros encuentren tu material.</div>
+	            </div>
+
+	            <div class="form-row">
+	                <label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer;font-size:13px;">
+	                    <input type="checkbox" id="saveModalShare" checked style="margin-top:3px;" />
+	                    <span><b>📌 Compartir en la Comunidad (nube ARKAIOS)</b><br><span class="form-help">Otros maestros y estudiantes podrán verlo y usarlo como base para no empezar de cero.</span></span>
+	                </label>
 	            </div>
 
 	            <div class="modal-actions">
@@ -1694,8 +1779,8 @@
 	                    backgroundColor: '#ffffff'
 	                });
 
-	                const targetW = 560;
-	                const targetH = 350;
+	                const targetW = 480;
+	                const targetH = Math.max(300, Math.min(760, Math.round(targetW * sourceCanvas.height / sourceCanvas.width)));
 	                const targetRatio = targetW / targetH;
 	                const srcRatio = sourceCanvas.width / sourceCanvas.height;
 
@@ -1709,7 +1794,7 @@
 	                    sx = (sourceCanvas.width - sw) / 2;
 	                } else {
 	                    sh = sourceCanvas.width / targetRatio;
-	                    sy = (sourceCanvas.height - sh) / 2;
+	                    sy = 0;
 	                }
 
 	                const thumb = document.createElement('canvas');
@@ -1761,14 +1846,7 @@
 	                confirmBtn.innerHTML = '<span>⏳</span><span>Guardando...</span>';
 	            }
 
-	            let data = null;
-	            try {
-	                if (iframe && iframe.contentWindow && iframe.contentWindow.ARKAIOS_getData) {
-	                    data = iframe.contentWindow.ARKAIOS_getData();
-	                }
-	            } catch (e) {
-	                console.warn('No se pudieron obtener datos del iframe:', e);
-	            }
+	            const data = window.ArkComunidad ? window.ArkComunidad.captureFrame(iframe) : null;
 
 	            let thumbnail = null;
 	            try {
@@ -1820,6 +1898,19 @@
 	                        status.style.color = 'var(--accent-red)';
 	                        status.textContent = 'No se pudo guardar: almacenamiento lleno.';
 	                    }
+	                }
+	            }
+
+	            const shareEl = document.getElementById('saveModalShare');
+	            if (shareEl && shareEl.checked && window.ArkComunidad) {
+	                const tagsEl = document.getElementById('saveModalTags');
+	                const tags = (tagsEl ? tagsEl.value : '').split(',').map(s => s.trim()).filter(Boolean);
+	                try {
+	                    if (status) { status.style.display = 'block'; status.style.color = 'var(--text-secondary)'; status.textContent = '☁️ Subiendo a la Comunidad...'; }
+	                    await window.ArkComunidad.publish({ title: name, description, tags, template: currentTemplate, data, thumbnail });
+	                    showIndicator('✓ Compartido en la Comunidad');
+	                } catch (e) {
+	                    alert('Se guardó en este navegador, pero no se pudo compartir en la Comunidad:\n' + e.message);
 	                }
 	            }
 
@@ -1955,14 +2046,31 @@
 
             frame.src = item.template;
             frame.onload = () => {
-                if (item.data && frame.contentWindow && frame.contentWindow.ARKAIOS_setData) {
-                    frame.contentWindow.ARKAIOS_setData(item.data);
-                }
+                if (item.data && window.ArkComunidad) window.ArkComunidad.restoreFrame(frame, item.data);
             };
 
             document.getElementById('dashboardContainer').style.display = 'none';
             frame.style.display = 'block';
             showIndicator('✓ Proyecto cargado');
+        }
+
+        async function openCommunityMaterial(id) {
+            try {
+                showIndicator('☁️ Cargando material de la Comunidad...');
+                for (let i = 0; i < 50 && !window.ArkComunidad; i++) await new Promise(r => setTimeout(r, 100));
+                const { item, data } = await window.ArkComunidad.get(id);
+                if (!/^[\w.-]+\.html$/.test(item.template)) throw new Error('Plantilla desconocida');
+                loadTemplate(item.template);
+                const frame = document.getElementById('plantillaFrame');
+                frame.onload = () => {
+                    frame.onload = null;
+                    window.ArkComunidad.restoreFrame(frame, data, { untrusted: true });
+                    showIndicator('✓ Listo: edítalo y guárdalo como tuyo');
+                };
+                history.replaceState(null, '', location.pathname);
+            } catch (e) {
+                alert('No se pudo abrir el material: ' + e.message);
+            }
         }
 
         function removeWorkspaceItem(index) {
@@ -2039,6 +2147,10 @@
 	            const frame = document.getElementById('plantillaFrame');
 	            frame.src = currentTemplate;
 
+	            // 3.1) Usar un material de la Comunidad como base (?usar=<id>)
+	            const usarId = new URLSearchParams(location.search).get('usar');
+	            if (usarId) openCommunityMaterial(usarId);
+
             // Drag & drop
             const uploadZone = document.querySelector('.upload-zone');
             if (uploadZone) {
@@ -2110,59 +2222,6 @@
             document.getElementById('dashboardContainer').style.display = 'grid';
         };
 
-		// Manejar el botón Guardar
-const saveBtn = document.getElementById('saveBtn');
-if (saveBtn) {
-  saveBtn.addEventListener('click', async function() {
-    console.log('Botón Guardar clickeado');
-    
-    // Obtener el contenido del canvas
-    const iframe = document.getElementById('pdfViewer');
-    if (!iframe || !iframe.contentWindow) {
-      alert('No se encontró el visor PDF');
-      return;
-    }
-    
-    try {
-      const canvas = iframe.contentWindow.document.querySelector('canvas');
-      if (!canvas) {
-        alert('No se encontró el canvas del PDF');
-        return;
-      }
-      
-      // Convertir canvas a blob
-      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-      
-      // Crear FormData y enviar a la API
-      const formData = new FormData();
-      formData.append('material', blob, 'material.png');
-      
-      // Mostrar indicador de carga
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Guardando...';
-      
-      const response = await fetch('/api/save-material', {
-        method: 'POST',
-        body: formData
-      });
-      
-      const result = await response.json();
-      
-      if (response.ok) {
-        alert('Material guardado exitosamente');
-      } else {
-        alert('Error: ' + (result.error || 'No se pudo guardar'));
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Error al guardar: ' + error.message);
-    } finally {
-      saveBtn.disabled = false;
-      saveBtn.textContent = '💾 Guardar';
-    }
-  });
-}
-
         // ===== ASISTENTE IA GLOBAL (PUTER / CLAUDE) =====
         // Modelo preferido con fallback automático si el principal está deprecado
         const PUTER_AI_MODELS_PRIORITY = [
@@ -2221,17 +2280,35 @@ if (saveBtn) {
             document.getElementById('puterTabAutofill').style.display = 'none';
             document.getElementById('puterTabImage').style.display = 'none';
             document.getElementById('puterTabChat').style.display = 'none';
+            const coagentTab = document.getElementById('puterTabCoagent');
+            if (coagentTab) coagentTab.style.display = 'none';
+            const feedTab = document.getElementById('puterTabFeed');
+            if (feedTab) feedTab.style.display = 'none';
 
             if (tabName === 'autofill') {
-                document.querySelector('[onclick="switchPuterTab(\'autofill\')"]').classList.add('active');
+                const btn = document.querySelector('[onclick="switchPuterTab(\'autofill\')"]');
+                if (btn) btn.classList.add('active');
                 document.getElementById('puterTabAutofill').style.display = 'flex';
                 scanActiveTemplate();
             } else if (tabName === 'image') {
-                document.querySelector('[onclick="switchPuterTab(\'image\')"]').classList.add('active');
+                const btn = document.querySelector('[onclick="switchPuterTab(\'image\')"]');
+                if (btn) btn.classList.add('active');
                 document.getElementById('puterTabImage').style.display = 'flex';
             } else if (tabName === 'chat') {
-                document.querySelector('[onclick="switchPuterTab(\'chat\')"]').classList.add('active');
+                const btn = document.querySelector('[onclick="switchPuterTab(\'chat\')"]');
+                if (btn) btn.classList.add('active');
                 document.getElementById('puterTabChat').style.display = 'flex';
+            } else if (tabName === 'coagent') {
+                const btn = document.querySelector('[onclick="switchPuterTab(\'coagent\')"]');
+                if (btn) btn.classList.add('active');
+                if (coagentTab) coagentTab.style.display = 'flex';
+            } else if (tabName === 'feed') {
+                const btn = document.querySelector('[onclick="switchPuterTab(\'feed\')"]');
+                if (btn) btn.classList.add('active');
+                if (feedTab) {
+                    feedTab.style.display = 'flex';
+                    loadArkaiosFanpageFeed();
+                }
             }
         }
 
@@ -2254,14 +2331,35 @@ if (saveBtn) {
                 if (!opt) return false;
                 el.value = opt.value;
             } else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-                const proto = el.tagName === 'INPUT' ? win.HTMLInputElement.prototype : win.HTMLTextAreaElement.prototype;
-                Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, text);
+                try {
+                    const proto = el.tagName === 'INPUT' ? win.HTMLInputElement.prototype : win.HTMLTextAreaElement.prototype;
+                    Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, text);
+                } catch(e) {
+                    el.value = text;
+                }
             } else {
                 el.innerText = text;
             }
             el.dispatchEvent(new win.Event('input', { bubbles: true }));
             el.dispatchEvent(new win.Event('change', { bubbles: true }));
             return true;
+        }
+
+        function isCurrentTemplateImageBased() {
+            const iframe = document.getElementById('plantillaFrame');
+            if (!iframe || iframe.style.display === 'none') return false;
+            try {
+                const win = iframe.contentWindow;
+                const doc = iframe.contentDocument || win.document;
+                return typeof win.applyExternalImages === 'function' ||
+                       typeof win.rellenarConPixabay === 'function' ||
+                       Array.isArray(win.imagenes) ||
+                       (currentTemplate && currentTemplate.includes('cuadro')) ||
+                       (currentTemplate && currentTemplate.includes('foto')) ||
+                       doc.querySelector('.celda-imagen, .arkaios-image-slot, #input-imagenes, #hojas-container') !== null;
+            } catch(e) {
+                return false;
+            }
         }
 
         function scanActiveTemplate() {
@@ -2284,11 +2382,54 @@ if (saveBtn) {
                     return;
                 }
 
+                if (isCurrentTemplateImageBased()) {
+                    display.textContent = (currentTemplate || 'Plantilla Activa') + ' [Cuadrícula Multimedia]';
+                    countDisplay.innerHTML = '🖼️ <strong>Modo Fotos / Cuadros:</strong> Soporta inyección de imágenes temáticas por lote o IA.';
+                    return;
+                }
+
                 const inputs = getTemplateFields(doc);
                 countDisplay.textContent = `Campos editables detectados: ${inputs.length}`;
             } catch (e) {
                 countDisplay.textContent = 'Acceso a plantilla activo';
             }
+        }
+
+        async function fetchImagesForTopic(query, count = 12) {
+            const cleanQuery = query.replace(/[^\w\s\u00C0-\u017F]/gi, ' ').trim() || 'educacion';
+            try {
+                // 1. Intentar con proxy seguro de Pexels
+                const res = await fetch('/api/pexels', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ q: cleanQuery, per_page: Math.min(count, 30) })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.photos && data.photos.length > 0) {
+                        return data.photos.map(p => p.src?.large || p.src?.medium || p.src?.original);
+                    }
+                }
+            } catch(e) {
+                console.warn('Fallo Pexels API serverless:', e);
+            }
+
+            // 2. Fallback a clave directa de Pexels del proyecto educativo
+            try {
+                const pexelsDirectRes = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(cleanQuery)}&per_page=${Math.min(count, 30)}`, {
+                    headers: { Authorization: '***REMOVIDA***' }
+                });
+                if (pexelsDirectRes.ok) {
+                    const pdata = await pexelsDirectRes.json();
+                    if (pdata.photos && pdata.photos.length > 0) {
+                        return pdata.photos.map(p => p.src?.large || p.src?.medium);
+                    }
+                }
+            } catch(e) {
+                console.warn('Fallo Pexels Direct:', e);
+            }
+
+            return [];
         }
 
         async function runPuterAutoFill() {
@@ -2310,14 +2451,72 @@ if (saveBtn) {
             try {
                 btn.disabled = true;
                 statusDiv.style.display = 'block';
+
+                const win = iframe.contentWindow;
+                const doc = iframe.contentDocument || win.document;
+                const isImageTpl = isCurrentTemplateImageBased();
+                const promptWantsImages = /(imagen|imágenes|imagenes|foto|fotos|cuadro|cuadros|descargar|pegar|dibujo)/i.test(promptInput);
+
+                // ===== RUTA A: AUTORRELLENADO DE IMÁGENES / CUADRÍCULA MULTIMEDIA =====
+                if (isImageTpl || promptWantsImages) {
+                    statusDiv.textContent = '🔍 Analizando petición y buscando imágenes educativas de alta calidad...';
+                    
+                    // Extraer cantidad deseada del texto o usar 12 por defecto
+                    const countMatch = promptInput.match(/(\d+)\s*(im[aá]genes|fotos|cuadros)?/i);
+                    const targetCount = countMatch ? Math.min(parseInt(countMatch[1]), 30) : 12;
+
+                    // Extraer tema clave
+                    let queryTopic = promptInput
+                        .replace(/me puedes regalar|crear|descargar|obtener|copiar|pegar|imagenes|imágenes|fotos|del tema|sobre|porfa|por favor|\d+/gi, '')
+                        .replace(/['":]/g, '')
+                        .trim();
+                    if (!queryTopic || queryTopic.length < 2) queryTopic = 'educacion tecnologia';
+
+                    statusDiv.textContent = `⏳ Obteniendo ${targetCount} imágenes sobre "${queryTopic}"...`;
+                    let imageUrls = await fetchImagesForTopic(queryTopic, targetCount);
+
+                    // Si no hubo suficientes fotos en Pexels, generar al menos una con Puter AI
+                    if (imageUrls.length === 0) {
+                        try {
+                            statusDiv.textContent = `🎨 Generando ilustración educativa con Puter AI para "${queryTopic}"...`;
+                            const genImg = await puter.ai.txt2img(queryTopic);
+                            if (genImg && genImg.src) imageUrls.push(genImg.src);
+                        } catch(genErr) {}
+                    }
+
+                    if (imageUrls.length > 0) {
+                        let injected = false;
+                        if (typeof win.applyExternalImages === 'function') {
+                            win.applyExternalImages(imageUrls, queryTopic);
+                            injected = true;
+                        } else if (typeof win.rellenarConPixabay === 'function') {
+                            win.rellenarConPixabay(imageUrls, queryTopic);
+                            injected = true;
+                        } else if (Array.isArray(win.imagenes)) {
+                            imageUrls.forEach(u => win.imagenes.push(u));
+                            if (typeof win.generarPlantilla === 'function') win.generarPlantilla();
+                            injected = true;
+                        } else {
+                            const domImgs = doc.querySelectorAll('img:not([src^="data:image/svg"])');
+                            imageUrls.forEach((u, idx) => {
+                                if (domImgs[idx]) { domImgs[idx].src = u; injected = true; }
+                            });
+                        }
+
+                        statusDiv.textContent = `✅ ¡Listo! Se obtuvieron e insertaron ${imageUrls.length} imágenes reales de "${queryTopic}" en tu plantilla.`;
+                        btn.disabled = false;
+                        return;
+                    }
+                }
+
+                // ===== RUTA B: AUTORRELLENADO DE TEXTO EN CAMPOS EDITABLES =====
                 const selectedModel = await getAIModel();
                 statusDiv.textContent = `⏳ Consultando ${selectedModel} vía Puter AI...`;
 
-                const doc = iframe.contentDocument || iframe.contentWindow.document;
                 const inputs = getTemplateFields(doc);
 
                 if (inputs.length === 0) {
-                    statusDiv.textContent = '⚠️ No se encontraron campos editables estándar en la plantilla actual.';
+                    statusDiv.textContent = 'ℹ️ No se detectaron campos de texto en esta plantilla. Si deseas fotos, escribe "imágenes de [tema]".';
                     btn.disabled = false;
                     return;
                 }
@@ -2389,13 +2588,41 @@ Ejemplo:
                 previewDiv.style.display = 'block';
 
                 if (iframe && iframe.style.display !== 'none') {
-                    const doc = iframe.contentDocument || iframe.contentWindow.document;
-                    const targetImg = doc.querySelector('img.editable-img, img.preview-img, img[data-ai-slot], .photo-placeholder img, #previewImg') || doc.querySelector('img');
-                    if (targetImg) {
-                        targetImg.src = imgSrc;
-                        alert('🎨 Imagen generada e inyectada exitosamente en la plantilla.');
+                    const win = iframe.contentWindow;
+                    const doc = iframe.contentDocument || win.document;
+                    let inyectada = false;
+
+                    // 1. Inyección en plantillas de cuadrícula de imágenes
+                    if (typeof win.applyExternalImages === 'function') {
+                        win.applyExternalImages([imgSrc], promptInput);
+                        inyectada = true;
+                    } else if (typeof win.rellenarConPixabay === 'function') {
+                        win.rellenarConPixabay([imgSrc], promptInput);
+                        inyectada = true;
+                    } else if (Array.isArray(win.imagenes)) {
+                        const emptyIndex = win.imagenes.findIndex(img => img === null);
+                        if (emptyIndex !== -1) {
+                            win.imagenes[emptyIndex] = imgSrc;
+                            if (win.estadosImagen) win.estadosImagen[emptyIndex] = { zoom: 100, x: 0, y: 0, fijada: false };
+                        } else {
+                            win.imagenes.push(imgSrc);
+                            if (win.estadosImagen) win.estadosImagen.push({ zoom: 100, x: 0, y: 0, fijada: false });
+                        }
+                        if (typeof win.generarPlantilla === 'function') win.generarPlantilla();
+                        inyectada = true;
                     } else {
-                        alert('🎨 Imagen generada con éxito (se muestra la vista previa).');
+                        // 2. Inyección en ranuras o elementos img editables
+                        const targetImg = doc.querySelector('img.editable-img, img.preview-img, img[data-ai-slot], .photo-placeholder img, #previewImg, .celda-imagen img, .img-container img') || doc.querySelector('img:not([src^="data:image/svg"])');
+                        if (targetImg) {
+                            targetImg.src = imgSrc;
+                            inyectada = true;
+                        }
+                    }
+
+                    if (inyectada) {
+                        alert('🎨 ¡Imagen generada e inyectada exitosamente en la plantilla activa!');
+                    } else {
+                        alert('🎨 Imagen generada con éxito (se muestra en la vista previa del copiloto).');
                     }
                 }
             } catch (err) {
@@ -2438,6 +2665,105 @@ Ejemplo:
             }
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
+
+        // ===== FEED EN TIEMPO REAL: FANPAGE ARKAIOS & AGENTES MCP =====
+        let lastKnownFeedCount = 0;
+        async function loadArkaiosFanpageFeed() {
+            const container = document.getElementById('arkaiosFeedList');
+            const statusBadge = document.getElementById('arkaiosFeedStatus');
+            if (!container) return;
+
+            try {
+                container.innerHTML = '<div style="text-align:center; padding:15px; font-size:12px; color:#64748b;">⏳ Conectando con Fanpage ARKAIOS y agentes MCP...</div>';
+                const res = await fetch('/api/arkaios-feed?type=all&limit=15');
+                const data = await res.json();
+
+                if (data.ok && Array.isArray(data.items)) {
+                    if (statusBadge) statusBadge.textContent = '🟢 En Vivo (Conectado)';
+                    container.innerHTML = '';
+                    
+                    data.items.forEach(item => {
+                        const card = document.createElement('div');
+                        card.className = 'feed-card';
+                        const isVideo = item.type === 'video';
+
+                        card.innerHTML = `
+                            <div class="feed-card-header">
+                                <div class="feed-card-title">${item.title}</div>
+                                <span class="feed-card-badge ${isVideo ? 'badge-video' : 'badge-post'}">${isVideo ? '🎬 Video HD' : '💡 Aporte'}</span>
+                            </div>
+                            <div class="feed-card-summary">${item.summary || item.agent_lesson || ''}</div>
+                            <div class="feed-card-actions">
+                                <a href="${item.canonical_url || item.original_url || '#'}" target="_blank" class="feed-btn">
+                                    <span>🌐 Ver en Fanpage</span>
+                                </a>
+                                <button class="feed-btn feed-btn-primary" onclick="injectFeedItemToTemplate(${JSON.stringify(item.title).replace(/"/g, '&quot;')}, ${JSON.stringify(item.summary || '').replace(/"/g, '&quot;')})">
+                                    <span>🪄 Inyectar en Plantilla</span>
+                                </button>
+                            </div>
+                        `;
+                        container.appendChild(card);
+                    });
+
+                    if (data.items.length > lastKnownFeedCount && lastKnownFeedCount > 0) {
+                        showFeedToastAlert('🔔 ¡Nuevo video o publicación en el Fanpage de Arkaios!');
+                    }
+                    lastKnownFeedCount = data.items.length;
+                } else {
+                    container.innerHTML = '<div style="text-align:center; padding:15px; font-size:12px; color:#ef4444;">No se pudieron cargar publicaciones del feed.</div>';
+                }
+            } catch(e) {
+                container.innerHTML = '<div style="text-align:center; padding:15px; font-size:12px; color:#ef4444;">Error al consultar el feed de Arkaios: ' + e.message + '</div>';
+            }
+        }
+
+        function injectFeedItemToTemplate(title, summary) {
+            const iframe = document.getElementById('plantillaFrame');
+            if (!iframe || iframe.style.display === 'none') {
+                alert('Abre primero una plantilla escolar para inyectar este aporte.');
+                return;
+            }
+            const doc = iframe.contentDocument || iframe.contentWindow.document;
+            const inputs = getTemplateFields(doc);
+            if (inputs.length >= 2) {
+                setTemplateField(inputs[0], title);
+                setTemplateField(inputs[1], summary);
+                alert('✅ Título y resumen del aporte inyectados en la plantilla.');
+            } else if (inputs.length === 1) {
+                setTemplateField(inputs[0], `${title}\n\n${summary}`);
+                alert('✅ Contenido inyectado en la plantilla.');
+            } else {
+                // Si es plantilla multimedia, sugerir generar imagen sobre el tema
+                document.getElementById('aiImagePrompt').value = title;
+                switchPuterTab('image');
+                alert(`📌 Se cargó "${title}" en el generador de imágenes para tu plantilla.`);
+            }
+        }
+
+        function showFeedToastAlert(msg) {
+            let toast = document.getElementById('arkaiosFeedToast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'arkaiosFeedToast';
+                toast.style.cssText = 'position:fixed; top:20px; right:20px; background:#0f172a; color:#fff; padding:12px 18px; border-radius:10px; box-shadow:0 10px 25px rgba(0,0,0,0.3); z-index:99999; font-size:13px; font-weight:600; display:flex; align-items:center; gap:8px; border-left:4px solid #3b82f6; transition:all 0.3s;';
+                document.body.appendChild(toast);
+            }
+            toast.textContent = msg;
+            toast.style.display = 'flex';
+            setTimeout(() => { if (toast) toast.style.display = 'none'; }, 6000);
+        }
+
+        // Monitoreo en segundo plano cada 60s
+        setInterval(() => {
+            fetch('/api/arkaios-feed?type=videos&limit=5')
+                .then(r => r.json())
+                .then(d => {
+                    if (d.has_new_alerts) {
+                        showFeedToastAlert('🚨 Alerta MCP: Nuevo video detectado en Fanpage ARKAIOS');
+                    }
+                })
+                .catch(() => {});
+        }, 60000);
     </script>
 
     <!-- WIDGET ASISTENTE IA GLOBAL (PUTER / CLAUDE) -->
@@ -2457,7 +2783,103 @@ Ejemplo:
             <button class="puter-ai-tab" onclick="switchPuterTab('image')">🎨 Generar Imagen</button>
             <button class="puter-ai-tab" onclick="switchPuterTab('chat')">💬 Consultas IA</button>
             <button class="puter-ai-tab" onclick="switchPuterTab('coagent')">🤝 Gemini-Lab</button>
+            <button class="puter-ai-tab" onclick="switchPuterTab('feed')">📡 Fanpage & Agente</button>
         </div>
+
+        <div class="puter-ai-body" id="puterTabAutofill">
+            <div style="font-size:12px; color:#475569; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
+                <strong style="color:#2563eb;">📌 Plantilla Detectada:</strong> <span id="currentTemplateNameDisplay">Ninguna seleccionada</span>
+                <br><span id="currentTemplateFieldsCount" style="font-size:11px; opacity:0.8;">Campos detectados: 0</span>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <label style="font-size:12px; font-weight:600; color:#334155;">Tema o Instrucción para la Plantilla:</label>
+                <textarea id="aiAutofillPrompt" placeholder="Ej: Rellena esta plantilla con información sobre la Revolución Mexicana, o pide '20 imágenes del tema cyberacoso'..." style="width:100%; height:80px; padding:10px; border-radius:8px; border:1px solid #cbd5e1; font-size:12px; resize:none;"></textarea>
+            </div>
+
+            <div class="quick-actions">
+                <button class="quick-btn" onclick="setQuickPrompt('Rellena la plantilla con 12 imágenes del tema cyberacoso')">🖼️ 12 Fotos Cyberacoso</button>
+                <button class="quick-btn" onclick="setQuickPrompt('Rellena la plantilla con contenido sobre Ciencias Naturales para primaria')">🔬 Ciencias</button>
+                <button class="quick-btn" onclick="setQuickPrompt('Genera datos históricos detallados para esta plantilla')">📜 Historia</button>
+            </div>
+
+            <button class="btn-premium btn-primary" onclick="runPuterAutoFill()" id="btnPuterAutoFill" style="width:100%; margin-top:8px;">
+                <span>🪄</span>
+                <span>Generar y Rellenar Plantilla</span>
+            </button>
+
+            <div id="autofillStatus" style="font-size:11px; color:#64748b; text-align:center; display:none;"></div>
+        </div>
+
+        <div class="puter-ai-body" id="puterTabImage" style="display:none;">
+            <div style="font-size:12px; color:#475569; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
+                <strong style="color:#2563eb;">🎨 Generador de Imágenes IA (Puter)</strong>
+                <br><span style="font-size:11px; opacity:0.8;">Crea ilustraciones educativas para insertar en tus documentos o cuadros.</span>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <label style="font-size:12px; font-weight:600; color:#334155;">Descripción de la Imagen:</label>
+                <textarea id="aiImagePrompt" placeholder="Ej: Un átomo brillante estilo acuarela educativa, o un mapa antiguo..." style="width:100%; height:80px; padding:10px; border-radius:8px; border:1px solid #cbd5e1; font-size:12px; resize:none;"></textarea>
+            </div>
+
+            <button class="btn-premium btn-primary" onclick="runPuterImageGen()" id="btnPuterImageGen" style="width:100%; margin-top:8px;">
+                <span>🎨</span>
+                <span>Generar e Inyectar Imagen</span>
+            </button>
+
+            <div id="imageGenPreview" style="margin-top:10px; text-align:center; display:none;">
+                <img id="generatedImgResult" style="max-width:100%; max-height:160px; border-radius:8px; border:1px solid #e2e8f0;">
+            </div>
+        </div>
+
+        <div class="puter-ai-body" id="puterTabChat" style="display:none;">
+            <div class="puter-ai-chat-messages" id="puterChatMessages">
+                <div class="msg ai">Hola 👋 Soy el Asistente IA de ARKAIOS. ¿En qué te ayudo con esta plantilla?</div>
+            </div>
+            <div class="puter-ai-footer">
+                <input type="text" class="puter-ai-input" id="puterChatInput" placeholder="Hazme una pregunta pedagógica..." onkeydown="if(event.key==='Enter') sendPuterChatMessage()">
+                <button class="puter-ai-send" onclick="sendPuterChatMessage()">Enviar</button>
+            </div>
+        </div>
+
+        <div class="puter-ai-body" id="puterTabCoagent" style="display:none;">
+            <div style="font-size:12px; color:#475569; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
+                <strong style="color:#2563eb;">🤝 Co-Agente Gemini-Lab Omni (AETHYR)</strong>
+                <br><span style="font-size:11px; opacity:0.8;">Solicita tareas complejas, investigación o medios en tiempo real entre ambos agentes.</span>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <label style="font-size:12px; font-weight:600; color:#334155;">Delegar Tarea a Gemini-Lab:</label>
+                <textarea id="coagentTaskPrompt" placeholder="Ej: Busca 9 imágenes en Pexels de volcanes y prepara los datos para la plantilla activa..." style="width:100%; height:80px; padding:10px; border-radius:8px; border:1px solid #cbd5e1; font-size:12px; resize:none;"></textarea>
+            </div>
+
+            <button class="btn-premium btn-primary" onclick="delegateTaskToGeminiLab()" id="btnDelegateGeminiLab" style="width:100%; margin-top:8px;">
+                <span>📡</span>
+                <span>Enviar a Gemini-Lab Omni</span>
+            </button>
+
+            <div id="coagentStatus" style="font-size:11px; color:#64748b; text-align:center; display:none; margin-top:8px;"></div>
+        </div>
+
+        <div class="puter-ai-body" id="puterTabFeed" style="display:none;">
+            <div style="font-size:12px; color:#475569; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <strong style="color:#2563eb;">📡 Fanpage ARKAIOS & Agentes MCP</strong>
+                    <br><span style="font-size:11px; opacity:0.8;">facebook.com/arkaiosIA</span>
+                </div>
+                <span id="arkaiosFeedStatus" style="font-size:10px; font-weight:bold; background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:12px;">🟢 En Vivo</span>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:12px; font-weight:700; color:#334155;">Últimos Videos y Aportes:</span>
+                <button class="feed-btn" onclick="loadArkaiosFanpageFeed()" style="font-size:11px; padding:3px 8px;">🔄 Actualizar</button>
+            </div>
+
+            <div id="arkaiosFeedList" style="display:flex; flex-direction:column; gap:8px; max-height:360px; overflow-y:auto;">
+                <!-- Tarjetas cargadas dinámicamente -->
+            </div>
+        </div>
+    </div>
 
         <div class="puter-ai-body" id="puterTabAutofill">
             <div style="font-size:12px; color:#475569; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">

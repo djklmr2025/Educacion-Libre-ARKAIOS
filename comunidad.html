@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comunidad ARKAIOS EDU</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="js/arkaios-comunidad.js" defer></script>
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+  const app = initializeApp({
+    apiKey: "AIzaSyD-ceCiJPVnLlepVBcMBhLABJEC771uypM",
+    authDomain: "arkaios-world.firebaseapp.com",
+    projectId: "arkaios-world",
+    appId: "1:502663599735:web:d702f5242ff9672e9c9872"
+  });
+  const auth = getAuth(app);
+  window.ARK_getIdToken = async () => { await auth.authStateReady(); return auth.currentUser ? auth.currentUser.getIdToken() : null; };
+  onAuthStateChanged(auth, (user) => window.dispatchEvent(new CustomEvent('ark-auth', { detail: user ? { uid: user.uid, name: user.displayName || user.email } : null })));
+</script>
+<style>
+  :root {
+    --bg: #f7f5f2; --surface: #ffffff; --ink: #1f2430; --ink-2: #5b6272; --ink-3: #9aa0ad;
+    --line: #e8e4de; --accent: #2563eb; --accent-ink: #ffffff; --save: #e2553f; --save-ink: #ffffff;
+    --free: #059669; --free-bg: #e8f7f1; --chip: #efece7; --chip-on: #1f2430; --chip-on-ink: #ffffff;
+    --shadow: 0 1px 2px rgba(31,36,48,.06), 0 8px 24px rgba(31,36,48,.08); --radius: 18px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12141a; --surface: #1b1e26; --ink: #eef0f4; --ink-2: #b4b9c5; --ink-3: #7c8291;
+      --line: #2a2e38; --chip: #252933; --chip-on: #eef0f4; --chip-on-ink: #12141a; --free-bg: #0f2b23;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12141a; --surface: #1b1e26; --ink: #eef0f4; --ink-2: #b4b9c5; --ink-3: #7c8291;
+    --line: #2a2e38; --chip: #252933; --chip-on: #eef0f4; --chip-on-ink: #12141a; --free-bg: #0f2b23;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: 'Inter', system-ui, sans-serif; min-height: 100vh; }
+  button { font: inherit; cursor: pointer; }
+  a { color: inherit; }
+
+  .top { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
+  .bar { display: flex; align-items: center; gap: 14px; padding: 12px 20px; max-width: 1600px; margin: 0 auto; }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; flex-shrink: 0; }
+  .brand-mark { width: 40px; height: 40px; border-radius: 12px; background: var(--accent); color: #fff; display: grid; place-items: center; font-size: 20px; }
+  .brand b { font-family: 'Poppins', sans-serif; font-size: 17px; display: block; line-height: 1.1; }
+  .brand small { color: var(--ink-2); font-size: 12px; }
+  .search { flex: 1; position: relative; }
+  .search input { width: 100%; height: 46px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface);
+    color: var(--ink); padding: 0 20px 0 46px; font-size: 15px; outline: none; transition: border-color .15s, box-shadow .15s; }
+  .search input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent); }
+  .search span { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: var(--ink-3); }
+  .go-app { height: 46px; padding: 0 20px; border-radius: 999px; border: 0; background: var(--ink); color: var(--bg); font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+
+  .sub { display: flex; align-items: center; gap: 8px; padding: 0 20px 12px; max-width: 1600px; margin: 0 auto; overflow-x: auto; scrollbar-width: none; }
+  .sub::-webkit-scrollbar { display: none; }
+  .tab, .chip { border: 0; border-radius: 999px; padding: 9px 16px; font-size: 14px; font-weight: 600; white-space: nowrap; background: var(--chip); color: var(--ink); transition: background .15s, color .15s, transform .1s; }
+  .tab:active, .chip:active { transform: scale(.97); }
+  .tab.on, .chip.on { background: var(--chip-on); color: var(--chip-on-ink); }
+  .sep { width: 1px; height: 24px; background: var(--line); margin: 0 6px; flex-shrink: 0; }
+
+  .free { max-width: 1600px; margin: 18px auto 4px; padding: 0 20px; }
+  .free div { background: var(--free-bg); color: var(--ink); border: 1px solid color-mix(in srgb, var(--free) 30%, transparent);
+    border-radius: 14px; padding: 12px 16px; font-size: 13px; line-height: 1.5; }
+  .free b { color: var(--free); }
+
+  .wall { max-width: 1600px; margin: 18px auto 60px; padding: 0 20px; columns: 5 236px; column-gap: 16px; }
+  .pin { break-inside: avoid; margin-bottom: 18px; cursor: pointer; }
+  .pin-media { position: relative; border-radius: var(--radius); overflow: hidden; background: var(--chip); box-shadow: var(--shadow); }
+  .pin-media img { display: block; width: 100%; height: auto; transition: transform .35s cubic-bezier(.2,.8,.2,1); }
+  .pin-media .noimg { aspect-ratio: 3/4; display: grid; place-items: center; font-size: 48px; }
+  .pin-over { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.35), transparent 40%, transparent 60%, rgba(0,0,0,.45));
+    opacity: 0; transition: opacity .2s; display: flex; flex-direction: column; justify-content: space-between; padding: 12px; }
+  .pin:hover .pin-over, .pin:focus-within .pin-over { opacity: 1; }
+  .pin:hover .pin-media img { transform: scale(1.03); }
+  .pin-save { align-self: flex-end; border: 0; border-radius: 999px; padding: 10px 16px; background: var(--save); color: var(--save-ink); font-weight: 700; font-size: 14px; }
+  .pin-save.done { background: #1f2430; }
+  .pin-use { align-self: flex-start; border: 0; border-radius: 999px; padding: 8px 14px; background: rgba(255,255,255,.94); color: #1f2430; font-weight: 700; font-size: 13px; }
+  .pin-title { font-weight: 700; font-size: 14px; margin: 8px 4px 2px; line-height: 1.3; }
+  .pin-meta { display: flex; align-items: center; gap: 6px; margin: 0 4px; color: var(--ink-2); font-size: 12.5px; }
+  .avatar { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+
+  .state { text-align: center; color: var(--ink-2); padding: 60px 20px; font-size: 15px; column-span: all; }
+  .state big { display: block; font-size: 44px; margin-bottom: 10px; }
+  #sentinel { height: 1px; }
+
+  .modal { position: fixed; inset: 0; z-index: 50; background: rgba(10,12,18,.62); display: none; align-items: center; justify-content: center; padding: 20px; }
+  .modal.open { display: flex; }
+  .sheet { background: var(--surface); border-radius: 28px; max-width: 980px; width: 100%; max-height: 92vh; overflow: auto; display: grid; grid-template-columns: 1.1fr 1fr; box-shadow: 0 30px 80px rgba(0,0,0,.35); }
+  .sheet-media { background: var(--chip); display: grid; place-items: center; min-height: 320px; }
+  .sheet-media img { max-width: 100%; max-height: 88vh; display: block; }
+  .sheet-body { padding: 28px; display: flex; flex-direction: column; gap: 14px; }
+  .sheet-body h2 { font-family: 'Poppins', sans-serif; font-size: 26px; line-height: 1.2; }
+  .sheet-body p { color: var(--ink-2); line-height: 1.6; font-size: 14.5px; white-space: pre-wrap; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tags span { background: var(--chip); border-radius: 999px; padding: 5px 11px; font-size: 12.5px; font-weight: 600; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: auto; padding-top: 10px; }
+  .btn { border: 0; border-radius: 999px; padding: 13px 20px; font-weight: 700; font-size: 15px; }
+  .btn-use { background: var(--accent); color: var(--accent-ink); }
+  .btn-save { background: var(--save); color: var(--save-ink); }
+  .btn-ghost { background: var(--chip); color: var(--ink); }
+  .btn-del { background: transparent; color: var(--save); }
+  .close { position: absolute; top: 18px; right: 18px; width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--surface); color: var(--ink); font-size: 20px; box-shadow: var(--shadow); }
+  :focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 60%, transparent); outline-offset: 2px; }
+
+  @media (max-width: 760px) {
+    .bar { flex-wrap: wrap; padding: 10px 16px; }
+    .brand small, .go-app span { display: none; }
+    .brand { flex: 1; }
+    .go-app { width: 46px; padding: 0; justify-content: center; }
+    .search { order: 3; flex-basis: 100%; }
+    .sub, .free { padding-left: 16px; padding-right: 16px; }
+    .wall { columns: 2 150px; column-gap: 10px; padding: 0 16px; }
+    .pin-over { opacity: 1; background: none; justify-content: flex-end; }
+    .pin-use { display: none; }
+    .sheet { grid-template-columns: 1fr; border-radius: 22px; }
+    .sheet-body { padding: 20px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="bar">
+    <a class="brand" href="/comunidad.html" aria-label="Comunidad ARKAIOS EDU">
+      <div class="brand-mark">🎓</div>
+      <div><b>Comunidad ARKAIOS</b><small>Material educativo compartido</small></div>
+    </a>
+    <label class="search"><span>🔍</span><input id="q" type="search" placeholder="Busca plantillas, temas, grados… ej. «día de la madre», «primaria»" autocomplete="off"></label>
+    <a class="go-app" href="/index.html" aria-label="Crear material">✏️ <span>Crear material</span></a>
+  </div>
+  <nav class="sub" id="sub" aria-label="Filtros">
+    <button class="tab on" data-tab="explorar">Explorar</button>
+    <button class="tab" data-tab="mios">Mis materiales</button>
+    <button class="tab" data-tab="guardados">Guardados</button>
+    <span class="sep"></span>
+    <span id="chips"></span>
+  </nav>
+</header>
+
+<section class="free"><div>🎓 <b>Gratis por siempre.</b> Estudiantes, niñas y niños, adultos que estudian, maestros, directivos y todo el personal escolar comparten y reutilizan material sin costo. Los gastos reales (tokens de IA, internet, luz, adaptaciones) los cubre al 100% el ecosistema autosustentable ARKAIOS.</div></section>
+
+<main class="wall" id="wall" aria-live="polite"></main>
+<div id="sentinel"></div>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <div class="sheet" style="position:relative">
+    <button class="close" id="mClose" aria-label="Cerrar">✕</button>
+    <div class="sheet-media" id="mMedia"></div>
+    <div class="sheet-body">
+      <div class="pin-meta" id="mOwner"></div>
+      <h2 id="mTitle"></h2>
+      <p id="mDesc"></p>
+      <div class="tags" id="mTags"></div>
+      <div class="pin-meta" id="mTpl"></div>
+      <div class="actions">
+        <button class="btn btn-use" id="mUse">✨ Usar como base</button>
+        <button class="btn btn-save" id="mSave">📌 Guardar</button>
+        <button class="btn btn-del" id="mDel" hidden>🗑️ Borrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const wall = document.getElementById('wall');
+  const qInput = document.getElementById('q');
+  const view = { tab: 'explorar', q: '', tpl: '', pageToken: null, loading: false, done: false, seq: 0 };
+  const savedIds = new Set();
+  let me = null;
+  let templates = {};
+  let current = null;
+
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const tplLabel = (t) => templates[t]?.label || t.replace(/\.html$/, '').replace(/[-_]/g, ' ');
+  const tplIcon = (t) => templates[t]?.icon || '📄';
+  const initial = (n) => esc((String(n || '?').trim()[0] || '?').toUpperCase());
+
+  async function loadTemplates() {
+    try {
+      const m = await (await fetch('modules.json', { cache: 'no-store' })).json();
+      m.sections.forEach((s) => s.items.forEach((i) => { templates[i.target] = { label: i.label, icon: i.icon }; }));
+    } catch { templates = {}; }
+    const chips = document.getElementById('chips');
+    chips.innerHTML = `<button class="chip on" data-tpl="">Todas</button>` +
+      Object.entries(templates).map(([t, v]) => `<button class="chip" data-tpl="${esc(t)}">${esc(v.icon)} ${esc(v.label)}</button>`).join('');
+    chips.style.display = 'contents';
+  }
+
+  function pinHtml(it) {
+    const img = it.thumbId ? `<img loading="lazy" src="${ArkComunidad.thumbUrl(it.thumbId)}" alt="${esc(it.title)}">` : `<div class="noimg">${esc(tplIcon(it.template))}</div>`;
+    const isSaved = savedIds.has(it.id);
+    return `<article class="pin" data-id="${esc(it.id)}" tabindex="0">
+      <div class="pin-media">${img}
+        <div class="pin-over">
+          <button class="pin-save ${isSaved ? 'done' : ''}" data-act="save">${isSaved ? 'Guardado' : 'Guardar'}</button>
+          <button class="pin-use" data-act="use">✨ Usar</button>
+        </div>
+      </div>
+      <div class="pin-title">${esc(it.title)}</div>
+      <div class="pin-meta"><span class="avatar">${initial(it.ownerName)}</span>${esc(it.ownerName)}${it.saves ? ` · 📌 ${it.saves}` : ''}</div>
+    </article>`;
+  }
+
+  const items = new Map();
+  function setState(icon, text) { wall.innerHTML = `<div class="state"><big>${icon}</big>${text}</div>`; }
+
+  async function load(reset) {
+    if (reset) { view.pageToken = null; view.done = false; view.loading = false; items.clear(); wall.innerHTML = ''; view.seq++; }
+    if (view.loading || view.done) return;
+    const seq = view.seq;
+    view.loading = true;
+    if (!items.size) setState('⏳', 'Cargando materiales…');
+    try {
+      let res;
+      if (view.tab === 'guardados') res = await ArkComunidad.saved();
+      else res = await ArkComunidad.list({ q: view.q, tpl: view.tpl, ...(view.tab === 'mios' ? { owner: 'me' } : {}), ...(view.pageToken ? { pageToken: view.pageToken } : {}) });
+      if (seq !== view.seq) return;
+      if (!items.size) wall.innerHTML = '';
+      let list = res.items;
+      if (view.tab === 'guardados' && view.tpl) list = list.filter((i) => i.template === view.tpl);
+      list.forEach((it) => { items.set(it.id, it); wall.insertAdjacentHTML('beforeend', pinHtml(it)); });
+      view.pageToken = res.nextPageToken;
+      view.done = !res.nextPageToken;
+      if (!items.size) {
+        const empty = { explorar: ['🌱', 'Aún no hay materiales aquí. ¡Sé la primera persona en compartir uno desde <a href="/index.html">Crear material</a>!'],
+          mios: ['✏️', 'Todavía no has compartido materiales. Al guardar uno en el sistema, deja marcada la opción «Compartir en la Comunidad».'],
+          guardados: ['📌', 'Aún no guardas materiales. Toca «Guardar» en cualquier tarjeta para tenerla a la mano.'] }[view.tab];
+        setState(empty[0], empty[1]);
+      }
+    } catch (e) {
+      if (seq !== view.seq) return;
+      view.done = true;
+      setState('🔐', esc(e.message));
+    } finally {
+      if (seq === view.seq) view.loading = false;
+    }
+  }
+
+  async function toggleSave(id, btnEls) {
+    try {
+      const want = !savedIds.has(id);
+      const r = await ArkComunidad.toggleSave(id, want);
+      if (r.saved) savedIds.add(id); else savedIds.delete(id);
+      const it = items.get(id); if (it) it.saves = r.saves;
+      btnEls.forEach((b) => { b.classList.toggle('done', r.saved); b.textContent = b.id === 'mSave' ? (r.saved ? '✓ Guardado' : '📌 Guardar') : (r.saved ? 'Guardado' : 'Guardar'); });
+    } catch (e) { alert(e.message); }
+  }
+
+  const useMaterial = (id) => { location.href = `/index.html?usar=${encodeURIComponent(id)}`; };
+
+  function openModal(it) {
+    current = it;
+    document.getElementById('mMedia').innerHTML = it.thumbId ? `<img src="${ArkComunidad.thumbUrl(it.thumbId)}" alt="${esc(it.title)}">` : `<div class="noimg" style="font-size:80px">${esc(tplIcon(it.template))}</div>`;
+    document.getElementById('mOwner').innerHTML = `<span class="avatar">${initial(it.ownerName)}</span>${esc(it.ownerName)} · ${new Date(it.createdTime).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+    document.getElementById('mTitle').textContent = it.title;
+    document.getElementById('mDesc').textContent = it.description || 'Sin descripción.';
+    document.getElementById('mTags').innerHTML = it.tags.map((t) => `<span>#${esc(t)}</span>`).join('');
+    document.getElementById('mTpl').textContent = `${tplIcon(it.template)} Plantilla: ${tplLabel(it.template)}${it.saves ? ` · 📌 ${it.saves} guardados` : ''}`;
+    const s = document.getElementById('mSave');
+    s.textContent = savedIds.has(it.id) ? '✓ Guardado' : '📌 Guardar';
+    document.getElementById('mDel').hidden = !(me && (me.uid === it.ownerUid || me.isAdmin));
+    document.getElementById('modal').classList.add('open');
+    document.getElementById('mUse').focus();
+  }
+  const closeModal = () => { document.getElementById('modal').classList.remove('open'); current = null; };
+
+  wall.addEventListener('click', (e) => {
+    const pin = e.target.closest('.pin'); if (!pin) return;
+    const it = items.get(pin.dataset.id); if (!it) return;
+    const act = e.target.closest('[data-act]')?.dataset.act;
+    if (act === 'save') { e.stopPropagation(); toggleSave(it.id, [e.target.closest('.pin-save')]); return; }
+    if (act === 'use') { e.stopPropagation(); useMaterial(it.id); return; }
+    openModal(it);
+  });
+  wall.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.classList.contains('pin')) openModal(items.get(e.target.dataset.id)); });
+
+  document.getElementById('mClose').onclick = closeModal;
+  document.getElementById('modal').addEventListener('click', (e) => { if (e.target.id === 'modal') closeModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+  document.getElementById('mUse').onclick = () => current && useMaterial(current.id);
+  document.getElementById('mSave').onclick = () => {
+    if (!current) return;
+    const pinBtn = wall.querySelector(`.pin[data-id="${CSS.escape(current.id)}"] .pin-save`);
+    toggleSave(current.id, [document.getElementById('mSave'), ...(pinBtn ? [pinBtn] : [])]);
+  };
+  document.getElementById('mDel').onclick = async () => {
+    if (!current || !confirm('¿Borrar este material de la Comunidad? Esta acción lo quita para todos.')) return;
+    try { await ArkComunidad.remove(current.id); wall.querySelector(`.pin[data-id="${CSS.escape(current.id)}"]`)?.remove(); items.delete(current.id); closeModal(); }
+    catch (e) { alert(e.message); }
+  };
+
+  document.getElementById('sub').addEventListener('click', (e) => {
+    const tab = e.target.closest('.tab'), chip = e.target.closest('.chip');
+    if (tab) { document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('on', b === tab)); view.tab = tab.dataset.tab; load(true); }
+    if (chip) { document.querySelectorAll('.chip').forEach((b) => b.classList.toggle('on', b === chip)); view.tpl = chip.dataset.tpl; load(true); }
+  });
+  let qTimer;
+  qInput.addEventListener('input', () => { clearTimeout(qTimer); qTimer = setTimeout(() => { view.q = qInput.value.trim(); load(true); }, 350); });
+
+  new IntersectionObserver((entries) => { if (entries[0].isIntersecting && items.size) load(false); }, { rootMargin: '600px' }).observe(document.getElementById('sentinel'));
+
+  window.addEventListener('ark-auth', async (e) => {
+    if (!e.detail) { me = null; return; }
+    try { const r = await ArkComunidad.me(); me = r.user; r.saved.forEach((id) => savedIds.add(id)); wall.querySelectorAll('.pin').forEach((p) => { if (savedIds.has(p.dataset.id)) { const b = p.querySelector('.pin-save'); b.classList.add('done'); b.textContent = 'Guardado'; } }); }
+    catch { me = null; }
+  });
+
+  window.addEventListener('DOMContentLoaded', async () => { await loadTemplates(); load(true); });
+})();
+</script>
+</body>
+</html>

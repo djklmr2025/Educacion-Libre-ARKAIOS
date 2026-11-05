@@ -3,260 +3,117 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ARKAIOS EDU — Acceso & Membresía Escolar</title>
+<title>ARKAIOS EDU — Acceso Libre Escolar</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
-<!-- SDK Pasarela Oficial de Pago Amerio (AMR-IO) -->
-<script src="https://genimi44-by-wix-app44.web.app/sdk/arkaios-pay.js"></script>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: 'Inter', sans-serif;
-    min-height: 100vh;
-    background: linear-gradient(135deg, #090d16 0%, #111e38 50%, #080c14 100%);
-    display: flex; align-items: center; justify-content: center;
-    position: relative; overflow-x: hidden; padding: 20px 10px;
+<!-- Tailwind CSS via CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'sans-serif'],
+          poppins: ['Poppins', 'sans-serif']
+        }
+      }
+    }
   }
+</script>
+<style>
+  body {
+    background-color: #020617; /* slate-950 */
+    color: #f1f5f9; /* slate-100 */
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow-x: hidden;
+    padding: 1.5rem;
+  }
+  
+  /* Background grid pattern */
   body::before {
     content: '';
     position: fixed; inset: 0; pointer-events: none;
-    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,.015) 2px, rgba(255,255,255,.015) 4px);
-  }
-  .orb {
-    position: absolute; border-radius: 50%;
-    filter: blur(90px); opacity: .2; pointer-events: none;
-  }
-  .orb1 { width: 500px; height: 500px; background: #3b82f6; top: -100px; left: -100px; }
-  .orb2 { width: 450px; height: 450px; background: #8b5cf6; bottom: -100px; right: -50px; }
-  .orb3 { width: 350px; height: 350px; background: #10b981; top: 40%; right: 25%; opacity: .12; }
-
-  .card {
-    background: rgba(15, 23, 42, 0.75);
-    border: 1px solid rgba(255,255,255,.12);
-    border-top: 3px solid #3b82f6;
-    border-radius: 24px;
-    backdrop-filter: blur(24px);
-    padding: 2.5rem 2rem;
-    width: 480px; max-width: 95vw;
-    position: relative; z-index: 10;
-    text-align: center;
-    box-shadow: 0 25px 60px -15px rgba(0,0,0,0.5);
-  }
-  .logo-ring {
-    width: 68px; height: 68px; margin: 0 auto 1.2rem;
-    border: 2px solid #3b82f6;
-    border-radius: 20px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 26px; font-weight: 800; color: #60a5fa;
-    background: linear-gradient(135deg, rgba(59,130,246,.2) 0%, rgba(139,92,246,.2) 100%);
-    box-shadow: 0 8px 25px rgba(59,130,246,.3);
-  }
-  h1 { color: #fff; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: .3rem; font-family: 'Poppins', sans-serif; }
-  .subtitle { color: #94a3b8; font-size: 13px; margin-bottom: .6rem; }
-  .badge {
-    display: inline-block;
-    background: rgba(59,130,246,.15);
-    border: 1px solid rgba(59,130,246,.35);
-    color: #93c5fd; font-size: 10px; letter-spacing: 1.5px;
-    padding: .25rem .8rem; margin-bottom: 1.5rem;
-    border-radius: 20px;
-    text-transform: uppercase; font-weight: 700;
-  }
-  .divider { border: none; border-top: 1px solid rgba(255,255,255,.08); margin: 1.3rem 0; }
-
-  .features {
-    display: grid; grid-template-columns: 1fr 1fr; gap: .65rem;
-    margin: 1.2rem 0;
-  }
-  .feat {
-    background: rgba(255,255,255,.03);
-    border: 1px solid rgba(255,255,255,.07);
-    border-radius: 12px;
-    padding: .75rem;
-    text-align: left;
-    transition: transform 0.2s, background 0.2s;
-  }
-  .feat:hover { background: rgba(255,255,255,.06); transform: translateY(-1px); }
-  .feat-icon { font-size: 18px; margin-bottom: .25rem; }
-  .feat-title { color: #e2e8f0; font-size: 12px; font-weight: 600; }
-  .feat-desc  { color: #64748b; font-size: 11px; margin-top: .15rem; }
-
-  .btn-google {
-    display: flex; align-items: center; justify-content: center; gap: .75rem;
-    width: 100%; padding: .85rem 1.4rem;
-    background: #fff; border: none; border-radius: 14px;
-    color: #1e293b; font-family: 'Inter', sans-serif;
-    font-size: 14px; font-weight: 700;
-    cursor: pointer; transition: all .2s;
-  }
-  .btn-google:hover { background: #f8fafc; transform: translateY(-1px); box-shadow: 0 8px 20px rgba(0,0,0,.35); }
-  .btn-google:disabled { opacity: .5; cursor: not-allowed; transform: none; }
-  .btn-google svg { width: 18px; height: 18px; flex-shrink: 0; }
-
-  /* ===== CAJA DE DONACIÓN & MEMBRESÍA VITALICIA ===== */
-  .membership-box {
-    background: linear-gradient(145deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
-    border: 1px solid rgba(139, 92, 246, 0.35);
-    border-radius: 18px;
-    padding: 1.25rem;
-    margin-top: 1.2rem;
-    text-align: left;
-    position: relative;
-    overflow: hidden;
-  }
-  .membership-box::after {
-    content: '';
-    position: absolute; top: 0; left: 0; right: 0; height: 2px;
-    background: linear-gradient(90deg, #6366f1, #a855f7, #06b6d4);
-  }
-  .mem-header {
-    display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;
-  }
-  .mem-tag {
-    background: rgba(168, 85, 247, 0.2);
-    color: #d8b4fe; font-size: 10px; font-weight: 800;
-    letter-spacing: 1px; padding: 3px 8px; border-radius: 8px;
-    border: 1px solid rgba(168, 85, 247, 0.4); text-transform: uppercase;
-  }
-  .mem-price {
-    font-size: 16px; font-weight: 800; color: #38bdf8; font-family: monospace;
-  }
-  .mem-title {
-    font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 4px;
-  }
-  .mem-desc {
-    font-size: 11px; color: #94a3b8; line-height: 1.45; margin-bottom: 12px;
-  }
-  .mem-perks {
-    list-style: none; margin-bottom: 14px; font-size: 11px; color: #cbd5e1;
-  }
-  .mem-perks li {
-    display: flex; align-items: center; gap: 6px; margin-bottom: 4px;
-  }
-  .mem-perks li span { color: #34d399; font-weight: bold; }
-
-  .btn-pay-amr {
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-    width: 100%; padding: .85rem;
-    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #06b6d4 100%);
-    border: none; border-radius: 12px; color: #fff;
-    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700;
-    cursor: pointer; transition: all .2s; box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
-  }
-  .btn-pay-amr:hover { opacity: .95; transform: translateY(-1px); box-shadow: 0 8px 25px rgba(124, 58, 237, 0.6); }
-
-  .redeem-toggle {
-    margin-top: 10px; font-size: 11px; color: #a78bfa; text-align: center;
-    cursor: pointer; text-decoration: underline; transition: color 0.2s;
-  }
-  .redeem-toggle:hover { color: #c4b5fd; }
-
-  .redeem-form {
-    display: none; margin-top: 10px; gap: 6px;
-  }
-  .redeem-input {
-    flex: 1; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15);
-    color: #fff; padding: 8px 12px; border-radius: 10px; font-size: 12px; font-family: monospace; outline: none;
-  }
-  .btn-redeem {
-    background: #0284c7; color: #fff; border: none; border-radius: 10px;
-    padding: 8px 14px; font-size: 11px; font-weight: 700; cursor: pointer;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 24px 24px;
+    z-index: 0;
   }
 
-  /* Estado de membresía activa */
-  .membership-active-banner {
-    display: none;
-    background: rgba(16, 185, 129, 0.12);
-    border: 1px solid rgba(16, 185, 129, 0.4);
-    border-radius: 14px;
-    padding: 12px;
-    margin-top: 14px;
-    text-align: left;
+  /* Glow Orbs */
+  .glow-bg {
+    position: fixed; inset: 0; pointer-events: none; overflow: hidden; opacity: 0.3; z-index: 0;
   }
-  .membership-active-banner.show { display: block; }
-  .mab-title { color: #34d399; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
-  .mab-desc { color: #94a3b8; font-size: 11px; margin-top: 3px; font-family: monospace; }
+  .glow-orb {
+    position: absolute; border-radius: 50%; filter: blur(140px);
+  }
+  .orb-1 { width: 700px; height: 500px; background: linear-gradient(to top right, #4f46e5, #06b6d4, #9333ea); top: -200px; left: 50%; transform: translateX(-50%); }
 
-  #user-panel {
-    display: none;
-    margin-top: 1.2rem;
-    background: rgba(34,197,94,.06);
-    border: 1px solid rgba(34,197,94,.2);
-    border-radius: 16px;
-    padding: 1.1rem;
-    text-align: left;
+  /* Glassmorphism Card */
+  .glass-card {
+    background: rgba(15, 23, 42, 0.6); /* slate-900/60 */
+    border: 1px solid rgba(51, 65, 85, 0.5); /* slate-700 */
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
   }
-  .user-name { color: #22c55e; font-weight: 700; font-size: 14px; }
-  .user-email { color: #94a3b8; font-size: 12px; margin-bottom: .6rem; }
-  .api-key-box {
-    background: rgba(0,0,0,.35);
-    border: 1px solid rgba(255,255,255,.1);
-    border-radius: 8px;
-    padding: .5rem .8rem;
-    font-family: monospace; font-size: 11px; color: #60a5fa;
-    word-break: break-all; margin-bottom: .75rem;
-  }
-  .btn-enter {
-    width: 100%; padding: .85rem;
-    background: #2563eb; border: none; border-radius: 12px; color: #fff;
-    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700;
-    cursor: pointer; transition: background .2s; letter-spacing: 0.5px;
-  }
-  .btn-enter:hover { background: #1d4ed8; }
-  .btn-enter:disabled { background: #475569; cursor: not-allowed; opacity: 0.7; }
-
-  .gateway-link {
-    display: block; margin-top: 12px; font-size: 11px; color: #64748b; text-decoration: none;
-  }
-  .gateway-link span { color: #38bdf8; font-weight: 600; text-decoration: underline; }
-
-  .status {
-    margin-top: 1.2rem;
-    font-size: 11px; color: #64748b;
-    font-family: monospace;
-  }
-  .status.loading { color: #60a5fa; }
-  .status.error   { color: #ef4444; }
-  .status.success { color: #22c55e; }
 </style>
 </head>
-<body>
-<div class="orb orb1"></div>
-<div class="orb orb2"></div>
-<div class="orb orb3"></div>
+<body class="selection:bg-indigo-500 selection:text-white">
 
-<div class="card">
-  <div class="logo-ring">🎓</div>
-  <h1>ARKAIOS EDU</h1>
-  <div class="subtitle">Educación Libre & Sistema Escolar Profesional</div>
-  <div class="badge">Powered by ARKAIOS × ELEMIA • AMR-IO</div>
+<div class="glow-bg">
+  <div class="glow-orb orb-1"></div>
+</div>
 
-  <div class="features">
-    <div class="feat">
-      <div class="feat-icon">📚</div>
-      <div class="feat-title">Archivos & Material</div>
-      <div class="feat-desc">Biblioteca completa</div>
+<main class="glass-card rounded-[2rem] w-full max-w-lg p-8 relative z-10 transition-all hover:border-slate-600">
+  
+  <!-- Header -->
+  <div class="text-center mb-6">
+    <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-tr from-indigo-600/20 to-cyan-500/20 rounded-2xl border border-indigo-500/30 flex items-center justify-center shadow-lg shadow-indigo-500/20 relative group">
+      <i data-lucide="graduation-cap" class="text-indigo-400 w-8 h-8 group-hover:scale-110 transition-transform"></i>
+      <div class="absolute inset-0 bg-indigo-400/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
     </div>
-    <div class="feat">
-      <div class="feat-icon">🎨</div>
-      <div class="feat-title">Plantillas Carta MX</div>
-      <div class="feat-desc">Áreas autoajustables</div>
-    </div>
-    <div class="feat">
-      <div class="feat-icon">🤖</div>
-      <div class="feat-title">IA Educativa en Vivo</div>
-      <div class="feat-desc">Gemini · Grok · GPT</div>
-    </div>
-    <div class="feat">
-      <div class="feat-icon">♾️</div>
-      <div class="feat-title">Acceso Vitalicio</div>
-      <div class="feat-desc">Licencia no comercial</div>
+    <h1 class="text-2xl font-poppins font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent mb-1">
+      ARKAIOS EDU
+    </h1>
+    <p class="text-sm text-slate-400 font-medium">Educación Libre & Sistema Escolar Profesional</p>
+    
+    <div class="inline-flex items-center gap-1.5 mt-4 px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-[10px] font-bold uppercase tracking-widest text-indigo-300">
+      <i data-lucide="zap" class="w-3 h-3"></i> Powered by ARKAIOS × ELEMIA
     </div>
   </div>
 
-  <!-- SECCIÓN DE AUTENTICACIÓN GOOGLE -->
+  <!-- Features Grid -->
+  <div class="grid grid-cols-2 gap-3 mb-8">
+    <div class="bg-slate-800/30 border border-slate-700/50 rounded-xl p-3 hover:bg-slate-800/50 transition-colors group">
+      <i data-lucide="library" class="w-5 h-5 text-cyan-400 mb-2 group-hover:scale-110 transition-transform"></i>
+      <h3 class="text-xs font-bold text-slate-200">Archivos & Material</h3>
+      <p class="text-[10px] text-slate-400 mt-0.5">Biblioteca completa</p>
+    </div>
+    <div class="bg-slate-800/30 border border-slate-700/50 rounded-xl p-3 hover:bg-slate-800/50 transition-colors group">
+      <i data-lucide="layout-template" class="w-5 h-5 text-purple-400 mb-2 group-hover:scale-110 transition-transform"></i>
+      <h3 class="text-xs font-bold text-slate-200">Plantillas Carta MX</h3>
+      <p class="text-[10px] text-slate-400 mt-0.5">Áreas autoajustables</p>
+    </div>
+    <div class="bg-slate-800/30 border border-slate-700/50 rounded-xl p-3 hover:bg-slate-800/50 transition-colors group">
+      <i data-lucide="bot" class="w-5 h-5 text-emerald-400 mb-2 group-hover:scale-110 transition-transform"></i>
+      <h3 class="text-xs font-bold text-slate-200">IA Educativa</h3>
+      <p class="text-[10px] text-slate-400 mt-0.5">Gemini · Grok · GPT</p>
+    </div>
+    <div class="bg-slate-800/30 border border-slate-700/50 rounded-xl p-3 hover:bg-slate-800/50 transition-colors group">
+      <i data-lucide="infinity" class="w-5 h-5 text-amber-400 mb-2 group-hover:scale-110 transition-transform"></i>
+      <h3 class="text-xs font-bold text-slate-200">Gratis por Siempre</h3>
+      <p class="text-[10px] text-slate-400 mt-0.5">Sin costos ni membresías</p>
+    </div>
+  </div>
+
+  <!-- AUTH SECTION GOOGLE -->
   <div id="auth-section">
-    <button class="btn-google" id="btn-google" onclick="signInWithGoogle()">
-      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <button id="btn-google" onclick="signInWithGoogle()" class="w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-white hover:bg-slate-50 text-slate-900 rounded-xl text-sm font-bold shadow-lg transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+      <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
         <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
         <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
@@ -266,65 +123,56 @@
     </button>
   </div>
 
-  <hr class="divider">
-
-  <!-- SECCIÓN DE MEMBRESÍA & DONACIÓN ESCOLAR ($100 AMR-IO) -->
-  <div class="membership-box" id="membership-box">
-    <div class="mem-header">
-      <span class="mem-tag">Donación de Apoyo Escolar</span>
-      <span class="mem-price">$100 AMR-IO</span>
+  <!-- EDUCACIÓN LIBRE: GRATIS POR SIEMPRE -->
+  <div id="free-forever-box" class="relative overflow-hidden bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-5 my-6">
+    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-cyan-500 to-indigo-500"></div>
+    <div class="flex items-center justify-between mb-3">
+      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase tracking-wide">Educación Libre</span>
+      <span class="text-lg font-bold text-emerald-400 font-mono tracking-tight">$0 · Gratis</span>
     </div>
-    <div class="mem-title">Licencia de Uso No Comercial sin Vigencia</div>
-    <p class="mem-desc">
-      Aporte único para el mantenimiento y reconocimiento de materiales didácticos. <strong>Paga lo mínimo $100 AMR ($100 MXN) y utiliza la plataforma por siempre.</strong>
+    <h3 class="text-sm font-bold text-white mb-1">Gratis por siempre para la comunidad educativa</h3>
+    <p class="text-xs text-slate-300 leading-relaxed mb-3">
+      Estudiantes, niñas y niños, adultos que estudian, maestros, directivos y todo el personal escolar usan ARKAIOS EDU <strong class="text-white">sin ningún costo, sin membresías y sin vencimiento</strong>.
     </p>
-
-    <ul class="mem-perks">
-      <li><span>✓</span> Acceso ilimitado a todos los archivos y plantillas</li>
-      <li><span>✓</span> Uso perpetuo de generadores didácticos y recortables</li>
-      <li><span>✓</span> IA educativa interna integrada (Gemini / ELEMIA)</li>
-      <li><span>✓</span> Sin mensualidades ni vencimiento (Vitalicia)</li>
-    </ul>
-
-    <button class="btn-pay-amr" id="btn-pay-amr" onclick="handlePayAmerio()">
-      <span>💳 Donar $100 AMR-IO y Activar Acceso</span>
-    </button>
-
-    <div class="redeem-toggle" onclick="toggleRedeemForm()">
-      ¿Ya donaste o tienes comprobante / clave activa? Canjear aquí
-    </div>
-
-    <div class="redeem-form" id="redeem-form">
-      <input type="text" id="redeem-code-input" class="redeem-input" placeholder="ej. AUTH-7F3A2B o CLAVE-EDU" />
-      <button type="button" class="btn-redeem" onclick="handleRedeemCode()">Canjear</button>
-    </div>
-  </div>
-
-  <!-- BANNER DE MEMBRESÍA ACTIVADA -->
-  <div class="membership-active-banner" id="membership-active-banner">
-    <div class="mab-title">
-      <span>✅</span> Membresía Vitalicia Activa
-    </div>
-    <div class="mab-desc" id="mab-details">
-      Licencia No Comercial Vigente &bull; Aut: AUTH-ACTIVE
-    </div>
+    <p class="text-[11px] text-slate-400 leading-relaxed">
+      Los costos reales de operación —uso de tokens de IA, internet, luz, adaptaciones y demás gastos— se cubren al 100% por el <strong class="text-slate-200">ecosistema autosustentable ARKAIOS</strong>. Desde su creación, el ecosistema se ha construido para ayudar, apoyar e impulsar la verdadera educación.
+    </p>
   </div>
 
   <!-- PANEL DE USUARIO AUTENTICADO -->
-  <div id="user-panel">
-    <div class="user-name" id="u-name"></div>
-    <div class="user-email" id="u-email"></div>
-    <div style="font-size:11px;color:#64748b;margin-bottom:.3rem;">TU API KEY EDUCATIVA:</div>
-    <div class="api-key-box" id="u-apikey">Generando...</div>
-    <button class="btn-enter" id="btn-enter-app" onclick="enterApp()">→ ENTRAR AL SISTEMA</button>
+  <div id="user-panel" class="hidden bg-slate-800/40 border border-slate-700/50 rounded-2xl p-5 mb-4">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-10 h-10 bg-indigo-500/20 rounded-full flex items-center justify-center border border-indigo-500/30">
+        <i data-lucide="user" class="w-5 h-5 text-indigo-400"></i>
+      </div>
+      <div>
+        <div id="u-name" class="font-bold text-slate-200 text-sm"></div>
+        <div id="u-email" class="text-xs text-slate-400"></div>
+      </div>
+    </div>
+    
+    <div class="mb-4">
+      <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1.5">Tu API Key Educativa:</div>
+      <div id="u-apikey" class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-xs text-indigo-400 font-mono break-all selection:bg-indigo-500/30">
+        Generando...
+      </div>
+    </div>
+
+    <button id="btn-enter-app" onclick="enterApp()" class="w-full flex items-center justify-center gap-2 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-600/20 disabled:bg-slate-700 disabled:text-slate-400 disabled:shadow-none disabled:cursor-not-allowed transition-all">
+      Entrar al Sistema <i data-lucide="arrow-right" class="w-4 h-4"></i>
+    </button>
   </div>
 
-  <a href="https://genimi44-by-wix-app44.web.app/?tab=checkout&amount=100&item=Donacion+Apoyo+Escolar+Arkaios" target="_blank" class="gateway-link">
-    ¿No tienes tokens Amerio? <span>Adquiere o recarga en la Pasarela Central AMR-IO</span>
-  </a>
+  <div id="status" class="mt-4 text-center text-[11px] font-mono text-slate-500">
+    // Inicia sesión para entrar · Gratis por siempre
+  </div>
 
-  <div class="status" id="status">// Esperando autenticación o validación de pase</div>
-</div>
+</main>
+
+<script>
+  // Initialize Lucide icons
+  lucide.createIcons();
+</script>
 
 <!-- Firebase SDK -->
 <script type="module">
@@ -347,119 +195,22 @@
   provider.addScope('email');
   provider.addScope('profile');
 
-  // Comprobar si ya existe membresía en localStorage
-  function checkExistingMembership() {
-    const mem = localStorage.getItem('ark_edu_membership');
-    if (mem) {
-      try {
-        const parsed = JSON.parse(mem);
-        if (parsed.status === 'ACTIVE') {
-          showMembershipActive(parsed);
-          return true;
-        }
-      } catch (e) {
-        localStorage.removeItem('ark_edu_membership');
-      }
-    }
-    return false;
-  }
-
-  function showMembershipActive(data) {
-    const banner = document.getElementById('membership-active-banner');
-    const details = document.getElementById('mab-details');
-    const box = document.getElementById('membership-box');
-    const enterBtn = document.getElementById('btn-enter-app');
-
-    banner.classList.add('show');
-    box.style.display = 'none';
-    details.textContent = `Licencia No Comercial Vitalicia • Donación: $${data.amount || 100} AMR-IO • Aut: ${data.authorizationCode || 'ACTIVO'}`;
-
-    if (enterBtn) {
-      enterBtn.disabled = false;
-      enterBtn.innerText = '→ ENTRAR AL SISTEMA (MEMBRESÍA ACTIVA)';
-    }
-  }
-
-  window.toggleRedeemForm = function() {
-    const form = document.getElementById('redeem-form');
-    form.style.display = form.style.display === 'flex' ? 'none' : 'flex';
-  };
-
-  window.handleRedeemCode = function() {
-    const code = document.getElementById('redeem-code-input').value.trim();
-    if (!code || code.length < 4) {
-      alert('Por favor introduce un código de comprobante o autorización válido.');
-      return;
-    }
-
-    const membership = {
-      status: 'ACTIVE',
-      tier: 'LIFETIME_NON_COMMERCIAL',
-      amount: 100,
-      currency: 'AMR-IO',
-      authorizationCode: code.toUpperCase(),
-      activatedAt: new Date().toISOString(),
-      method: 'CANJE_MANUAL_COMPROBANTE'
-    };
-
-    localStorage.setItem('ark_edu_membership', JSON.stringify(membership));
-    showMembershipActive(membership);
-    alert('¡Membresía Vitalicia Validada con Éxito! Tienes acceso ilimitado sin vigencia.');
-  };
-
-  window.handlePayAmerio = function() {
-    if (!window.ArkaiosPay) {
-      alert('Iniciando el conector seguro con la Pasarela de Pagos Amerio (AMR-IO)...');
-      return;
-    }
-
-    const user = JSON.parse(sessionStorage.getItem('ark_user') || '{}');
-    const userEmail = user.email || 'usuario-escolar@arkaios.com';
-
-    window.ArkaiosPay.open({
-      amount: 100.00,
-      item: 'Licencia Vitalicia No Comercial - Educacion Libre ARKAIOS',
-      merchant: 'ARK-EDU-PROYECTO',
-      orderId: `EDU-${Date.now().toString().slice(-6)}`,
-      onSuccess: function(receipt) {
-        console.log('✅ Donación Escolar Aprobada:', receipt);
-        const authCode = receipt.authorizationCode || `AUTH-${Date.now().toString().slice(-6)}`;
-        const membership = {
-          status: 'ACTIVE',
-          tier: 'LIFETIME_NON_COMMERCIAL',
-          amount: 100,
-          currency: 'AMR-IO',
-          authorizationCode: authCode,
-          userEmail: userEmail,
-          activatedAt: new Date().toISOString(),
-          receipt: receipt
-        };
-
-        localStorage.setItem('ark_edu_membership', JSON.stringify(membership));
-        showMembershipActive(membership);
-        alert('🎉 ¡Donación de $100 AMR-IO recibida con éxito!\nTu licencia de uso no comercial vitalicia está activa de por vida.');
-      },
-      onCancel: function() {
-        console.log('Pago de donación cancelado por el usuario.');
-      }
-    });
-  };
-
+  // Educación Libre: acceso gratuito por siempre, sin membresías ni pagos.
   window.signInWithGoogle = async function() {
     const btn = document.getElementById('btn-google');
     const status = document.getElementById('status');
     btn.disabled = true;
     status.textContent = '// Conectando con Google...';
-    status.className = 'status loading';
+    status.className = 'mt-4 text-center text-[11px] font-mono text-cyan-400';
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       status.textContent = `// Autenticado: ${user.email}`;
-      status.className = 'status success';
+      status.className = 'mt-4 text-center text-[11px] font-mono text-emerald-400';
       showUserPanel(user);
     } catch(e) {
       status.textContent = `// Error: ${e.message}`;
-      status.className = 'status error';
+      status.className = 'mt-4 text-center text-[11px] font-mono text-rose-400';
       btn.disabled = false;
     }
   };
@@ -472,21 +223,12 @@
   function showUserPanel(user) {
     document.getElementById('auth-section').style.display = 'none';
     const panel = document.getElementById('user-panel');
-    panel.style.display = 'block';
+    panel.classList.remove('hidden');
+    panel.classList.add('block');
     document.getElementById('u-name').textContent = user.displayName || 'Usuario Escolar';
     document.getElementById('u-email').textContent = user.email;
     const apiKey = generateApiKey(user.uid, user.email);
     document.getElementById('u-apikey').textContent = apiKey;
-
-    if (user.email === 'djklmr2024@gmail.com' || user.email === 'arkaios2026@gmail.com') {
-      const adminMembership = {
-        status: 'ACTIVE',
-        tier: 'ADMIN_ACCESS',
-        amount: 0,
-        authorizationCode: 'ARK-ADMIN-BYPASS',
-      };
-      localStorage.setItem('ark_edu_membership', JSON.stringify(adminMembership));
-    }
 
     sessionStorage.setItem('ark_user', JSON.stringify({
       uid: user.uid,
@@ -497,34 +239,17 @@
       token: user.accessToken
     }));
 
-    const hasMembership = checkExistingMembership();
-    const enterBtn = document.getElementById('btn-enter-app');
-    if (!hasMembership) {
-      enterBtn.disabled = true;
-      enterBtn.innerText = '⚠️ Requiere Donación de $100 AMR-IO para Entrar';
-    } else {
-      enterBtn.disabled = false;
-      enterBtn.innerText = '→ ENTRAR AL SISTEMA (MEMBRESÍA ACTIVA)';
-    }
   }
 
   window.enterApp = function() {
-    const hasMembership = checkExistingMembership();
-    if (!hasMembership) {
-      alert('Se requiere la donación mínima de $100 AMR-IO (reconocimiento de materiales de apoyo escolar con licencia vitalicia) para entrar a la plataforma.');
-      return;
-    }
     window.location.href = '/index.html';
   };
-
-  // Check state on load
-  checkExistingMembership();
 
   onAuthStateChanged(auth, (user) => {
     if (user) {
       const status = document.getElementById('status');
       status.textContent = `// Sesión activa: ${user.email}`;
-      status.className = 'status success';
+      status.className = 'mt-4 text-center text-[11px] font-mono text-emerald-400';
       showUserPanel(user);
     }
   });

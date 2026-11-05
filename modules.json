@@ -5,7 +5,7 @@
       "icon": "⚛️",
       "items": [
         {
-          "label": "Tabla Periodica Interactiva",
+          "label": "Tabla Periódica Interactiva",
           "icon": "⚛️",
           "target": "tabla_periodica_interactiva.html"
         }
@@ -17,7 +17,17 @@
       "makeFirstActive": true,
       "items": [
         {
-          "label": "Biografia Profesional",
+          "label": "Carta MX - Índice + Texto",
+          "icon": "📄",
+          "target": "plantilla_escolar_carta_mx_autoajuste_y_areas_editables.html"
+        },
+        {
+          "label": "Hoja Milimétrica",
+          "icon": "📐",
+          "target": "hoja_milimetrica_interactiva.html"
+        },
+        {
+          "label": "Biografía Profesional",
           "icon": "👤",
           "target": "biografia_profesional.html"
         },
@@ -25,99 +35,89 @@
           "label": "Croquis Animado Casa ⇄ Escuela",
           "icon": "🗺️",
           "target": "croquis_animado_v3.html"
-        },
-        {
-          "label": "Hoja Milimetrica Interactiva",
-          "icon": "📐",
-          "target": "hoja_milimetrica_interactiva.html"
-        },
-        {
-          "label": "Plantilla Escolar Carta Mx Autoajuste Y Areas Editables",
-          "icon": "📄",
-          "target": "plantilla_escolar_carta_mx_autoajuste_y_areas_editables.html"
         }
       ]
     },
     {
-      "title": "Módulos de Imagen",
-      "icon": "📸",
+      "title": "Plantillas de Imagen para Imprimir",
+      "icon": "🖨️",
       "items": [
         {
-          "label": "Buscador Imagenes Educativo",
-          "icon": "🎨",
-          "target": "buscador-imagenes-educativo.html"
+          "label": "20 Instituciones (logos editables)",
+          "icon": "🏛️",
+          "target": "plantilla_20_instituciones_editable.html"
         },
         {
-          "label": "Etiquetas Libretas",
-          "icon": "🏷️",
-          "target": "etiquetas-libretas.html"
-        },
-        {
-          "label": "Generador Fotos Infantiles",
-          "icon": "👶",
-          "target": "generador-fotos-infantiles.html"
-        },
-        {
-          "label": "Generador Ia Imagenes",
-          "icon": "🎨",
-          "target": "generador-ia-imagenes.html"
-        },
-        {
-          "label": "Pixabay Descargador Lote",
-          "icon": "🌐",
-          "target": "pixabay-descargador-lote.html"
-        },
-        {
-          "label": "Plantilla Circulos Jack",
-          "icon": "⭕",
-          "target": "plantilla_circulos_jack.html"
-        },
-        {
-          "label": "Plantilla Cuadros Frutas Kinder",
-          "icon": "🖼️",
-          "target": "plantilla-cuadros-frutas-kinder.html"
-        },
-        {
-          "label": "Plantilla Cuadros Imagenes V2",
+          "label": "Cuadros Imágenes v2",
           "icon": "🖼️",
           "target": "plantilla-cuadros-imagenes-v2.html"
         },
         {
-          "label": "Plantilla Imagenes V2",
+          "label": "Plantilla Imágenes v2",
           "icon": "🎨",
           "target": "plantilla-imagenes-v2.html"
         },
         {
-          "label": "Tiras Calcomanias Lapiz",
+          "label": "Frutas Kínder (tarjetas)",
+          "icon": "🍎",
+          "target": "plantilla-cuadros-frutas-kinder.html"
+        },
+        {
+          "label": "Círculos Jack Skellington",
+          "icon": "⭕",
+          "target": "plantilla_circulos_jack.html"
+        },
+        {
+          "label": "Fotos Infantiles 2.5×3 cm",
+          "icon": "👶",
+          "target": "generador-fotos-infantiles.html"
+        },
+        {
+          "label": "Etiquetas para Libretas",
+          "icon": "🏷️",
+          "target": "etiquetas-libretas.html"
+        },
+        {
+          "label": "Tiras de Calcomanías para Lápiz",
           "icon": "✏️",
           "target": "tiras-calcomanias-lapiz.html"
         }
       ]
     },
     {
-      "title": "Otros",
-      "icon": "🧩",
+      "title": "Buscar y Generar Imágenes",
+      "icon": "🔎",
       "items": [
         {
-          "label": "Material Educativo Reutilizable",
-          "icon": "📄",
-          "target": "material-educativo-reutilizable.html"
+          "label": "Buscador Imágenes Educativo",
+          "icon": "🎨",
+          "target": "buscador-imagenes-educativo.html"
         },
         {
-          "label": "Orquestador Html Plus",
-          "icon": "📄",
-          "target": "orquestador-html-plus.html"
+          "label": "Generador IA Imágenes",
+          "icon": "🤖",
+          "target": "generador-ia-imagenes.html"
+        },
+        {
+          "label": "Pixabay Descarga Lote",
+          "icon": "🌐",
+          "target": "pixabay-descargador-lote.html"
         }
       ]
     },
     {
-      "title": "Biblioteca",
+      "title": "Biblioteca y Herramientas",
       "icon": "📚",
       "items": [
         {
           "label": "Material Reutilizable",
           "icon": "📖",
           "target": "material-educativo-reutilizable.html"
+        },
+        {
+          "label": "Orquestador HTML Plus",
+          "icon": "🧩",
+          "target": "orquestador-html-plus.html"
         }
       ]
     }

@@ -53,7 +53,8 @@ function categorize(file) {
     f.includes("jack") ||
     f.includes("cuadros") ||
     f.includes("etiquetas") ||
-    f.includes("tiras");
+    f.includes("tiras") ||
+    f.includes("instituciones");
 
   if (isCiencias) return "ciencias";
   if (isText) return "text";
@@ -82,6 +83,7 @@ function iconForFile(file) {
   if (f.includes("imagen")) return "🎨";
   if (f.includes("etiquetas")) return "🏷️";
   if (f.includes("tiras")) return "✏️";
+  if (f.includes("instituciones")) return "🏛️";
   return "📄";
 }
 
