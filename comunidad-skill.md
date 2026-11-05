@@ -57,6 +57,12 @@ Solo pueden hacerlo las cuentas de Google configuradas como administradoras en e
 
 ## 2. Opción A — Servidor MCP (recomendado)
 
+No necesitas acceso al repositorio: descarga el servidor (Node 20+, sin dependencias) desde el sitio.
+
+```bash
+curl -o arkaios-edu-comunidad-mcp.js https://eduacion-libre-proyecto-arkaios.vercel.app/tools/arkaios-edu-comunidad-mcp.js
+```
+
 ```bash
 claude mcp add arkaios-edu-comunidad --scope user -- node tools/arkaios-edu-comunidad-mcp.js
 ```
