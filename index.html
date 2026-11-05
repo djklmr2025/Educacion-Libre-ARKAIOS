@@ -840,6 +840,53 @@
             }
         }
 
+        /* ========== CATÁLOGO DE PLANTILLAS ========== */
+        #dashboardContainer.catalog-view { padding: 0; overflow-y: auto; height: 100%; }
+        .catalog { max-width: 1320px; margin: 0 auto; padding: 36px 32px 120px; }
+        .catalog-hero { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 22px; }
+        .catalog-hero h2 { font-family: 'Poppins', sans-serif; font-size: clamp(26px, 2.2vw + 12px, 40px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; color: var(--text-primary); }
+        .catalog-hero p { color: var(--text-secondary); font-size: 15px; margin-top: 8px; max-width: 560px; line-height: 1.5; }
+        .catalog-search { position: relative; flex: 0 1 380px; }
+        .catalog-search input { width: 100%; height: 48px; border-radius: 999px; border: 1px solid var(--border-color); background: var(--bg-white); padding: 0 18px 0 46px; font-size: 15px; font-family: inherit; color: var(--text-primary); outline: none; box-shadow: var(--shadow-sm); transition: border-color .15s, box-shadow .15s; }
+        .catalog-search input:focus { border-color: var(--primary-blue); box-shadow: 0 0 0 4px rgba(37, 99, 235, .15); }
+        .catalog-search span { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); }
+        .catalog-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 26px; scrollbar-width: none; }
+        .catalog-chips::-webkit-scrollbar { display: none; }
+        .catalog-chip { border: 0; border-radius: 999px; padding: 9px 16px; font: 600 13.5px 'Inter', sans-serif; white-space: nowrap; background: var(--bg-gray); color: var(--text-primary); cursor: pointer; transition: background .15s, color .15s; }
+        .catalog-chip:hover { background: #cbd5e1; }
+        .catalog-chip.on { background: var(--text-primary); color: #fff; }
+        .tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 26px 22px; }
+        .tpl-card { all: unset; cursor: pointer; display: flex; flex-direction: column; gap: 10px; border-radius: 18px; }
+        .tpl-thumb { aspect-ratio: 900 / 1000; border-radius: 16px; overflow: hidden; background: var(--bg-white); border: 1px solid var(--border-color); box-shadow: var(--shadow-md); position: relative; transition: transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s; }
+        .tpl-thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; }
+        .tpl-thumb .tpl-open { position: absolute; left: 50%; bottom: 14px; transform: translate(-50%, 8px); opacity: 0; background: var(--primary-blue); color: #fff; font-weight: 700; font-size: 13.5px; padding: 10px 18px; border-radius: 999px; white-space: nowrap; box-shadow: var(--shadow-lg); transition: opacity .2s, transform .2s; }
+        .tpl-card:hover .tpl-thumb, .tpl-card:focus-visible .tpl-thumb { transform: translateY(-4px); box-shadow: var(--shadow-xl); }
+        .tpl-card:hover .tpl-open, .tpl-card:focus-visible .tpl-open { opacity: 1; transform: translate(-50%, 0); }
+        .tpl-card:focus-visible { outline: 3px solid rgba(37, 99, 235, .5); outline-offset: 4px; }
+        .tpl-info { display: flex; gap: 10px; align-items: flex-start; padding: 0 4px; }
+        .tpl-icon { font-size: 20px; line-height: 1; }
+        .tpl-info b { display: block; font-size: 14.5px; font-weight: 700; color: var(--text-primary); line-height: 1.3; }
+        .tpl-info small { color: var(--text-muted); font-size: 12px; }
+        .catalog-section-title { font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 700; margin: 48px 0 18px; color: var(--text-primary); }
+        .catalog-empty { color: var(--text-muted); padding: 30px 0; }
+        body.ark-catalog .view-controls, body.ark-catalog .toggle-nav { display: none !important; }
+        body.ark-catalog nav#sidebar, body.ark-working nav#sidebar.collapsed { width: 0; padding: 0; border-right: none; overflow: hidden; }
+        body.ark-catalog nav#sidebar { transition: none; }
+        .back-to-catalog { display: none; }
+        main { min-width: 0; }
+        .layout { min-width: 0; overflow: hidden; }
+        body.ark-working .back-to-catalog { display: inline-flex; }
+        @media (max-width: 760px) {
+            .catalog { padding: 22px 16px 120px; }
+            .tpl-grid { grid-template-columns: repeat(2, 1fr); gap: 18px 12px; }
+            .tpl-thumb .tpl-open { display: none; }
+            .catalog-search { flex-basis: 100%; }
+            body.ark-catalog .module-dropdown-container { display: none; }
+            header { flex-wrap: wrap; gap: 8px; height: auto; }
+            .header-actions { flex-wrap: wrap; gap: 6px; }
+            .layout { height: calc(100vh - 120px); }
+        }
+
         /* ========== ASISTENTE IA GLOBAL (PUTER / CLAUDE) ========== */
         .puter-ai-trigger {
             position: fixed;
@@ -1251,6 +1298,10 @@
 
         <main>
             <div class="view-controls">
+                <button class="btn-premium btn-secondary back-to-catalog" onclick="showDashboardView()" title="Volver al catálogo de plantillas">
+                    <span>←</span>
+                    <span>Plantillas</span>
+                </button>
                 <div class="zoom-controls">
                     <span>🔍</span>
                     <input type="range" min="50" max="150" value="100" class="zoom-slider" id="zoomSlider"
@@ -1360,6 +1411,7 @@
                 const res = await fetch('modules.json', { cache: 'no-store' });
                 if (!res.ok) throw new Error('modules.json no encontrado');
                 const manifest = await res.json();
+                window.ARK_MANIFEST = manifest;
 
                 root.innerHTML = '';
                 buildMenuFromManifest(root, manifest);
@@ -1542,33 +1594,123 @@
 	            return el;
 	        }
 
+	        // ===== CATÁLOGO DE PLANTILLAS (inicio) =====
+	        function catalogTemplates() {
+	            const m = window.ARK_MANIFEST;
+	            const seen = new Set();
+	            const list = [];
+	            const add = (target, label, icon, section) => {
+	                if (!target || seen.has(target)) return;
+	                seen.add(target);
+	                list.push({ target, label, icon, section });
+	            };
+	            if (m && Array.isArray(m.sections)) {
+	                m.sections.forEach(s => (s.items || []).forEach(i => add(i.target, i.label, i.icon, s.title)));
+	            } else {
+	                document.querySelectorAll('#staticMenuFallback .btn[data-target]').forEach(b =>
+	                    add(b.dataset.target, b.textContent.trim(), '📄', 'Plantillas'));
+	            }
+	            return list;
+	        }
+
+	        function buildCatalog() {
+	            const wrap = document.createElement('section');
+	            wrap.className = 'catalog';
+	            const items = catalogTemplates();
+	            const sections = [...new Set(items.map(i => i.section))];
+	            wrap.innerHTML = `
+	                <div class="catalog-hero">
+	                    <div>
+	                        <h2>¿Qué quieres crear hoy?</h2>
+	                        <p>Elige una plantilla, rellénala y descárgala en PDF. Todo es gratis por siempre. ¿Buscas algo ya hecho? Mira la <a href="/comunidad.html" style="color:var(--primary-blue);font-weight:600;">📌 Comunidad</a>.</p>
+	                    </div>
+	                    <label class="catalog-search"><span>🔍</span><input type="search" id="catalogSearch" placeholder="Buscar plantilla…" autocomplete="off"></label>
+	                </div>
+	                <div class="catalog-chips" id="catalogChips"></div>
+	                <div class="tpl-grid" id="tplGrid"></div>`;
+
+	            const chips = wrap.querySelector('#catalogChips');
+	            ['Todas', ...sections].forEach((s, idx) => {
+	                const b = document.createElement('button');
+	                b.className = 'catalog-chip' + (idx === 0 ? ' on' : '');
+	                b.textContent = s;
+	                b.dataset.section = idx === 0 ? '' : s;
+	                chips.appendChild(b);
+	            });
+
+	            const grid = wrap.querySelector('#tplGrid');
+	            items.forEach(i => {
+	                const card = document.createElement('button');
+	                card.className = 'tpl-card';
+	                card.dataset.target = i.target;
+	                card.dataset.section = i.section;
+	                card.dataset.search = (i.label + ' ' + i.section).toLowerCase();
+	                const thumb = 'img/plantillas/' + i.target.replace(/\.html$/, '') + '.png';
+	                card.innerHTML = `
+	                    <div class="tpl-thumb"><img loading="lazy" alt="" src="${thumb}"><span class="tpl-open">Abrir plantilla</span></div>
+	                    <div class="tpl-info"><span class="tpl-icon"></span><div><b></b><small></small></div></div>`;
+	                card.querySelector('.tpl-icon').textContent = i.icon || '📄';
+	                card.querySelector('b').textContent = i.label;
+	                card.querySelector('small').textContent = i.section;
+	                card.querySelector('img').alt = 'Vista previa de ' + i.label;
+	                card.querySelector('img').onerror = function () { this.replaceWith(Object.assign(document.createElement('div'), { textContent: i.icon || '📄', style: 'height:100%;display:grid;place-items:center;font-size:56px;' })); };
+	                card.addEventListener('click', () => loadTemplate(i.target));
+	                grid.appendChild(card);
+	            });
+
+	            let activeSection = '';
+	            const filter = () => {
+	                const q = (wrap.querySelector('#catalogSearch').value || '').trim().toLowerCase();
+	                grid.querySelectorAll('.tpl-card').forEach(c => {
+	                    c.style.display = (!activeSection || c.dataset.section === activeSection) && (!q || c.dataset.search.includes(q)) ? '' : 'none';
+	                });
+	            };
+	            chips.addEventListener('click', e => {
+	                const b = e.target.closest('.catalog-chip'); if (!b) return;
+	                chips.querySelectorAll('.catalog-chip').forEach(x => x.classList.toggle('on', x === b));
+	                activeSection = b.dataset.section;
+	                filter();
+	            });
+	            wrap.querySelector('#catalogSearch').addEventListener('input', filter);
+	            return wrap;
+	        }
+
+	        function catalogSection(title) {
+	            const h = document.createElement('h3');
+	            h.className = 'catalog-section-title';
+	            h.textContent = title;
+	            const grid = document.createElement('div');
+	            grid.className = 'pdf-grid';
+	            grid.style.cssText = 'padding:0;height:auto;overflow:visible;';
+	            return { h, grid };
+	        }
+
 	        function renderDashboard() {
 	            const container = document.getElementById('dashboardContainer');
 	            container.innerHTML = '';
+	            container.classList.add('catalog-view');
+	            const catalog = buildCatalog();
+	            container.appendChild(catalog);
 
-	            // Biblioteca / Proyectos (Workspace)
-	            container.appendChild(createSectionHeader('📌 Biblioteca / Proyectos Guardados'));
-
-	            if (workspaceItems.length === 0) {
-	                container.appendChild(createEmptyState('No hay material guardado todavía. Usa “Guardar” para crear tu primera ficha.'));
-	            } else {
-	                workspaceItems.forEach((item, index) => {
-	                    const card = createWorkspaceCard(item, index);
-	                    container.appendChild(card);
-	                });
+	            if (workspaceItems.length) {
+	                const s = catalogSection('💾 Mis trabajos guardados');
+	                workspaceItems.forEach((item, index) => s.grid.appendChild(createWorkspaceCard(item, index)));
+	                catalog.append(s.h, s.grid);
 	            }
-
-	            // PDFs Finalizados
-	            container.appendChild(createSectionHeader('📚 Documentos Finalizados', { marginTop: 32 }));
-
-	            if (completedWorks.length === 0) {
-	                container.appendChild(createEmptyState('No hay documentos guardados'));
-	            } else {
-	                completedWorks.forEach((item, index) => {
-	                    const card = createPDFCard(item.name, '📄', 'PDF', () => downloadWork(index), () => removeWork(index));
-	                    container.appendChild(card);
-	                });
+	            if (completedWorks.length) {
+	                const s = catalogSection('📚 Documentos finalizados');
+	                completedWorks.forEach((item, index) => s.grid.appendChild(createPDFCard(item.name, '📄', 'PDF', () => downloadWork(index), () => removeWork(index))));
+	                catalog.append(s.h, s.grid);
 	            }
+	        }
+
+	        function setViewMode(mode) {
+	            document.body.classList.toggle('ark-catalog', mode === 'catalog');
+	            document.body.classList.toggle('ark-working', mode === 'working');
+	            const nav = document.getElementById('sidebar');
+	            const toggle = document.getElementById('toggleNav');
+	            if (nav) nav.classList.add('collapsed');
+	            if (toggle) toggle.textContent = '›';
 	        }
 
 	        function createWorkspaceCard(item, index) {
@@ -1684,8 +1826,9 @@
 	        function showDashboardView() {
 	            const dashboard = document.getElementById('dashboardContainer');
 	            const iframe = document.getElementById('plantillaFrame');
-	            dashboard.style.display = 'grid';
+	            dashboard.style.display = 'block';
 	            iframe.style.display = 'none';
+	            setViewMode('catalog');
 	            renderDashboard();
 	        }
 
@@ -1993,6 +2136,9 @@
 
             document.getElementById('dashboardContainer').style.display = 'none';
             frame.style.display = 'block';
+            setViewMode('working');
+            const sel = document.getElementById('moduleSelect');
+            if (sel && [...sel.options].some(o => o.value === target)) sel.value = target;
 
             document.querySelectorAll('.btn[data-target]').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.target === target);
@@ -2044,6 +2190,7 @@
 
             document.getElementById('dashboardContainer').style.display = 'none';
             frame.style.display = 'block';
+            setViewMode('working');
             showIndicator('✓ Proyecto cargado');
         }
 
@@ -2128,8 +2275,8 @@
 	            // 1) Menú dinámico (si existe modules.json)
 	            await initDynamicMenu();
 
-	            // 2) Render dashboard
-	            renderDashboard();
+	            // 2) Inicio = catálogo de plantillas
+	            showDashboardView();
 	
 	            // 2.1) Guardar -> Biblioteca (fichas tipo Pinterest)
 	            const saveBtn = document.getElementById('saveBtn');
@@ -2210,9 +2357,8 @@
                 });
             }
 
-            // Mostrar dashboard por defecto
-            document.getElementById('plantillaFrame').style.display = 'none';
-            document.getElementById('dashboardContainer').style.display = 'grid';
+            // Mostrar el catálogo por defecto (salvo que se esté abriendo un material de la Comunidad)
+            if (!new URLSearchParams(location.search).get('usar')) showDashboardView();
         };
 
         // ===== ASISTENTE IA GLOBAL (PUTER / CLAUDE) =====
