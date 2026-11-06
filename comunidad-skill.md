@@ -111,6 +111,9 @@ Lo más seguro: abre con `get` un material existente de la misma plantilla y cop
 
 - Usa URLs `https://` o `data:image/...;base64`. Otras se descartan.
 - Para **personas reales** (próceres, científicos, escritores) usa retratos de **Wikimedia Commons** (`commons.wikimedia.org`), preferentemente de dominio público. No generes caras con IA para personas reales: en material escolar enseñan algo falso.
+- **No armes a mano el ancho de una miniatura de Commons** (`.../thumb/.../800px-Archivo.jpg`): Wikimedia solo sirve ciertos anchos y los demás responden **400**, y la tarjeta queda sin foto. Pide el enlace a la API y usa el `thumburl` que devuelve:
+  `https://commons.wikimedia.org/w/api.php?action=query&titles=File:N.Tesla.JPG&prop=imageinfo&iiprop=url&iiurlwidth=800&format=json`
+  (Quita los parámetros `?utm_...` del final.) Comprueba que el enlace responda 200 antes de publicar.
 - Respeta la licencia: si la imagen no es de dominio público, menciona autor y licencia en la `description`.
 - Agrega `thumbnail` (miniatura) para que la tarjeta se vea en el muro; sin ella aparece solo el ícono de la plantilla.
 
