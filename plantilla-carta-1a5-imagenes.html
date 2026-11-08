@@ -43,6 +43,11 @@
   .btn:hover { filter: brightness(.95); }
   .btn.primary { background: var(--accent); color: #fff; }
   .hint { font-size: 12px; color: var(--muted); width: 100%; margin: 0; }
+  .ai-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; width: 100%; }
+  .ai-row input { flex: 1 1 260px; font: inherit; font-size: 13px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; }
+  .ai-row input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .btn:disabled { opacity: .55; cursor: wait; }
+  .ai-status { font-size: 12px; color: var(--muted); }
 
   .stage { padding: 24px 16px 48px; overflow-x: auto; }
   .page {
@@ -126,7 +131,13 @@
     <label><input type="checkbox" id="capChk"> Pies de imagen</label>
     <button class="btn" id="clearAllBtn">🧹 Vaciar</button>
     <button class="btn primary" id="printBtn">🖨️ Imprimir / PDF</button>
-    <p class="hint">Clic en un recuadro para seleccionarlo y pulsa <b>Ctrl+V</b> para pegar una imagen copiada. También puedes arrastrar archivos, hacer doble clic para elegir uno, o usar el autollenado / generador IA del panel.</p>
+    <div class="ai-row">
+      <input type="text" id="topicInput" placeholder="Tema: ej. volcanes de México, sistema solar…" maxlength="200">
+      <button class="btn primary" id="autoFillBtn">🔍 Autollenar</button>
+      <button class="btn" id="aiGenBtn">🎨 Generar con IA</button>
+      <span class="ai-status" id="aiStatus"></span>
+    </div>
+    <p class="hint"><b>Autollenar</b> busca fotos del tema y llena los recuadros vacíos (o todos si ya están llenos). <b>Generar con IA</b> crea una imagen y la pone en el recuadro seleccionado. También: clic en un recuadro + <b>Ctrl+V</b> para pegar, arrastrar archivos o doble clic para elegir uno.</p>
   </div>
 
   <div class="stage">
@@ -357,6 +368,114 @@
     }
     render();
   };
+
+  const PEXELS_PROXY = '/api/pexels';
+  const PUTER_SDK = 'https://js.puter.com/v2/';
+  const statusEl = $('aiStatus');
+  const setStatus = (msg) => { statusEl.textContent = msg; };
+
+  function getTopic() {
+    const t = $('topicInput').value.trim();
+    if (!t) { toast('Escribe primero un tema.'); $('topicInput').focus(); }
+    return t;
+  }
+
+  async function searchPexels(q, n) {
+    const res = await fetch(PEXELS_PROXY, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ q, per_page: n })
+    });
+    if (!res.ok) throw new Error('Pexels ' + res.status);
+    const data = await res.json();
+    return (data.photos || []).map((p) => p.src?.landscape || p.src?.large).filter(Boolean);
+  }
+
+  async function searchWikimedia(q, n) {
+    const url = 'https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*' +
+      '&generator=search&gsrnamespace=6&gsrlimit=' + (n * 3) +
+      '&gsrsearch=' + encodeURIComponent(q + ' filetype:bitmap') +
+      '&prop=imageinfo&iiprop=url|size&iiurlwidth=1280';
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Wikimedia ' + res.status);
+    const pages = Object.values((await res.json()).query?.pages || {});
+    return pages
+      .map((p) => p.imageinfo?.[0])
+      .filter((ii) => ii && ii.width > ii.height)
+      .map((ii) => ii.thumburl || ii.url)
+      .slice(0, n);
+  }
+
+  function slotsToFill() {
+    const empties = [];
+    for (let i = 0; i < state.count; i++) if (!state.images[i]) empties.push(i);
+    return empties.length ? empties : Array.from({ length: state.count }, (_, i) => i);
+  }
+
+  async function autoFill() {
+    const q = getTopic();
+    if (!q) return;
+    const targets = slotsToFill();
+    const btn = $('autoFillBtn');
+    btn.disabled = true;
+    setStatus('🔍 Buscando fotos de "' + q + '"…');
+    try {
+      let urls = [];
+      try { urls = await searchPexels(q, targets.length); } catch (err) { console.warn(err); }
+      let source = 'Pexels';
+      if (!urls.length) {
+        setStatus('🔍 Buscando en Wikimedia Commons…');
+        urls = await searchWikimedia(q, targets.length);
+        source = 'Wikimedia Commons';
+      }
+      if (!urls.length) { setStatus('⚠️ No se encontraron imágenes. Prueba otro tema.'); return; }
+      targets.forEach((slot, k) => { if (urls[k]) state.images[slot] = urls[k]; });
+      render();
+      setStatus('✅ ' + Math.min(urls.length, targets.length) + ' imagen(es) de ' + source);
+    } catch (err) {
+      console.error(err);
+      setStatus('❌ No se pudieron buscar imágenes: ' + err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function loadPuter() {
+    if (window.puter) return Promise.resolve(window.puter);
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = PUTER_SDK;
+      s.onload = () => (window.puter ? resolve(window.puter) : reject(new Error('Puter no disponible')));
+      s.onerror = () => reject(new Error('No se pudo cargar Puter'));
+      document.head.appendChild(s);
+    });
+  }
+
+  async function generateAI() {
+    const q = getTopic();
+    if (!q) return;
+    const target = state.selected < state.count ? state.selected : 0;
+    const btn = $('aiGenBtn');
+    btn.disabled = true;
+    setStatus('🎨 Generando imagen para el recuadro ' + (target + 1) + '… (puede tardar)');
+    try {
+      const puter = await loadPuter();
+      const prompt = q + ', ilustración educativa horizontal 16:9, colores claros, sin texto';
+      const imgEl = await puter.ai.txt2img(prompt);
+      if (!imgEl?.src) throw new Error('La IA no devolvió imagen');
+      setImage(target, imgEl.src);
+      setStatus('✅ Imagen IA colocada en el recuadro ' + (target + 1));
+    } catch (err) {
+      console.error(err);
+      setStatus('❌ Error al generar: ' + (err.message || err));
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  $('autoFillBtn').addEventListener('click', autoFill);
+  $('aiGenBtn').addEventListener('click', generateAI);
+  $('topicInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') autoFill(); });
 
   window.addEventListener('message', (e) => {
     const d = e.data || {};
