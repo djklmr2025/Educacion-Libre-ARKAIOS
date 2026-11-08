@@ -655,6 +655,7 @@
 
   <!-- MODAL DE IA REMOVIDO -->
 
+  <script src="js/arkaios-imagenes.js"></script>
   <script>
     // ===== CONFIGURACIÓN DE API KEYS =====
     const PEXELS_PROXY = '/api/pexels'; // la llave vive solo en el servidor (Vercel)
@@ -767,6 +768,7 @@
         if (oldSlots[i]) {
           const img = document.createElement('img');
           img.src = oldSlots[i];
+          img.draggable = false;
           slot.appendChild(img);
           slot.classList.add('has-image');
           imageSlots[i] = oldSlots[i];
@@ -984,6 +986,20 @@
     };
     // Proporcionar función de impresión para el padre
     window.printTemplate = () => window.print();
+
+    // ===== IMÁGENES COMPARTIDAS: pegar, arrastrar/intercambiar, autollenar, IA =====
+    ArkImagenes.init({
+      slots: () => [...document.querySelectorAll('#imagePage .image-slot')],
+      get: (i) => imageSlots[i] || null,
+      set: (i, src) => {
+        if (!src) { removeImage(i); return; }
+        imageSlots[i] = src;
+        changeImageLayout();
+      },
+      toolbar: '.toolbar',
+      toolbarPosition: 'after',
+      orientation: 'landscape'
+    });
   </script>
   <script src="arkaios-biblioteca.js"></script>
   <script src="arkaios-orquestador.js"></script>

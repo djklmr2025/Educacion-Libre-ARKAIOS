@@ -991,6 +991,49 @@
     // Iniciar
     generarPlantilla();
   </script>
+  <script src="js/arkaios-imagenes.js"></script>
+  <script>
+    (function () {
+      const nuevoEstado = () => ({ zoom: 100, x: 0, y: 0, fijada: false });
+
+      function rellenarHasta(i) {
+        while (imagenes.length < i) {
+          imagenes.push(null);
+          estadosImagen.push(null);
+        }
+      }
+
+      function recortarVacios() {
+        while (imagenes.length > 0 && !imagenes[imagenes.length - 1]) {
+          imagenes.pop();
+          estadosImagen.pop();
+        }
+      }
+
+      ArkImagenes.init({
+        slots: () => [...hojasContainer.querySelectorAll('.celda-imagen')],
+        get: (i) => imagenes[i] || null,
+        set: (i, src) => {
+          rellenarHasta(i);
+          imagenes[i] = src || null;
+          estadosImagen[i] = src ? nuevoEstado() : null;
+          recortarVacios();
+          generarPlantilla();
+        },
+        swap: (a, b) => {
+          rellenarHasta(Math.max(a, b) + 1);
+          [imagenes[a], imagenes[b]] = [imagenes[b] || null, imagenes[a] || null];
+          [estadosImagen[a], estadosImagen[b]] = [estadosImagen[b] || null, estadosImagen[a] || null];
+          recortarVacios();
+          generarPlantilla();
+        },
+        toolbar: '.botones-accion',
+        toolbarPosition: 'after',
+        orientation: 'square',
+        dragSwap: false
+      });
+    })();
+  </script>
   <script src="arkaios-biblioteca.js"></script>
   <script src="arkaios-orquestador.js"></script>
 </body>

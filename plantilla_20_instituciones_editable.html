@@ -36,6 +36,7 @@
   .name { margin-top:6px; font-size:10.5px; font-weight:bold; color:var(--ink); text-align:center; min-height:2.6em; width:100%; padding:2px; }
   [contenteditable]:focus { outline:1.5px solid var(--acc); border-radius:3px; background:#fffbe6; }
   @media (max-width:760px) { .page { width:100%; padding:6px; } .grid { height:auto; grid-template-columns:repeat(2,1fr); } .cell { min-height:200px; } }
+  body > .ark-img-bar { max-width:216mm; margin:12px auto 0; }
   @page { size: letter portrait; margin: 6mm; }
   @media print {
     body { background:#fff; }
@@ -60,6 +61,7 @@
 <input type="file" id="file" accept="image/*" hidden>
 
 <div class="page"><div class="grid" id="grid"></div></div>
+<script src="js/arkaios-imagenes.js"></script>
 
 <script>
 const DATA = [
@@ -84,7 +86,7 @@ DATA.forEach((d,i)=>{
   cell.innerHTML = `
     <span class="num">${i+1}</span>
     <div class="slot" data-i="${i}" tabindex="0">
-      <img alt="">
+      <img alt="" draggable="false">
       <div class="ph"><div class="circle" contenteditable="true" spellcheck="false" data-f="abbr"></div><span class="phlabel">LOGOTIPO / IMAGEN</span></div>
       <button class="del" title="Quitar imagen">✕</button>
     </div>
@@ -106,6 +108,7 @@ function put(slot, src){ const i = idx(slot); state[i] = state[i] || {}; state[i
 function select(slot){
   document.querySelectorAll(".slot.sel").forEach(s=>s.classList.remove("sel"));
   selected = slot; if (slot) slot.classList.add("sel");
+  if (window.ArkImagenes) ArkImagenes.select(slot ? idx(slot) : -1);
 }
 grid.addEventListener("click", e=>{
   if (e.target.classList.contains("del")){ put(e.target.closest(".slot"), null); return; }
@@ -181,7 +184,7 @@ function clearImages(){
   select(null); save();
 }
 // Protocolo ARKAIOS: el sistema guarda y restaura el contenido (Biblioteca y Comunidad).
-const SAFE_IMG = /^data:image\/(png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=]+$/;
+const SAFE_IMG = /^(data:image\/(png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=]+|https:\/\/[^\s"'<>]+)$/;
 window.ARKAIOS_getData = function(){
   return { cells: DATA.map((_,i)=>{ const s = state[i] || {}; return { abbr: s.abbr ?? DATA[i][0], name: s.name ?? DATA[i][1], img: s.img || null }; }) };
 };
@@ -210,6 +213,28 @@ function clearAll(){
   DATA.forEach((_,i)=>{ state[i] = {abbr:"", name:"", img:null}; });
   select(null); save();
 }
+
+// Imágenes compartidas: Autollenar / IA y arrastrar un logo a otro recuadro.
+// Ctrl+V y soltar archivos los sigue manejando esta plantilla (reduce la imagen antes de guardarla en localStorage).
+// Al arrastrar se intercambian solo los logos: los nombres son la lista fija numerada y lo que se acomoda es la imagen.
+const slotEls = () => [...grid.querySelectorAll(".slot")];
+if (window.ArkImagenes) ArkImagenes.init({
+  slots: slotEls,
+  get: i => (state[i] && state[i].img) || null,
+  set: (i, src) => {
+    const slot = slotEls()[i]; if (!slot) return;
+    put(slot, src);
+    select(slotEls().find(s => !s.classList.contains("has")) || slot);
+  },
+  swap: (a, b) => {
+    const els = slotEls(), ia = (state[a] && state[a].img) || null, ib = (state[b] && state[b].img) || null;
+    put(els[a], ib); put(els[b], ia); select(els[b]);
+  },
+  toolbar: ".toolbar", toolbarPosition: "after",
+  orientation: "square",
+  aiHint: "logotipo institucional sencillo, fondo blanco, sin texto",
+  paste: false, drop: false
+});
 </script>
 </body>
 </html>

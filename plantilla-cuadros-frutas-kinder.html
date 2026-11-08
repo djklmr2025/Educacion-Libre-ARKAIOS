@@ -36,6 +36,7 @@ button.sec{background:#fff;color:var(--ink);border:1px solid var(--line)}
 .b{position:relative;width:84px;text-align:center}
 .b img{width:84px;height:84px;object-fit:contain;background:#fff;border:1px solid var(--line);border-radius:8px}
 .b button{position:absolute;top:2px;right:2px;padding:0 6px;background:#fff;color:#111;border:1px solid var(--line)}
+body>.ark-img-bar{margin:10px 16px 0}
 @page{size:letter;margin:0}
 @media print{
  body{background:#fff}.bar,.tools,.num,#bankp{display:none!important}
@@ -64,6 +65,7 @@ button.sec{background:#fff;color:var(--ink);border:1px solid var(--line)}
 </div>
 <div id="bankp" hidden></div>
 <div id="pages"></div>
+<script src="js/arkaios-imagenes.js"></script>
 
 <script>
 // ---------- Banco interno de imágenes (SVG, viewBox 100x100) ----------
@@ -125,7 +127,8 @@ function render(){
    if(it){c.draggable=true;
     c.innerHTML='<div class="tools"><button title="Cambiar fruta/nombre" data-a="ren">✎</button><button title="Otra versión del dibujo" data-a="var">🔄</button><button title="Subir imagen (se guarda en el banco)" data-a="img">🖼</button><button title="Quitar" data-a="del">✕</button></div><div class="pic"></div><div class="name" contenteditable="true" spellcheck="false"></div>';
     const pic=c.querySelector('.pic'),L=it.key?vlist(it.key):[],cur=L[(it.v||0)%(L.length||1)];
-    if(cur&&cur.img)pic.innerHTML='<img src="'+cur.img+'">';
+    if(it.img){const im=document.createElement('img');im.src=it.img;pic.appendChild(im)}
+    else if(cur&&cur.img)pic.innerHTML='<img src="'+cur.img+'">';
     else if(cur)pic.innerHTML='<svg viewBox="0 0 100 100">'+cur.svg+'</svg>';
     else pic.innerHTML='<span class="q">?</span>';
     const nm=c.querySelector('.name');nm.textContent=it.name;
@@ -134,7 +137,7 @@ function render(){
     c.onclick=e=>{const a=e.target.dataset.a;if(!a)return;
      if(a==='del'){items.splice(i,1);render()}
      if(a==='ren'){const v=prompt('Nombre o fruta (ej. mango):',it.name);if(v){const n=mk(v);items[i]={name:n.name,key:n.key,v:0};render()}}
-     if(a==='var'){const L=it.key?vlist(it.key):[];if(L.length>1){it.v=((it.v||0)+1)%L.length;render()}}
+     if(a==='var'){if(it.img){it.img=null;render();return}const L=it.key?vlist(it.key):[];if(L.length>1){it.v=((it.v||0)+1)%L.length;render()}}
      if(a==='img')pick(i)};
     c.ondragstart=e=>{e.dataTransfer.setData('text/plain',i);e.dataTransfer.effectAllowed='move'};
    }
@@ -153,11 +156,13 @@ function render(){
   $('pages').appendChild(pg)}
  document.documentElement.style.setProperty('--card',$('col').value);
 }
-function read(f,i){const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{
+function read(f,i){const r=new FileReader();r.onload=()=>bankImg(i,r.result);r.readAsDataURL(f)}
+function bankImg(i,src){const im=new Image();im.onload=()=>{
  const s=Math.min(1,480/Math.max(im.width,im.height)),cv=document.createElement('canvas');cv.width=im.width*s;cv.height=im.height*s;
  cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);
- const it=items[i],k=it.key||keyOf(it.name)||norm(it.name),url=cv.toDataURL('image/png');
- (LIB[k]=LIB[k]||[]).push(url);it.key=k;it.v=vlist(k).length-1;save();render();bankr();up(k,url)};im.src=r.result};r.readAsDataURL(f)}
+ const it=items[i];if(!it)return;const k=it.key||keyOf(it.name)||norm(it.name),url=cv.toDataURL('image/png');
+ (LIB[k]=LIB[k]||[]).push(url);it.key=k;it.img=null;it.v=vlist(k).length-1;save();render();bankr();up(k,url)};
+ im.onerror=()=>alert('No se pudo leer la imagen');im.src=src}
 const API='/api/banco-frutas',REMOTE=/^https?:$/.test(location.protocol);let CLOUD=false;
 const hdr=()=>{const h={'Content-Type':'application/json'},k=localStorage.getItem('ARKAIOS_SAVE_KEY');if(k)h['x-arkaios-key']=k;return h};
 const furl=f=>API+'?img='+encodeURIComponent(f);
@@ -185,6 +190,7 @@ $('bank').onclick=()=>{$('bankp').hidden=!$('bankp').hidden;bankr()};
 $('exp').onclick=()=>dl('banco-frutas.json',JSON.stringify(LIB),'application/json');
 $('imp').onclick=()=>{const i=document.createElement('input');i.type='file';i.accept='.json';i.onchange=async()=>{try{merge(JSON.parse(await i.files[0].text()));save();bankr();render()}catch(e){alert('Archivo no válido')}};i.click()};
 $('bake').onclick=()=>{const c=document.documentElement.cloneNode(true);c.querySelector('#pages').innerHTML='';c.querySelector('#bankp').innerHTML='';c.querySelector('#bankp').hidden=true;
+ c.querySelectorAll('.ark-img-bar,.ark-toast').forEach(e=>e.remove());c.querySelectorAll('style').forEach(s=>{if(s.textContent.includes('.ark-swap-source'))s.remove()});
  let h='<!DOCTYPE html>\n'+c.outerHTML;h=h.replace(/\/\*B\*\/[\s\S]*?\/\*E\*\//,()=>'/*B*/'+JSON.stringify(LIB)+'/*E*/');dl('plantillas-frutas.html',h,'text/html')};
 function pick(i){const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.onchange=()=>inp.files[0]&&read(inp.files[0],i);inp.click()}
 
@@ -196,6 +202,22 @@ $('print').onclick=()=>window.print();
 $('ttl').oninput=render;
 $('txt').value='manzana, plátano, fresa, uvas, mandarina, pera, naranja, sandía, kiwi, durazno, higo, aguacate, cereza, ciruela, limón, toronja, mango, papaya';
 (async()=>{merge(BAKED);merge(await load());await pull();save();items=parse($('txt').value);render();syncAll()})();
+
+// ---------- Imágenes compartidas (pegar, Autollenar, IA) ----------
+// data:/blob: (pegar, IA) va al banco como 🖼; URLs de internet quedan solo en la tarjeta para no llenar el banco con fotos sueltas.
+const svgSrc=svg=>'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'+svg+'</svg>');
+if(window.ArkImagenes)ArkImagenes.init({
+ slots:()=>[...document.querySelectorAll('#pages .cell:not(.empty)')],
+ get:i=>{const it=items[i];if(!it)return null;if(it.img)return it.img;
+  const L=it.key?vlist(it.key):[],cur=L[(it.v||0)%(L.length||1)];return cur?(cur.img||svgSrc(cur.svg)):null},
+ set:(i,src)=>{const it=items[i];if(!it)return;
+  if(src&&/^(data|blob):/.test(src)){bankImg(i,src);return}
+  it.img=src||null;render()},
+ swap:(a,b)=>{if(!items[a]||!items[b])return;[items[a],items[b]]=[items[b],items[a]];render()},
+ toolbar:'.bar',toolbarPosition:'after',orientation:'square',
+ aiHint:'dibujo infantil para kínder, colores vivos, fondo blanco, sin texto',
+ dragSwap:false,drop:false
+});
 </script>
 </body>
 </html>

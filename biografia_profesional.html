@@ -601,6 +601,7 @@
 
     <input type="file" id="batchPhotoInput" accept="image/*" multiple>
 
+    <script src="js/arkaios-imagenes.js"></script>
     <script>
         let currentBioCount = 1;
         let currentShape = 'circular';
@@ -836,6 +837,34 @@
                 if (nameField) nameField.value = String(saved.name || '').slice(0, BIO_MAX_NAME);
             });
         };
+
+        // ===== IMÁGENES COMPARTIDAS: cada foto de tarjeta es un recuadro =====
+        const BIO_PLACEHOLDER_HTML = createBioCard().querySelector('.photo-placeholder').outerHTML;
+
+        function setBioPhoto(container, src) {
+            if (!container) return;
+            if (!src) { container.innerHTML = BIO_PLACEHOLDER_HTML; return; }
+            const img = document.createElement('img');
+            img.src = src;
+            img.alt = 'Foto';
+            img.draggable = false;
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'cover';
+            container.innerHTML = '';
+            container.appendChild(img);
+        }
+
+        const bioPhotoSlots = () => [...document.querySelectorAll('.bio-card .photo-container')];
+
+        ArkImagenes.init({
+            slots: bioPhotoSlots,
+            get: (i) => bioPhotoSlots()[i]?.querySelector('img')?.getAttribute('src') || null,
+            set: (i, src) => setBioPhoto(bioPhotoSlots()[i], src),
+            toolbar: '.controls-panel',
+            orientation: 'portrait',
+            aiHint: 'retrato profesional, fondo liso claro, sin texto'
+        });
 
         // Función para preparar e imprimir
         function prepareAndPrint() {

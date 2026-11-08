@@ -1294,6 +1294,73 @@
     // ===== INICIALIZACIÓN =====
     addPage();
   </script>
+  <script src="js/arkaios-imagenes.js"></script>
+  <script>
+    (function () {
+      const IMAGEN_LIMPIA = { scale: 100, posX: 50, posY: 50, locked: false };
+
+      function circuloEn(i) {
+        let k = i;
+        for (const page of pages) {
+          if (k < page.circles.length) return { page, circle: page.circles[k] };
+          k -= page.circles.length;
+        }
+        return null;
+      }
+
+      function cancelarArrastreInterno() {
+        if (!draggedImage) return;
+        draggedImage.img.classList.remove('dragging');
+        draggedImage = null;
+      }
+
+      ArkImagenes.init({
+        slots: () => [...pagesContainer.querySelectorAll('.circle')],
+        get: (i) => {
+          const ref = circuloEn(i);
+          return ref ? ref.circle.imageData : null;
+        },
+        set: (i, src) => {
+          const ref = circuloEn(i);
+          if (!ref) return;
+          if (ref.circle.locked && src) {
+            ArkImagenes.toast('🔒 El círculo ' + (i + 1) + ' está fijado');
+            return;
+          }
+          cancelarArrastreInterno();
+          updateCircle(ref.page.id, ref.circle.id, { ...IMAGEN_LIMPIA, imageData: src || null });
+        },
+        swap: (a, b) => {
+          const ra = circuloEn(a);
+          const rb = circuloEn(b);
+          cancelarArrastreInterno();
+          if (!ra || !rb) return;
+          if (ra.circle.locked || rb.circle.locked) {
+            ArkImagenes.toast('🔒 No puedes mover imágenes fijadas');
+            renderPages();
+            return;
+          }
+          const pick = (c) => ({ imageData: c.imageData, scale: c.scale, posX: c.posX, posY: c.posY });
+          const da = pick(ra.circle);
+          const db = pick(rb.circle);
+          pages = pages.map((page) => ({
+            ...page,
+            circles: page.circles.map((c) => {
+              if (c.id === ra.circle.id) return { ...c, ...db };
+              if (c.id === rb.circle.id) return { ...c, ...da };
+              return c;
+            })
+          }));
+          closeEditPanel();
+          renderPages();
+        },
+        toolbar: '.toolbar',
+        toolbarPosition: 'after',
+        orientation: 'square',
+        aiHint: 'ilustración educativa centrada, fondo simple, sin texto'
+      });
+    })();
+  </script>
   <script src="arkaios-biblioteca.js"></script>
   <script src="arkaios-orquestador.js"></script>
 </body>

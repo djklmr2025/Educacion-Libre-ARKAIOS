@@ -465,16 +465,7 @@
                 handleFiles(e.target.files);
             });
 
-            document.addEventListener('paste', (e) => {
-                const items = e.clipboardData.items;
-                for (let item of items) {
-                    if (item.type.indexOf('image') !== -1) {
-                        e.preventDefault();
-                        const file = item.getAsFile();
-                        handleFiles([file]);
-                    }
-                }
-            });
+            // Ctrl+V lo maneja js/arkaios-imagenes.js (pega en el recuadro seleccionado o el primero vacío).
 
             document.getElementById('gridSize').addEventListener('change', (e) => {
                 const [rows, cols] = e.target.value.split('x').map(Number);
@@ -915,6 +906,35 @@
         }
     `;
         document.head.appendChild(toastStyles);
+    </script>
+    <script src="js/arkaios-imagenes.js"></script>
+    <script>
+        (function () {
+            function recortarVacios() {
+                while (allImages.length > 0 && !allImages[allImages.length - 1]) {
+                    allImages.pop();
+                }
+            }
+
+            ArkImagenes.init({
+                slots: () => [...document.querySelectorAll('#templatesContainer .grid-cell')],
+                get: (i) => (allImages[i] && allImages[i].data) || null,
+                set: (i, src) => {
+                    if (allImages[i] && allImages[i].isFixed) {
+                        showToast('⚠️ La imagen ' + (i + 1) + ' está fijada');
+                        return;
+                    }
+                    while (allImages.length < i) allImages.push(null);
+                    allImages[i] = src ? { data: src, name: 'Imagen ' + (i + 1) } : null;
+                    recortarVacios();
+                    renderTemplates();
+                    updateStats();
+                },
+                toolbar: '.controls-row',
+                toolbarPosition: 'after',
+                dragSwap: false
+            });
+        })();
     </script>
 </body>
 

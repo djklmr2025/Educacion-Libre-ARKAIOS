@@ -599,6 +599,7 @@
 
     <input type="file" id="fileInputHidden" accept="image/*" style="display:none">
 
+    <script src="js/arkaios-imagenes.js"></script>
     <script>
         const PHOTOS_PER_SHEET = 72;
         const PHOTOS_PER_ROW = 8;
@@ -756,6 +757,7 @@
                 if (rowImages[row].image) {
                     const img = document.createElement('img');
                     img.src = rowImages[row].image;
+                    img.draggable = false;
                     preview.appendChild(img);
                     selector.classList.add('active');
                 } else {
@@ -1011,6 +1013,32 @@
         // Ahora el sistema se comunica globalmente a través de ARKAIOS Principal.
 
         initApp();
+
+        // ===== IMÁGENES COMPARTIDAS: cada renglón (vista previa lateral) es un recuadro =====
+        // Las celdas de la hoja conservan su propio Ctrl+V y arrastre (detienen la propagación).
+        ArkImagenes.init({
+            slots: () => [...document.querySelectorAll('#rowSelectors .row-preview')],
+            get: (i) => (rowImages[i + 1] && rowImages[i + 1].image) || null,
+            set: (i, src) => {
+                const row = i + 1;
+                if (!rowImages[row]) return;
+                if (src) setRowImage(row, src);
+                else removeCellImage(row);
+            },
+            swap: (a, b) => {
+                const ra = rowImages[a + 1];
+                const rb = rowImages[b + 1];
+                if (!ra || !rb) return;
+                [ra.image, rb.image] = [rb.image, ra.image];
+                createRowSelectors();
+                renderTemplate();
+                updateStats();
+            },
+            toolbar: '#rowSelectors',
+            toolbarPosition: 'before',
+            orientation: 'portrait',
+            aiHint: 'foto tipo credencial, de frente, fondo liso claro, sin texto'
+        });
     </script>
     <script src="arkaios-biblioteca.js"></script>
     <script src="arkaios-orquestador.js"></script>

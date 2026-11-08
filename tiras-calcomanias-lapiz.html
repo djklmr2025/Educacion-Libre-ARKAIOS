@@ -181,6 +181,9 @@
     margin-bottom:4px;
   }
 
+  .field .ark-img-bar{margin:0 0 8px;padding:8px;}
+  .field .ark-img-bar input{flex-basis:100%;}
+
   .divider{
     height:1px;
     background:var(--line);
@@ -350,7 +353,7 @@
     <div class="field">
       <label>Imagen de fondo (opcional)</label>
       <label class="file-drop" id="dropLabel">
-        Toca para subir una imagen
+        Toca para subir una imagen<br>o pega una con Ctrl+V
         <input type="file" id="imgInput" accept="image/*">
       </label>
       <div class="file-name" id="fileName"></div>
@@ -401,6 +404,7 @@
   </main>
 </div>
 
+<script src="js/arkaios-imagenes.js"></script>
 <script>
   const $ = id => document.getElementById(id);
 
@@ -559,6 +563,27 @@
   });
 
   $('printBtn').addEventListener('click', () => window.print());
+
+  // Imágenes compartidas: hay UNA sola imagen de fondo que se repite en todas las tiras,
+  // así que el único "recuadro" es la zona de subir imagen (sin intercambio por arrastre).
+  function setBgImage(src){
+    if (!src){ clearImg.click(); return; }
+    bgImage = src;
+    imgInput.value = '';
+    fileName.textContent = 'Imagen agregada (pegada, de internet o IA)';
+    clearImg.style.display = 'inline-block';
+    imgAdjustField.style.display = 'block';
+    render();
+  }
+  if (window.ArkImagenes) ArkImagenes.init({
+    slots: () => [$('dropLabel')],
+    get: () => bgImage,
+    set: (i, src) => setBgImage(src),
+    toolbar: '#dropLabel', toolbarPosition: 'before',
+    orientation: 'landscape',
+    aiHint: 'patrón decorativo infantil para calcomanía, colores suaves, sin texto',
+    dragSwap: false
+  });
 
   render();
 </script>
