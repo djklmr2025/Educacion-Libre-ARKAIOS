@@ -36,7 +36,9 @@ export default async function handler(req, res) {
   }
 
   const apiUrl = 'https://api.pexels.com/v1/search';
-  const searchUrl = `${apiUrl}?query=${encodeURIComponent(q)}&per_page=${per_page}`;
+  const ORIENTATIONS = ['landscape', 'portrait', 'square'];
+  const orientationParam = ORIENTATIONS.includes(body.orientation) ? `&orientation=${body.orientation}` : '';
+  const searchUrl = `${apiUrl}?query=${encodeURIComponent(q)}&per_page=${per_page}${orientationParam}`;
 
   try {
     const pexelsResponse = await fetch(searchUrl, {
