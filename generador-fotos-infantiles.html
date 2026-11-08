@@ -752,7 +752,8 @@
 
                 const preview = document.createElement('div');
                 preview.className = 'row-preview';
-                preview.onclick = () => selectImageForRow(row);
+                preview.ondblclick = () => selectImageForRow(row);
+                preview.title = 'Clic para seleccionar · doble clic para elegir archivo · Ctrl+V para pegar';
 
                 if (rowImages[row].image) {
                     const img = document.createElement('img');

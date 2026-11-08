@@ -589,7 +589,7 @@
                                     <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
                                     <circle cx="12" cy="13" r="4"></circle>
                                 </svg>
-                                <div>Clic para imagen</div>
+                                <div>Doble clic o Ctrl+V</div>
                             </div>
                         </div>
                         <input type="text" class="name-field" placeholder="NOMBRE COMPLETO">
@@ -623,43 +623,13 @@
                                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
                                 <circle cx="12" cy="13" r="4"></circle>
                             </svg>
-                            <div>Clic para imagen</div>
+                            <div>Doble clic o Ctrl+V</div>
                         </div>
                     </div>
                     <input type="text" class="name-field" placeholder="NOMBRE COMPLETO">
                 </div>
             `;
             
-            card.querySelector('.photo-container').addEventListener('click', function() {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = 'image/*';
-                input.onchange = function(e) {
-                    const file = e.target.files[0];
-                    if (file) {
-                        // Extraer nombre del archivo sin extensión
-                        const fileName = file.name.replace(/\.[^/.]+$/, '');
-                        // Limpiar y formatear el nombre (reemplazar guiones/guiones bajos con espacios)
-                        const cleanName = fileName.replace(/[-_]/g, ' ').toUpperCase();
-                        
-                        const reader = new FileReader();
-                        reader.onload = function(event) {
-                            const img = document.createElement('img');
-                            img.src = event.target.result;
-                            card.querySelector('.photo-container').innerHTML = '';
-                            card.querySelector('.photo-container').appendChild(img);
-                            
-                            // Colocar el nombre automáticamente
-                            const nameField = card.querySelector('.name-field');
-                            if (nameField && !nameField.value) {
-                                nameField.value = cleanName;
-                            }
-                        }
-                        reader.readAsDataURL(file);
-                    }
-                };
-                input.click();
-            });
             
             return card;
         }
@@ -837,6 +807,29 @@
                 if (nameField) nameField.value = String(saved.name || '').slice(0, BIO_MAX_NAME);
             });
         };
+
+        // Doble clic en la foto de cualquier tarjeta (también la inicial) abre el selector de archivos
+        document.addEventListener('dblclick', function (e) {
+            const container = e.target.closest('.bio-card .photo-container');
+            if (!container) return;
+            const card = container.closest('.bio-card');
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = function (ev) {
+                const file = ev.target.files[0];
+                if (!file) return;
+                const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ').toUpperCase();
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    setBioPhoto(container, event.target.result);
+                    const nameField = card.querySelector('.name-field');
+                    if (nameField && !nameField.value) nameField.value = cleanName;
+                };
+                reader.readAsDataURL(file);
+            };
+            input.click();
+        });
 
         // ===== IMÁGENES COMPARTIDAS: cada foto de tarjeta es un recuadro =====
         const BIO_PLACEHOLDER_HTML = createBioCard().querySelector('.photo-placeholder').outerHTML;
