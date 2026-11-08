@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plantilla Carta · 1 a 5 Imágenes</title>
+<style>
+  :root {
+    --ink: #1e293b;
+    --muted: #64748b;
+    --accent: #4f46e5;
+    --accent-soft: #eef2ff;
+    --line: #cbd5e1;
+    --bg: #e2e8f0;
+    --page-w: 8.5in;
+    --page-h: 11in;
+    --margin: 0.5in;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; color: var(--ink); background: var(--bg); }
+
+  .toolbar {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center;
+    padding: 10px 16px; background: #fff; border-bottom: 1px solid var(--line);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, .06);
+  }
+  .toolbar label { font-size: 13px; font-weight: 600; display: flex; gap: 6px; align-items: center; }
+  .toolbar select, .toolbar input[type=text] {
+    font: inherit; font-size: 13px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: #fff;
+  }
+  .count-group { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .count-group button {
+    border: 0; background: #fff; padding: 6px 12px; font-weight: 700; cursor: pointer; border-right: 1px solid var(--line);
+  }
+  .count-group button:last-child { border-right: 0; }
+  .count-group button.active { background: var(--accent); color: #fff; }
+  .count-group button:hover:not(.active) { background: var(--accent-soft); }
+  .btn {
+    border: 0; border-radius: 8px; padding: 8px 14px; font-weight: 700; cursor: pointer; font-size: 13px;
+    background: var(--accent-soft); color: var(--accent);
+  }
+  .btn:hover { filter: brightness(.95); }
+  .btn.primary { background: var(--accent); color: #fff; }
+  .hint { font-size: 12px; color: var(--muted); width: 100%; margin: 0; }
+
+  .stage { padding: 24px 16px 48px; overflow-x: auto; }
+  .page {
+    width: var(--page-w); height: var(--page-h); margin: 0 auto; background: #fff;
+    padding: var(--margin); display: flex; flex-direction: column;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, .18);
+  }
+  .page-title {
+    margin: 0 0 0.15in; text-align: center; font-size: 20pt; font-weight: 800; outline: none;
+    border-bottom: 2px solid var(--ink); padding-bottom: 4pt; min-height: 1.2em;
+  }
+  .page-title:empty::before { content: attr(data-placeholder); color: #94a3b8; }
+  .page.no-title .page-title { display: none; }
+  .slots { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: space-evenly; min-height: 0; }
+
+  .slot-wrap { display: flex; flex-direction: column; align-items: center; }
+  .slot {
+    position: relative; overflow: hidden; background: #f8fafc;
+    border: 2px dashed var(--line); border-radius: 6px; cursor: pointer; outline: none;
+    display: flex; align-items: center; justify-content: center; text-align: center;
+  }
+  .slot:focus, .slot.selected { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79, 70, 229, .25); }
+  .slot.dragover { background: var(--accent-soft); }
+  .slot.filled { border-style: solid; border-color: transparent; background: #fff; }
+  .slot img { width: 100%; height: 100%; display: block; }
+  .slot .empty-msg { font-size: 12px; color: var(--muted); padding: 8px; line-height: 1.4; pointer-events: none; }
+  .slot .empty-msg b { color: var(--accent); font-size: 14px; }
+  .slot-actions { position: absolute; top: 6px; right: 6px; display: none; gap: 4px; }
+  .slot:hover .slot-actions, .slot:focus .slot-actions { display: flex; }
+  .slot-actions button {
+    border: 0; border-radius: 6px; padding: 4px 7px; font-size: 12px; cursor: pointer;
+    background: rgba(15, 23, 42, .75); color: #fff;
+  }
+  .caption {
+    margin-top: 4pt; font-size: 10pt; text-align: center; outline: none; min-height: 1.2em; width: 100%;
+  }
+  .caption:empty::before { content: "Pie de imagen (opcional)"; color: #94a3b8; }
+  .page.no-captions .caption { display: none; }
+  .toast {
+    position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff;
+    padding: 8px 14px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+
+  @page { size: letter portrait; margin: 0; }
+  @media print {
+    body { background: #fff; }
+    .toolbar, .toast, .slot-actions, .empty-msg { display: none !important; }
+    .stage { padding: 0; overflow: visible; }
+    .page { box-shadow: none; margin: 0; }
+    .slot { border: none !important; box-shadow: none !important; background: transparent; }
+    .slot:not(.filled) { border: 1px dashed #cbd5e1 !important; }
+    .caption:empty, .page-title:empty { visibility: hidden; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+  <div class="toolbar">
+    <label>Imágenes:
+      <span class="count-group" id="countGroup">
+        <button data-n="1">1</button><button data-n="2">2</button><button data-n="3" class="active">3</button><button data-n="4">4</button><button data-n="5">5</button>
+      </span>
+    </label>
+    <label>Formato:
+      <select id="ratioSel">
+        <option value="1.7778">16:9 · 1920×1080 / 1280×720</option>
+        <option value="1.7786">1366×768</option>
+        <option value="1.6">16:10 · 1280×800</option>
+        <option value="1.5">3:2</option>
+        <option value="1.3333">4:3</option>
+      </select>
+    </label>
+    <label>Ajuste:
+      <select id="fitSel">
+        <option value="cover">Llenar (recorta)</option>
+        <option value="contain">Completa (sin recortar)</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="titleChk" checked> Título</label>
+    <label><input type="checkbox" id="capChk"> Pies de imagen</label>
+    <button class="btn" id="clearAllBtn">🧹 Vaciar</button>
+    <button class="btn primary" id="printBtn">🖨️ Imprimir / PDF</button>
+    <p class="hint">Clic en un recuadro para seleccionarlo y pulsa <b>Ctrl+V</b> para pegar una imagen copiada. También puedes arrastrar archivos, hacer doble clic para elegir uno, o usar el autollenado / generador IA del panel.</p>
+  </div>
+
+  <div class="stage">
+    <div class="page no-captions" id="page">
+      <h1 class="page-title" id="pageTitle" contenteditable="true" data-placeholder="Escribe un título (opcional)"></h1>
+      <div class="slots" id="slots"></div>
+    </div>
+  </div>
+
+  <input type="file" id="fileInput" accept="image/*" hidden>
+  <div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const MAX_SLOTS = 5;
+  const PAGE_IN = { w: 8.5, h: 11, margin: 0.5 };
+  const TITLE_IN = 0.65;
+  const CAPTION_IN = 0.28;
+  const GAP_IN = 0.18;
+
+  const state = {
+    count: 3,
+    ratio: 1.7778,
+    fit: 'cover',
+    showTitle: true,
+    showCaptions: false,
+    images: Array(MAX_SLOTS).fill(null),
+    captions: Array(MAX_SLOTS).fill(''),
+    selected: 0
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const slotsEl = $('slots');
+  const pageEl = $('page');
+  const fileInput = $('fileInput');
+
+  function toast(msg) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  function slotSize() {
+    const availW = PAGE_IN.w - PAGE_IN.margin * 2;
+    let availH = PAGE_IN.h - PAGE_IN.margin * 2 - (state.showTitle ? TITLE_IN : 0);
+    const perSlotExtra = state.showCaptions ? CAPTION_IN : 0;
+    availH -= GAP_IN * (state.count - 1) + perSlotExtra * state.count;
+    const maxH = availH / state.count;
+    const w = Math.min(availW, maxH * state.ratio);
+    return { w, h: w / state.ratio };
+  }
+
+  function syncCaptionsFromDom() {
+    slotsEl.querySelectorAll('.caption').forEach((c) => {
+      state.captions[Number(c.dataset.i)] = c.textContent.trim();
+    });
+  }
+
+  function render() {
+    syncCaptionsFromDom();
+    const { w, h } = slotSize();
+    pageEl.classList.toggle('no-title', !state.showTitle);
+    pageEl.classList.toggle('no-captions', !state.showCaptions);
+    slotsEl.innerHTML = '';
+    for (let i = 0; i < state.count; i++) {
+      const wrap = document.createElement('div');
+      wrap.className = 'slot-wrap';
+      wrap.style.width = w + 'in';
+
+      const slot = document.createElement('div');
+      slot.className = 'slot' + (state.images[i] ? ' filled' : '') + (i === state.selected ? ' selected' : '');
+      slot.tabIndex = 0;
+      slot.dataset.i = i;
+      slot.style.width = w + 'in';
+      slot.style.height = h + 'in';
+
+      if (state.images[i]) {
+        const img = document.createElement('img');
+        img.src = state.images[i];
+        img.alt = state.captions[i] || `Imagen ${i + 1}`;
+        img.style.objectFit = state.fit;
+        slot.appendChild(img);
+        const actions = document.createElement('div');
+        actions.className = 'slot-actions';
+        actions.innerHTML = '<button data-act="replace" title="Cambiar">📁</button><button data-act="clear" title="Quitar">✕</button>';
+        slot.appendChild(actions);
+      } else {
+        const msg = document.createElement('div');
+        msg.className = 'empty-msg';
+        msg.innerHTML = `<b>Imagen ${i + 1}</b><br>Clic + Ctrl+V para pegar<br>doble clic o arrastra un archivo`;
+        slot.appendChild(msg);
+      }
+      wrap.appendChild(slot);
+
+      const cap = document.createElement('div');
+      cap.className = 'caption';
+      cap.contentEditable = 'true';
+      cap.dataset.i = i;
+      cap.textContent = state.captions[i];
+      wrap.appendChild(cap);
+
+      slotsEl.appendChild(wrap);
+    }
+  }
+
+  function selectSlot(i) {
+    state.selected = i;
+    slotsEl.querySelectorAll('.slot').forEach((s) => s.classList.toggle('selected', Number(s.dataset.i) === i));
+  }
+
+  function setImage(i, src) {
+    if (i < 0 || i >= MAX_SLOTS) return;
+    state.images[i] = src;
+    render();
+    const nextEmpty = state.images.slice(0, state.count).findIndex((x) => !x);
+    selectSlot(nextEmpty === -1 ? i : nextEmpty);
+  }
+
+  function readFile(file, i) {
+    if (!file || !file.type.startsWith('image/')) {
+      toast('Ese archivo no es una imagen.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setImage(i, reader.result);
+    reader.onerror = () => toast('No se pudo leer la imagen.');
+    reader.readAsDataURL(file);
+  }
+
+  function pasteTarget() {
+    const focused = document.activeElement?.closest?.('.slot');
+    if (focused) return Number(focused.dataset.i);
+    return state.selected < state.count ? state.selected : 0;
+  }
+
+  document.addEventListener('paste', (e) => {
+    const active = document.activeElement;
+    if (active && active.isContentEditable) return;
+    const items = Array.from(e.clipboardData?.items || []);
+    const imgItem = items.find((it) => it.type.startsWith('image/'));
+    const i = pasteTarget();
+    if (imgItem) {
+      e.preventDefault();
+      readFile(imgItem.getAsFile(), i);
+      return;
+    }
+    const text = (e.clipboardData?.getData('text') || '').trim();
+    if (/^(https?:\/\/|data:image\/)/i.test(text)) {
+      e.preventDefault();
+      setImage(i, text);
+      return;
+    }
+    toast('El portapapeles no contiene una imagen.');
+  });
+
+  slotsEl.addEventListener('click', (e) => {
+    const slot = e.target.closest('.slot');
+    if (!slot) return;
+    const i = Number(slot.dataset.i);
+    const act = e.target.closest('button')?.dataset.act;
+    if (act === 'clear') { setImage(i, null); return; }
+    if (act === 'replace') { selectSlot(i); fileInput.click(); return; }
+    selectSlot(i);
+    slot.focus();
+  });
+  slotsEl.addEventListener('dblclick', (e) => {
+    const slot = e.target.closest('.slot');
+    if (!slot) return;
+    selectSlot(Number(slot.dataset.i));
+    fileInput.click();
+  });
+  slotsEl.addEventListener('dragover', (e) => {
+    const slot = e.target.closest('.slot');
+    if (!slot) return;
+    e.preventDefault();
+    slot.classList.add('dragover');
+  });
+  slotsEl.addEventListener('dragleave', (e) => e.target.closest('.slot')?.classList.remove('dragover'));
+  slotsEl.addEventListener('drop', (e) => {
+    const slot = e.target.closest('.slot');
+    if (!slot) return;
+    e.preventDefault();
+    slot.classList.remove('dragover');
+    const i = Number(slot.dataset.i);
+    const file = e.dataTransfer.files?.[0];
+    if (file) { readFile(file, i); return; }
+    const url = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text');
+    if (url) setImage(i, url.trim());
+  });
+  fileInput.addEventListener('change', () => {
+    readFile(fileInput.files[0], state.selected);
+    fileInput.value = '';
+  });
+
+  $('countGroup').addEventListener('click', (e) => {
+    const n = Number(e.target.dataset.n);
+    if (!n) return;
+    state.count = n;
+    if (state.selected >= n) state.selected = 0;
+    document.querySelectorAll('#countGroup button').forEach((b) => b.classList.toggle('active', Number(b.dataset.n) === n));
+    render();
+  });
+  $('ratioSel').addEventListener('change', (e) => { state.ratio = Number(e.target.value); render(); });
+  $('fitSel').addEventListener('change', (e) => { state.fit = e.target.value; render(); });
+  $('titleChk').addEventListener('change', (e) => { state.showTitle = e.target.checked; render(); });
+  $('capChk').addEventListener('change', (e) => { state.showCaptions = e.target.checked; render(); });
+  $('clearAllBtn').addEventListener('click', () => {
+    if (!confirm('¿Vaciar todas las imágenes?')) return;
+    state.images = Array(MAX_SLOTS).fill(null);
+    state.selected = 0;
+    render();
+  });
+  $('printBtn').addEventListener('click', () => window.print());
+
+  // Integración con el panel ARKAIOS (autollenado, generador IA, Pexels)
+  window.applyExternalImages = function (urls) {
+    const list = (urls || []).filter(Boolean);
+    if (!list.length) return;
+    let queue = [...list];
+    for (let i = 0; i < state.count && queue.length; i++) {
+      if (!state.images[i]) state.images[i] = queue.shift();
+    }
+    if (list.length >= state.count) {
+      queue = list.slice(0, state.count);
+      queue.forEach((u, i) => { state.images[i] = u; });
+    }
+    render();
+  };
+
+  window.addEventListener('message', (e) => {
+    const d = e.data || {};
+    if (/^ARKAIOS_(PIXABAY|FREEPIK|PEXELS)_IMAGES$/.test(d.type) && Array.isArray(d.images)) {
+      window.applyExternalImages(d.images);
+    }
+  });
+
+  window.ARKAIOS_getData = function () {
+    syncCaptionsFromDom();
+    return {
+      template: 'plantilla-carta-1a5-imagenes',
+      count: state.count, ratio: state.ratio, fit: state.fit,
+      showTitle: state.showTitle, showCaptions: state.showCaptions,
+      title: $('pageTitle').textContent.trim(),
+      images: state.images.slice(), captions: state.captions.slice()
+    };
+  };
+
+  window.ARKAIOS_setData = function (data) {
+    if (!data || typeof data !== 'object') return;
+    const n = Number(data.count);
+    if (n >= 1 && n <= MAX_SLOTS) state.count = n;
+    if (Number(data.ratio) > 0) state.ratio = Number(data.ratio);
+    if (data.fit === 'cover' || data.fit === 'contain') state.fit = data.fit;
+    state.showTitle = data.showTitle !== false;
+    state.showCaptions = !!data.showCaptions;
+    const safeSrc = (s) => (typeof s === 'string' && /^(https?:|data:image\/|blob:)/i.test(s) ? s : null);
+    state.images = Array.from({ length: MAX_SLOTS }, (_, i) => safeSrc(data.images?.[i]));
+    state.captions = Array.from({ length: MAX_SLOTS }, (_, i) => String(data.captions?.[i] || ''));
+    $('pageTitle').textContent = String(data.title || '');
+    $('ratioSel').value = String(state.ratio);
+    $('fitSel').value = state.fit;
+    $('titleChk').checked = state.showTitle;
+    $('capChk').checked = state.showCaptions;
+    document.querySelectorAll('#countGroup button').forEach((b) => b.classList.toggle('active', Number(b.dataset.n) === state.count));
+    slotsEl.innerHTML = '';
+    render();
+  };
+
+  render();
+})();
+</script>
+</body>
+</html>
