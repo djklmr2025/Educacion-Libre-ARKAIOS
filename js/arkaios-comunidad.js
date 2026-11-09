@@ -144,7 +144,25 @@
     }
   }
 
+  // Sube un PDF crudo (application/octet-stream) para no pasar el límite de 4.5 MB de Vercel.
+  async function uploadPdf(file, meta) {
+    const token = await idToken();
+    if (!token) throw new Error("Inicia sesión con tu cuenta de Google para subir trabajos.");
+    const qs = new URLSearchParams({ action: "upload-pdf", ...meta });
+    const r = await fetch(`${API}?${qs}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/octet-stream" },
+      body: file
+    });
+    const j = await r.json().catch(() => ({}));
+    if (r.status === 413 && !j.error) throw new Error("El PDF es demasiado grande (máx. 4 MB).");
+    if (!r.ok || !j.ok) throw new Error(j.error || `Error al subir (${r.status}).`);
+    return j;
+  }
+
   window.ArkComunidad = {
+    uploadPdf,
+    fileUrl: (id) => `${API}?action=file&id=${encodeURIComponent(id)}`,
     list: (params) => call("list", { params }),
     saved: () => call("saved", { auth: true }),
     me: () => call("me", { auth: true }),

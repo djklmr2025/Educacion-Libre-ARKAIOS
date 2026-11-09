@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Comunidad ARKAIOS EDU</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="js/arkaios-comunidad.js" defer></script>
+<script src="js/arkaios-comunidad.js?v=20261109" defer></script>
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
   import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
@@ -122,11 +122,33 @@
   .agent small { color: var(--ink-3); font-size: 12px; }
   .agent.off { opacity: .5; }
 
+  .go-up { background: var(--save); color: var(--save-ink); border: 0; }
+  .pdf-cover { aspect-ratio: 3/4; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    background: linear-gradient(160deg, color-mix(in srgb, var(--save) 14%, var(--surface)), var(--surface)); }
+  .pdf-cover big { font-size: 54px; line-height: 1; }
+  .pdf-cover span { font-size: 12px; font-weight: 800; letter-spacing: .08em; color: var(--save); text-transform: uppercase; }
+  .sheet-media iframe { width: 100%; height: 78vh; border: 0; background: #fff; }
+  .up-sheet { background: var(--surface); border-radius: 24px; max-width: 560px; width: 100%; max-height: 92vh; overflow: auto; padding: 26px; position: relative; box-shadow: 0 30px 80px rgba(0,0,0,.35); }
+  .up-sheet h2 { font-family: 'Poppins', sans-serif; font-size: 22px; margin-bottom: 4px; padding-right: 50px; }
+  .up-sheet > p { color: var(--ink-2); font-size: 13.5px; line-height: 1.5; margin-bottom: 14px; }
+  .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; font-size: 13px; font-weight: 600; }
+  .field input, .field select, .field textarea { font: inherit; font-weight: 400; font-size: 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); padding: 10px 12px; }
+  .field textarea { min-height: 72px; resize: vertical; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .drop { display: block; border: 2px dashed var(--line); border-radius: 16px; padding: 18px; text-align: center; color: var(--ink-2); font-size: 14px; cursor: pointer; margin-bottom: 12px; transition: border-color .15s, background .15s; }
+  .drop.over, .drop:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent); }
+  .drop b { color: var(--ink); }
+  .check { display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; color: var(--ink-2); line-height: 1.45; margin: 4px 0 14px; }
+  .up-msg { font-size: 13px; margin-top: 10px; min-height: 1.2em; }
+  .up-msg.err { color: var(--save); }
+  .up-msg.ok { color: var(--free); }
+
   @media (max-width: 760px) {
     .bar { flex-wrap: wrap; padding: 10px 16px; }
     .brand small, .go-app span { display: none; }
     .brand { flex: 1; }
     .go-app { width: 46px; padding: 0; justify-content: center; }
+    .two { grid-template-columns: 1fr; }
     .search { order: 3; flex-basis: 100%; }
     .sub, .free { padding-left: 16px; padding-right: 16px; }
     .wall { columns: 2 150px; column-gap: 10px; padding: 0 16px; }
@@ -146,6 +168,7 @@
       <div><b>Comunidad ARKAIOS</b><small>Material educativo compartido</small></div>
     </a>
     <label class="search"><span>🔍</span><input id="q" type="search" placeholder="Busca plantillas, temas, grados… ej. «día de la madre», «primaria»" autocomplete="off"></label>
+    <button class="go-app go-up" id="btnUpload" aria-label="Subir trabajo en PDF">📄 <span>Subir PDF</span></button>
     <a class="go-app" href="/index.html" aria-label="Crear material">✏️ <span>Crear material</span></a>
   </div>
   <nav class="sub" id="sub" aria-label="Filtros">
@@ -158,7 +181,7 @@
   </nav>
 </header>
 
-<section class="free"><div>🎓 <b>Gratis por siempre.</b> Estudiantes, niñas y niños, adultos que estudian, maestros, directivos y todo el personal escolar comparten y reutilizan material sin costo. Los gastos reales (tokens de IA, internet, luz, adaptaciones) los cubre al 100% el ecosistema autosustentable ARKAIOS.</div></section>
+<section class="free"><div>🎓 <b>Gratis por siempre.</b> Estudiantes, niñas y niños, adultos que estudian, maestros, directivos y todo el personal escolar comparten y reutilizan material sin costo. Los gastos reales (tokens de IA, internet, luz, adaptaciones) los cubre al 100% el ecosistema autosustentable ARKAIOS. 📚 <b>Biblioteca de tareas:</b> toma los trabajos ya hechos por agentes y estudiantes, y con <b>📄 Subir PDF</b> comparte tareas hechas en otras plataformas para formar una biblioteca de conocimientos para todos los niveles educativos.</div></section>
 
 <main class="wall" id="wall" aria-live="polite"></main>
 <div id="sentinel"></div>
@@ -182,11 +205,35 @@
   </div>
 </div>
 
+<div class="modal" id="upModal" role="dialog" aria-modal="true" aria-labelledby="upTitle">
+  <form class="up-sheet" id="upForm" novalidate>
+    <button type="button" class="close" id="upClose" aria-label="Cerrar">✕</button>
+    <h2 id="upTitle">📄 Subir trabajo o tarea en PDF</h2>
+    <p>Comparte trabajos hechos en otras plataformas o fuentes para alimentar la biblioteca. Aparecerá en <b>Explorar</b> para todos y en <b>Mis materiales</b> para ti.</p>
+    <label class="drop" id="upDrop"><input type="file" id="upFile" accept="application/pdf,.pdf" hidden><span id="upDropText"><b>Elige o arrastra tu PDF aquí</b><br>Máximo 3.8 MB</span></label>
+    <label class="field">Título<input id="upName" maxlength="120" required placeholder="Ej. Ensayo: el ciclo del agua"></label>
+    <div class="two">
+      <label class="field">Nivel educativo
+        <select id="upGrade">
+          <option value="preescolar">Preescolar</option><option value="primaria" selected>Primaria</option><option value="secundaria">Secundaria</option>
+          <option value="preparatoria">Preparatoria</option><option value="universidad">Universidad</option><option value="adultos">Educación para adultos</option><option value="otro">Otro</option>
+        </select>
+      </label>
+      <label class="field">Materia<input id="upSubject" maxlength="40" placeholder="Ej. Ciencias naturales"></label>
+    </div>
+    <label class="field">Etiquetas (separadas por coma)<input id="upTags" maxlength="200" placeholder="Ej. ensayo, agua, 4to grado"></label>
+    <label class="field">Descripción (opcional)<textarea id="upDesc" maxlength="1000" placeholder="¿De qué trata? ¿Para qué grado o actividad sirve?"></textarea></label>
+    <label class="check"><input type="checkbox" id="upOk"> Confirmo que este trabajo puede compartirse y que no contiene datos personales de estudiantes (direcciones, teléfonos, CURP, fotos de menores).</label>
+    <button class="btn btn-use" id="upSend" type="submit">⬆️ Subir a la biblioteca</button>
+    <div class="up-msg" id="upMsg" role="status"></div>
+  </form>
+</div>
+
 <script>
 (function () {
   const wall = document.getElementById('wall');
   const qInput = document.getElementById('q');
-  const view = { tab: 'explorar', q: '', tpl: '', pageToken: null, loading: false, done: false, seq: 0 };
+  const view = { tab: 'explorar', q: '', tpl: '', kind: '', pageToken: null, loading: false, done: false, seq: 0 };
   const savedIds = new Set();
   let me = null;
   let templates = {};
@@ -203,19 +250,23 @@
       m.sections.forEach((s) => s.items.forEach((i) => { templates[i.target] = { label: i.label, icon: i.icon }; }));
     } catch { templates = {}; }
     const chips = document.getElementById('chips');
-    chips.innerHTML = `<button class="chip on" data-tpl="">Todas</button>` +
+    chips.innerHTML = `<button class="chip on" data-tpl="">Todas</button><button class="chip" data-kind="pdf">📄 PDFs y tareas</button>` +
       Object.entries(templates).map(([t, v]) => `<button class="chip" data-tpl="${esc(t)}">${esc(v.icon)} ${esc(v.label)}</button>`).join('');
     chips.style.display = 'contents';
   }
 
+  const GRADE_LABEL = { preescolar: 'Preescolar', primaria: 'Primaria', secundaria: 'Secundaria', preparatoria: 'Preparatoria', universidad: 'Universidad', adultos: 'Adultos', otro: '' };
+  const isPdf = (it) => it.kind === 'pdf';
+  const pdfCover = (it) => `<div class="pdf-cover"><big>📄</big><span>PDF${GRADE_LABEL[it.grade] ? ' · ' + esc(GRADE_LABEL[it.grade]) : ''}</span></div>`;
+
   function pinHtml(it) {
-    const img = it.thumbId ? `<img loading="lazy" src="${ArkComunidad.thumbUrl(it.thumbId)}" alt="${esc(it.title)}">` : `<div class="noimg">${esc(tplIcon(it.template))}</div>`;
+    const img = isPdf(it) ? pdfCover(it) : it.thumbId ? `<img loading="lazy" src="${ArkComunidad.thumbUrl(it.thumbId)}" alt="${esc(it.title)}">` : `<div class="noimg">${esc(tplIcon(it.template))}</div>`;
     const isSaved = savedIds.has(it.id);
     return `<article class="pin" data-id="${esc(it.id)}" tabindex="0">
       <div class="pin-media">${img}
         <div class="pin-over">
           <button class="pin-save ${isSaved ? 'done' : ''}" data-act="save">${isSaved ? 'Guardado' : 'Guardar'}</button>
-          <button class="pin-use" data-act="use">✨ Usar</button>
+          <button class="pin-use" data-act="use">${isPdf(it) ? '📄 Ver' : '✨ Usar'}</button>
         </div>
       </div>
       <div class="pin-title">${esc(it.title)}</div>
@@ -236,17 +287,18 @@
     try {
       let res;
       if (view.tab === 'guardados') res = await ArkComunidad.saved();
-      else res = await ArkComunidad.list({ q: view.q, tpl: view.tpl, ...(view.tab === 'mios' ? { owner: 'me' } : {}), ...(view.pageToken ? { pageToken: view.pageToken } : {}) });
+      else res = await ArkComunidad.list({ q: view.q, tpl: view.tpl, ...(view.kind ? { kind: view.kind } : {}), ...(view.tab === 'mios' ? { owner: 'me' } : {}), ...(view.pageToken ? { pageToken: view.pageToken } : {}) });
       if (seq !== view.seq) return;
       if (!items.size) wall.innerHTML = '';
       let list = res.items;
       if (view.tab === 'guardados' && view.tpl) list = list.filter((i) => i.template === view.tpl);
+      if (view.tab === 'guardados' && view.kind) list = list.filter((i) => i.kind === view.kind);
       list.forEach((it) => { items.set(it.id, it); wall.insertAdjacentHTML('beforeend', pinHtml(it)); });
       view.pageToken = res.nextPageToken;
       view.done = !res.nextPageToken;
       if (!items.size) {
         const empty = { explorar: ['🌱', 'Aún no hay materiales aquí. ¡Sé la primera persona en compartir uno desde <a href="/index.html">Crear material</a>!'],
-          mios: ['✏️', 'Todavía no has compartido materiales. Al guardar uno en el sistema, deja marcada la opción «Compartir en la Comunidad».'],
+          mios: ['✏️', 'Todavía no has compartido materiales. Al guardar uno en el sistema, deja marcada la opción «Compartir en la Comunidad», o usa <b>📄 Subir PDF</b> para subir trabajos hechos en otras plataformas.'],
           guardados: ['📌', 'Aún no guardas materiales. Toca «Guardar» en cualquier tarjeta para tenerla a la mano.'] }[view.tab];
         setState(empty[0], empty[1]);
       }
@@ -307,23 +359,31 @@
     } catch (e) { alert(e.message); }
   }
 
-  const useMaterial = (id) => { location.href = `/index.html?usar=${encodeURIComponent(id)}`; };
+  const useMaterial = (id) => {
+    const it = items.get(id);
+    if (it && isPdf(it)) { window.open(ArkComunidad.fileUrl(id), '_blank', 'noopener'); return; }
+    location.href = `/index.html?usar=${encodeURIComponent(id)}`;
+  };
+  const sizeLabel = (b) => (b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB');
 
   function openModal(it) {
     current = it;
-    document.getElementById('mMedia').innerHTML = it.thumbId ? `<img src="${ArkComunidad.thumbUrl(it.thumbId)}" alt="${esc(it.title)}">` : `<div class="noimg" style="font-size:80px">${esc(tplIcon(it.template))}</div>`;
+    document.getElementById('mMedia').innerHTML = isPdf(it) ? `<iframe title="${esc(it.title)}" src="${ArkComunidad.fileUrl(it.id)}#view=FitH"></iframe>` : it.thumbId ? `<img src="${ArkComunidad.thumbUrl(it.thumbId)}" alt="${esc(it.title)}">` : `<div class="noimg" style="font-size:80px">${esc(tplIcon(it.template))}</div>`;
     document.getElementById('mOwner').innerHTML = `<span class="avatar">${initial(it.ownerName)}</span>${esc(it.ownerName)} · ${new Date(it.createdTime).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })}`;
     document.getElementById('mTitle').textContent = it.title;
     document.getElementById('mDesc').textContent = it.description || 'Sin descripción.';
     document.getElementById('mTags').innerHTML = it.tags.map((t) => `<span>#${esc(t)}</span>`).join('');
-    document.getElementById('mTpl').textContent = `${tplIcon(it.template)} Plantilla: ${tplLabel(it.template)}${it.saves ? ` · 📌 ${it.saves} guardados` : ''}`;
+    document.getElementById('mTpl').textContent = isPdf(it)
+      ? ['📄 PDF', GRADE_LABEL[it.grade], it.subject, it.size ? sizeLabel(it.size) : '', it.saves ? `📌 ${it.saves} guardados` : ''].filter(Boolean).join(' · ')
+      : `${tplIcon(it.template)} Plantilla: ${tplLabel(it.template)}${it.saves ? ` · 📌 ${it.saves} guardados` : ''}`;
+    document.getElementById('mUse').textContent = isPdf(it) ? '📄 Abrir / descargar PDF' : '✨ Usar como base';
     const s = document.getElementById('mSave');
     s.textContent = savedIds.has(it.id) ? '✓ Guardado' : '📌 Guardar';
     document.getElementById('mDel').hidden = !(me && (me.uid === it.ownerUid || me.isAdmin));
     document.getElementById('modal').classList.add('open');
     document.getElementById('mUse').focus();
   }
-  const closeModal = () => { document.getElementById('modal').classList.remove('open'); current = null; };
+  const closeModal = () => { document.getElementById('modal').classList.remove('open'); document.getElementById('mMedia').innerHTML = ''; current = null; };
 
   wall.addEventListener('click', (e) => {
     const pin = e.target.closest('.pin'); if (!pin) return;
@@ -337,7 +397,65 @@
 
   document.getElementById('mClose').onclick = closeModal;
   document.getElementById('modal').addEventListener('click', (e) => { if (e.target.id === 'modal') closeModal(); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeModal(); closeUpload(); } });
+
+  // ---------- Subir PDF ----------
+  const MAX_PDF = 3.8 * 1024 * 1024;
+  const up = { file: null, busy: false };
+  const upEl = (id) => document.getElementById(id);
+  const DROP_EMPTY = '<b>Elige o arrastra tu PDF aquí</b><br>Máximo 3.8 MB';
+  function upMsg(text, cls) { const m = upEl('upMsg'); m.textContent = text; m.className = 'up-msg' + (cls ? ' ' + cls : ''); }
+  function pickPdf(file) {
+    if (!file) return;
+    if (file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name)) { upMsg('Ese archivo no es un PDF.', 'err'); return; }
+    if (file.size > MAX_PDF) { upMsg(`Tu PDF pesa ${sizeLabel(file.size)}; el máximo es 3.8 MB. Comprímelo (ej. ilovepdf.com) e inténtalo de nuevo.`, 'err'); return; }
+    up.file = file;
+    upEl('upDropText').innerHTML = `<b>${esc(file.name)}</b><br>${sizeLabel(file.size)} · toca para cambiar`;
+    if (!upEl('upName').value.trim()) upEl('upName').value = file.name.replace(/\.pdf$/i, '').replace(/[-_]+/g, ' ').trim().slice(0, 120);
+    upMsg('');
+  }
+  function openUpload() {
+    if (!me) { alert('Inicia sesión con tu cuenta de Google (desde «Crear material») para subir trabajos.'); return; }
+    upEl('upModal').classList.add('open');
+    upEl('upName').focus();
+  }
+  function closeUpload() { if (!up.busy) upEl('upModal').classList.remove('open'); }
+  upEl('btnUpload').onclick = openUpload;
+  upEl('upClose').onclick = closeUpload;
+  upEl('upModal').addEventListener('click', (e) => { if (e.target.id === 'upModal') closeUpload(); });
+  upEl('upFile').addEventListener('change', (e) => pickPdf(e.target.files[0]));
+  const drop = upEl('upDrop');
+  drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+  drop.addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('over'); pickPdf(e.dataTransfer.files[0]); });
+  upEl('upForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (up.busy) return;
+    if (!up.file) { upMsg('Elige primero un PDF.', 'err'); return; }
+    const title = upEl('upName').value.trim();
+    if (!title) { upMsg('Escribe un título.', 'err'); upEl('upName').focus(); return; }
+    if (!upEl('upOk').checked) { upMsg('Marca la casilla de confirmación para continuar.', 'err'); return; }
+    up.busy = true;
+    upEl('upSend').disabled = true;
+    upMsg('⏳ Subiendo a la biblioteca…');
+    try {
+      await ArkComunidad.uploadPdf(up.file, {
+        title, grade: upEl('upGrade').value, subject: upEl('upSubject').value.trim(),
+        tags: upEl('upTags').value, description: upEl('upDesc').value.trim()
+      });
+      upMsg('✅ ¡Listo! Tu trabajo ya está en la biblioteca.', 'ok');
+      up.file = null;
+      upEl('upForm').reset();
+      upEl('upDropText').innerHTML = DROP_EMPTY;
+      if (view.tab !== 'agentes') load(true);
+      setTimeout(() => { up.busy = false; closeUpload(); upMsg(''); }, 1400);
+    } catch (err) {
+      upMsg('❌ ' + err.message, 'err');
+      up.busy = false;
+    } finally {
+      upEl('upSend').disabled = false;
+    }
+  });
   document.getElementById('mUse').onclick = () => current && useMaterial(current.id);
   document.getElementById('mSave').onclick = () => {
     if (!current) return;
@@ -353,7 +471,7 @@
   document.getElementById('sub').addEventListener('click', (e) => {
     const tab = e.target.closest('.tab'), chip = e.target.closest('.chip');
     if (tab) { document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('on', b === tab)); view.tab = tab.dataset.tab; load(true); }
-    if (chip) { document.querySelectorAll('.chip').forEach((b) => b.classList.toggle('on', b === chip)); view.tpl = chip.dataset.tpl; load(true); }
+    if (chip) { document.querySelectorAll('.chip').forEach((b) => b.classList.toggle('on', b === chip)); view.tpl = chip.dataset.tpl || ''; view.kind = chip.dataset.kind || ''; load(true); }
   });
   let qTimer;
   qInput.addEventListener('input', () => { clearTimeout(qTimer); qTimer = setTimeout(() => { view.q = qInput.value.trim(); load(true); }, 350); });

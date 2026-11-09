@@ -20,7 +20,10 @@ const MAX_DATA_BYTES = 3_500_000;
 const MAX_THUMB_BYTES = 700_000;
 const PAGE_SIZE = 30;
 const PUBLISH_LIMIT_PER_HOUR = 20;
-const MAT_FIELDS = "id,name,description,appProperties,createdTime,parents";
+const MAT_FIELDS = "id,name,description,appProperties,createdTime,parents,mimeType,size";
+// Biblioteca de PDF: el límite de cuerpo de Vercel es 4.5 MB, así que el PDF va crudo (octet-stream).
+const MAX_PDF_BYTES = 4_000_000; // el cliente limita a 3.8 MB
+const GRADES = ["preescolar", "primaria", "secundaria", "preparatoria", "universidad", "adultos", "otro"];
 
 class HttpError extends Error {
   constructor(status, message) { super(message); this.status = status; }
@@ -229,7 +232,11 @@ function toCard(f) {
   const p = f.appProperties || {};
   return {
     id: f.id,
-    title: f.name.replace(/\.json$/i, ""),
+    title: f.name.replace(/\.(json|pdf)$/i, ""),
+    kind: p.kind === "pdf" ? "pdf" : "plantilla",
+    grade: p.grade || "",
+    subject: p.subj || "",
+    size: Number(f.size) || 0,
     description: f.description || "",
     template: p.tpl || "",
     tags: p.tags ? p.tags.split(",").filter(Boolean) : [],
@@ -254,6 +261,8 @@ async function listMaterials(query, user) {
   const parts = [`${quote(FOLDERS.materiales)} in parents`, "trashed=false", "appProperties has { key='k' and value='edu_mat' }"];
   const text = String(query.q || "").trim().slice(0, 80);
   if (text) parts.push(`(name contains ${quote(text)} or fullText contains ${quote(text)})`);
+  if (query.kind === "pdf") parts.push("appProperties has { key='kind' and value='pdf' }");
+  if (GRADES.includes(query.grade)) parts.push(`appProperties has { key='grade' and value=${quote(query.grade)} }`);
   if (query.tpl && /^[\w.-]+\.html$/.test(query.tpl)) parts.push(`appProperties has { key='tpl' and value=${quote(query.tpl)} }`);
   if (query.owner === "me") {
     if (!user) throw new HttpError(401, "Inicia sesión para ver tus materiales.");
@@ -362,9 +371,64 @@ async function streamThumb(id, res) {
 
 async function getMaterial(id) {
   const f = await getMaterialMeta(id);
+  if (f.appProperties.kind === "pdf") return { item: toCard(f), data: null, fileUrl: `/api/comunidad?action=file&id=${f.id}` };
   const r = await drive(`/files/${f.id}?alt=media`, { raw: true });
   const content = r.ok ? await r.json().catch(() => ({})) : {};
   return { item: toCard(f), data: content.data ?? null };
+}
+
+function readPdf(req) {
+  if (Buffer.isBuffer(req.body)) return { buffer: req.body, meta: req.query || {} };
+  const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+  const b64 = String(body.pdf || "").replace(/^data:application\/pdf;base64,/, "");
+  if (!/^[A-Za-z0-9+/=\s]+$/.test(b64)) throw new HttpError(400, "Envía el PDF como cuerpo application/octet-stream o en el campo «pdf» en base64.");
+  return { buffer: Buffer.from(b64, "base64"), meta: body };
+}
+
+async function uploadPdf(req, user) {
+  const { buffer, meta } = readPdf(req);
+  if (!buffer.length) throw new HttpError(400, "No llegó ningún archivo.");
+  if (buffer.length > MAX_PDF_BYTES) throw new HttpError(413, "El PDF pesa más de 3.8 MB. Comprímelo (ej. ilovepdf.com) e inténtalo de nuevo.");
+  if (buffer.subarray(0, 5).toString("latin1") !== "%PDF-") throw new HttpError(400, "El archivo no es un PDF válido.");
+  const title = cleanText(meta.title, 120);
+  if (!title) throw new HttpError(400, "Escribe un título.");
+  const grade = GRADES.includes(String(meta.grade)) ? String(meta.grade) : "otro";
+  const subject = cleanText(meta.subject, 40);
+  const tagList = Array.isArray(meta.tags) ? meta.tags : String(meta.tags || "").split(",");
+  const tags = tagList.map((t) => cleanText(t, 24).toLowerCase().replace(/[,]/g, "")).filter(Boolean).slice(0, 8);
+  checkPublishRate(user.uid);
+  const f = await uploadFile({
+    name: `${title}.pdf`,
+    parent: FOLDERS.materiales,
+    mimeType: "application/pdf",
+    buffer,
+    description: cleanText(meta.description, 1000),
+    appProperties: {
+      k: "edu_mat",
+      kind: "pdf",
+      owner: user.uid,
+      ownerName: fitAppProp("ownerName", user.name),
+      tags: fitAppProp("tags", tags.join(",")),
+      grade,
+      subj: fitAppProp("subj", subject),
+      thumb: "",
+      saves: "0"
+    }
+  });
+  return { item: toCard(f) };
+}
+
+async function streamPdf(id, res) {
+  const f = await getMaterialMeta(id);
+  if (f.appProperties.kind !== "pdf") throw new HttpError(404, "Ese material no es un PDF.");
+  const r = await drive(`/files/${f.id}?alt=media`, { raw: true });
+  if (!r.ok) throw new HttpError(502, "No se pudo leer el PDF.");
+  const filename = encodeURIComponent(f.name);
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `inline; filename*=UTF-8''${filename}`);
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Cache-Control", "public, max-age=3600");
+  return res.status(200).send(Buffer.from(await r.arrayBuffer()));
 }
 
 export default async function handler(req, res) {
@@ -372,6 +436,7 @@ export default async function handler(req, res) {
   try {
     if (req.method === "GET") {
       if (action === "thumb") return await streamThumb(String(req.query.id || ""), res);
+      if (action === "file") return await streamPdf(String(req.query.id || ""), res);
       res.setHeader("Cache-Control", "no-store");
       if (action === "get") return res.status(200).json({ ok: true, ...(await getMaterial(String(req.query.id || ""))) });
       if (action === "me") {
@@ -393,6 +458,7 @@ export default async function handler(req, res) {
     if (req.method === "POST") {
       res.setHeader("Cache-Control", "no-store");
       const user = await requireUser(req);
+      if (action === "upload-pdf") return res.status(200).json({ ok: true, ...(await uploadPdf(req, user)) });
       const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
       if (action === "publish") return res.status(200).json({ ok: true, ...(await publish(body, user)) });
       if (action === "save") return res.status(200).json({ ok: true, ...(await toggleSave(body, user)) });
