@@ -1,74 +1,92 @@
 // api/pexels.js
-// Endpoint serverless para buscar imágenes en Pexels sin exponer la API key en el navegador
+// Proxy de búsqueda de imágenes (Pexels, Pixabay, Freepik) sin exponer las API keys en el navegador.
+// Un solo archivo porque Vercel Hobby limita a 12 funciones.
+// Body: { q, per_page?, orientation?, provider?: 'pexels' | 'pixabay' | 'freepik' }
+
+const ORIENTATIONS = ['landscape', 'portrait', 'square'];
+const MAX_PER_PAGE = 40;
+
+const PROVIDERS = {
+  pexels: {
+    envVar: 'PEXELS_API_KEY',
+    build(q, perPage, orientation, key) {
+      const o = ORIENTATIONS.includes(orientation) ? `&orientation=${orientation}` : '';
+      return {
+        url: `https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&per_page=${perPage}${o}`,
+        headers: { Authorization: key },
+      };
+    },
+  },
+  pixabay: {
+    envVar: 'PIXABAY_API_KEY',
+    build(q, perPage, orientation, key) {
+      const o = orientation === 'landscape' ? '&orientation=horizontal'
+        : orientation === 'portrait' ? '&orientation=vertical' : '';
+      const n = Math.max(3, perPage); // Pixabay exige per_page >= 3
+      return {
+        url: `https://pixabay.com/api/?key=${encodeURIComponent(key)}&q=${encodeURIComponent(q)}&image_type=photo&lang=es&safesearch=true&per_page=${n}${o}`,
+        headers: {},
+      };
+    },
+  },
+  freepik: {
+    envVar: 'FREEPIK_API_KEY',
+    build(q, perPage, _orientation, key) {
+      return {
+        url: `https://api.freepik.com/v1/resources?locale=es-ES&term=${encodeURIComponent(q)}&limit=${perPage}`,
+        headers: { 'x-freepik-api-key': key, 'Accept-Language': 'es-ES' },
+      };
+    },
+  },
+};
 
 export default async function handler(req, res) {
-  // Configuración de CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-  // Manejo de la solicitud OPTIONS (pre-flight)
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  // Solo permitir solicitudes POST
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
-  }
-
-  const apiKey = process.env.PEXELS_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: 'PEXELS_API_KEY no está configurada en el servidor.' });
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
   let body;
   try {
-    body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
   } catch (e) {
     return res.status(400).json({ error: 'Cuerpo de la solicitud inválido (JSON malformado).' });
   }
 
-  const { q, per_page = 10 } = body;
+  const providerName = body.provider || 'pexels';
+  const provider = PROVIDERS[providerName];
+  if (!provider) return res.status(400).json({ error: 'Proveedor no soportado.' });
 
-  if (!q) {
-    return res.status(400).json({ error: 'El parámetro "q" (búsqueda) es requerido.' });
-  }
+  const q = typeof body.q === 'string' ? body.q.trim().slice(0, 100) : '';
+  if (!q) return res.status(400).json({ error: 'El parámetro "q" (búsqueda) es requerido.' });
 
-  const apiUrl = 'https://api.pexels.com/v1/search';
-  const ORIENTATIONS = ['landscape', 'portrait', 'square'];
-  const orientationParam = ORIENTATIONS.includes(body.orientation) ? `&orientation=${body.orientation}` : '';
-  const searchUrl = `${apiUrl}?query=${encodeURIComponent(q)}&per_page=${per_page}${orientationParam}`;
+  const perPage = Math.min(MAX_PER_PAGE, Math.max(1, parseInt(body.per_page, 10) || 10));
+
+  const key = process.env[provider.envVar];
+  if (!key) return res.status(500).json({ error: `${provider.envVar} no está configurada en el servidor.` });
+
+  const { url, headers } = provider.build(q, perPage, body.orientation, key);
 
   try {
-    const pexelsResponse = await fetch(searchUrl, {
-      headers: {
-        'Authorization': apiKey,
-      },
-    });
-    
-    const rateLimit = pexelsResponse.headers.get('X-Ratelimit-Limit');
-    const rateLimitRemaining = pexelsResponse.headers.get('X-Ratelimit-Remaining');
-    const rateLimitReset = pexelsResponse.headers.get('X-Ratelimit-Reset');
+    const upstream = await fetch(url, { headers });
 
-    if (rateLimit) res.setHeader('X-Ratelimit-Limit', rateLimit);
-    if (rateLimitRemaining) res.setHeader('X-Ratelimit-Remaining', rateLimitRemaining);
-    if (rateLimitReset) res.setHeader('X-Ratelimit-Reset', rateLimitReset);
-
-    if (!pexelsResponse.ok) {
-      const errorData = await pexelsResponse.text();
-      console.error('Error de API Pexels:', errorData);
-      return res.status(pexelsResponse.status).json({
-        error: `Error de la API de Pexels: ${pexelsResponse.statusText}`,
-        details: errorData,
-      });
+    if (providerName === 'pexels') {
+      for (const h of ['X-Ratelimit-Limit', 'X-Ratelimit-Remaining', 'X-Ratelimit-Reset']) {
+        const v = upstream.headers.get(h);
+        if (v) res.setHeader(h, v);
+      }
     }
 
-    const data = await pexelsResponse.json();
-    return res.status(200).json(data);
+    if (!upstream.ok) {
+      console.error(`Error de API ${providerName}:`, upstream.status, await upstream.text());
+      return res.status(upstream.status).json({ error: `Error de la API de ${providerName}: ${upstream.statusText}` });
+    }
 
+    return res.status(200).json(await upstream.json());
   } catch (error) {
-    console.error('Error interno del servidor:', error);
-    return res.status(500).json({ error: 'Error interno del servidor al contactar la API de Pexels.' });
+    console.error(`Error interno contactando ${providerName}:`, error);
+    return res.status(500).json({ error: `Error interno del servidor al contactar ${providerName}.` });
   }
 }

@@ -625,9 +625,7 @@
         }
 
         // ===== API KEYS =====
-        const PEXELS_PROXY = '/api/pexels'; // la llave vive solo en el servidor (Vercel)
-        const FREEPIK_API_KEY = '***REMOVIDA***';
-        const PIXABAY_API_KEY = '***REMOVIDA***';
+        const PEXELS_PROXY = '/api/pexels'; // proxy de Pexels/Pixabay/Freepik: las llaves viven solo en Vercel
 
         // ===== FUNCIONES DE BÚSQUEDA =====
         async function searchPixabay() {
@@ -637,8 +635,10 @@
             const count = parseInt(countStr) || 1;
 
             try {
-                const response = await fetch(`https://pixabay.com/api/?key=${PIXABAY_API_KEY}&q=${encodeURIComponent(query)}&image_type=photo&per_page=${count}`);
+                const response = await fetch(PEXELS_PROXY, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ provider: 'pixabay', q: query, per_page: count, orientation: 'portrait' }) });
                 const data = await response.json();
+                if (!response.ok) throw new Error(data.error || response.status);
+                data.hits = (data.hits || []).slice(0, count);
                 if (data.hits && data.hits.length > 0) {
                     const urls = data.hits.map(hit => hit.largeImageURL);
                     assignImagesToRows(urls);
@@ -673,10 +673,9 @@
             const count = parseInt(countStr) || 1;
 
             try {
-                const response = await fetch(`https://api.freepik.com/v1/resources?locale=es-ES&q=${encodeURIComponent(query)}&limit=${count}`, {
-                    headers: { 'X-Freepik-API-Key': FREEPIK_API_KEY }
-                });
+                const response = await fetch(PEXELS_PROXY, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ provider: 'freepik', q: query, per_page: count }) });
                 const data = await response.json();
+                if (!response.ok) throw new Error(data.error || response.status);
                 if (data.data && data.data.length > 0) {
                     const urls = data.data.map(item => item.image.source.url);
                     assignImagesToRows(urls);

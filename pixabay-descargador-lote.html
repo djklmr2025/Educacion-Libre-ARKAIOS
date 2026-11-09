@@ -333,14 +333,14 @@
         <div class="section">
             <div class="section-title">🔑 Configuración API</div>
             <div class="alert alert-info">
-                <strong>Tu API Key de Pixabay:</strong> <code>***REMOVIDA***</code><br>
-                Esta clave ya está configurada por defecto. Puedes cambiarla si tienes otra.
+                <strong>No necesitas API Key:</strong> la búsqueda usa la clave del servidor.<br>
+                Si tienes tu propia clave de Pixabay puedes escribirla abajo (opcional).
             </div>
             <input type="text" 
                    class="api-key-input" 
                    id="apiKey" 
-                   placeholder="Tu API Key de Pixabay"
-                   value="***REMOVIDA***">
+                   placeholder="(Opcional) Tu propia API Key de Pixabay"
+                   value="">
             <p class="help-text">
                 💡 Límite: 100 peticiones cada 60 segundos | Las imágenes se descargan en formato JPG de alta calidad
             </p>
@@ -392,7 +392,6 @@
     </div>
 
     <script>
-        const API_KEY_DEFAULT = '***REMOVIDA***';
 
         // Plantilla de derechos de niñas y niños
         function loadDerechosTemplate() {
@@ -430,11 +429,6 @@ niño expresión hablando`;
         async function iniciarDescarga() {
             const apiKey = document.getElementById('apiKey').value.trim();
             const temasText = document.getElementById('temas').value.trim();
-            
-            if (!apiKey) {
-                alert('⚠️ Por favor ingresa tu API Key de Pixabay');
-                return;
-            }
             
             if (!temasText) {
                 alert('⚠️ Por favor ingresa al menos un tema');
@@ -474,8 +468,9 @@ niño expresión hablando`;
                 try {
                     addLog(`🔍 Buscando: "${tema}"...`, 'info');
                     
-                    const url = `https://pixabay.com/api/?key=${apiKey}&q=${encodeURIComponent(tema)}&image_type=photo&lang=es&per_page=3`;
-                    const response = await fetch(url);
+                    const response = apiKey
+                        ? await fetch(`https://pixabay.com/api/?key=${encodeURIComponent(apiKey)}&q=${encodeURIComponent(tema)}&image_type=photo&lang=es&per_page=3`)
+                        : await fetch('/api/pexels', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ provider: 'pixabay', q: tema, per_page: 3 }) });
                     const data = await response.json();
                     
                     if (data.hits && data.hits.length > 0) {
