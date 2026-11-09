@@ -25,10 +25,9 @@
           // Make user info available globally
           const stored = sessionStorage.getItem('ark_user');
           if (!stored) {
-            const apiKey = 'aek_' + btoa(`ARK-EDU:${user.uid}:${user.email}:2026`).replace(/=/g,'').substring(0,32);
             sessionStorage.setItem('ark_user', JSON.stringify({
               uid: user.uid, name: user.displayName,
-              email: user.email, photo: user.photoURL, apiKey
+              email: user.email, photo: user.photoURL
             }));
           }
           window.ARK_USER = JSON.parse(sessionStorage.getItem('ark_user'));

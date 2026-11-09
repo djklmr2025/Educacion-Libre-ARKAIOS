@@ -1,5 +1,6 @@
 // api/apikey.js — ARKAIOS EDU Public API
 // API educativa unificada. Las credenciales de proveedores viven SOLO en variables de entorno.
+import { verifyUserKey } from './_edukey.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -152,11 +153,10 @@ function educationalTemplates() {
 }
 
 function isValidEducationalKey(key) {
-  // Compatibilidad con las aek_ existentes. Se puede endurecer con ARKAIOS_EDU_API_KEYS.
-  if (!key.startsWith('aek_') || key.length < 12) return false;
+  if (verifyUserKey(key)) return true;
   const configured = String(process.env.ARKAIOS_EDU_API_KEYS || '')
     .split(',').map(k => k.trim()).filter(Boolean);
-  return configured.length === 0 || configured.includes(key);
+  return configured.includes(key);
 }
 
 function maskKey(key) {

@@ -137,6 +137,9 @@
     <p class="text-[11px] text-slate-400 leading-relaxed">
       Los costos reales de operación —uso de tokens de IA, internet, luz, adaptaciones y demás gastos— se cubren al 100% por el <strong class="text-slate-200">ecosistema autosustentable ARKAIOS</strong>. Desde su creación, el ecosistema se ha construido para ayudar, apoyar e impulsar la verdadera educación.
     </p>
+    <p class="text-[11px] text-slate-400 leading-relaxed mt-2">
+      No obstante, se mantiene una <strong class="text-slate-200">biblioteca de tareas realizadas por agentes y estudiantes</strong>, para tomar de ahí los trabajos ya hechos que puedan servir a otros estudiantes, con un acceso personal y un botón único para subir otros trabajos y tareas en <strong class="text-slate-200">.pdf</strong> realizados en otras plataformas o fuentes. Así se alimenta la base y se forma una verdadera <strong class="text-slate-200">biblioteca de conocimientos para todos los niveles educativos</strong>.
+    </p>
   </div>
 
   <!-- PANEL DE USUARIO AUTENTICADO -->
@@ -152,9 +155,24 @@
     </div>
     
     <div class="mb-4">
-      <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1.5">Tu API Key Educativa:</div>
-      <div id="u-apikey" class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-xs text-indigo-400 font-mono break-all selection:bg-indigo-500/30">
+      <div class="flex items-center justify-between mb-1.5">
+        <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Tu API Key Educativa (para tu IA o agente):</div>
+        <button id="btn-copy-key" type="button" onclick="copyApiKey()" disabled class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/30 disabled:opacity-40">Copiar</button>
+      </div>
+      <div id="u-apikey" class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-xs text-indigo-400 font-mono break-all selection:bg-indigo-500/30 max-h-20 overflow-y-auto">
         Generando...
+      </div>
+      <div class="mt-3 bg-indigo-500/10 border border-indigo-500/25 rounded-xl p-3">
+        <p class="text-[11px] text-slate-200 font-bold mb-1">🤖 ¿Trabajas con IAs o agentes de IA?</p>
+        <p class="text-[11px] text-slate-300 leading-relaxed">
+          Dale esta llave a tu IA o agente y tendrá acceso al ecosistema ARKAIOS EDU para trabajar directamente contigo:
+          crear y llenar plantillas, generar material educativo y publicar o guardar trabajos en la Comunidad <strong class="text-white">a tu nombre</strong>.
+        </p>
+        <p class="text-[10px] text-slate-400 leading-relaxed mt-1.5 font-mono">
+          API educativa: header <span class="text-indigo-300">x-ark-api-key: &lt;tu llave&gt;</span> → /api/apikey<br>
+          Comunidad: header <span class="text-indigo-300">Authorization: Bearer &lt;tu llave&gt;</span> → /api/comunidad
+        </p>
+        <p class="text-[10px] text-amber-300/90 leading-relaxed mt-1.5">Es personal: compártela solo con tus propias IAs y agentes, no la publiques.</p>
       </div>
     </div>
 
@@ -215,10 +233,22 @@
     }
   };
 
-  function generateApiKey(uid, email) {
-    const base = btoa(`ARK-EDU:${uid}:${email}:2026`).replace(/=/g,'');
-    return `aek_${base.substring(0,32)}`;
+  async function fetchApiKey(user) {
+    const idToken = await user.getIdToken();
+    const r = await fetch('/api/comunidad?action=my-key', { headers: { Authorization: `Bearer ${idToken}` } });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.key) throw new Error(j.error || `HTTP ${r.status}`);
+    return j.key;
   }
+
+  window.copyApiKey = async function () {
+    const btn = document.getElementById('btn-copy-key');
+    const key = document.getElementById('u-apikey').textContent.trim();
+    if (!key.startsWith('aek_')) return;
+    try { await navigator.clipboard.writeText(key); btn.textContent = '¡Copiada!'; }
+    catch { btn.textContent = 'Selecciónala y copia'; }
+    setTimeout(() => { btn.textContent = 'Copiar'; }, 1800);
+  };
 
   function showUserPanel(user) {
     document.getElementById('auth-section').style.display = 'none';
@@ -227,17 +257,24 @@
     panel.classList.add('block');
     document.getElementById('u-name').textContent = user.displayName || 'Usuario Escolar';
     document.getElementById('u-email').textContent = user.email;
-    const apiKey = generateApiKey(user.uid, user.email);
-    document.getElementById('u-apikey').textContent = apiKey;
-
     sessionStorage.setItem('ark_user', JSON.stringify({
       uid: user.uid,
       name: user.displayName,
       email: user.email,
       photo: user.photoURL,
-      apiKey,
       token: user.accessToken
     }));
+
+    const keyBox = document.getElementById('u-apikey');
+    fetchApiKey(user)
+      .then((key) => {
+        keyBox.textContent = key;
+        document.getElementById('btn-copy-key').disabled = false;
+      })
+      .catch((e) => {
+        console.error('[ARKAIOS] llave aek_:', e);
+        keyBox.textContent = 'No se pudo generar tu llave ahora. Puedes entrar al sistema y volver más tarde.';
+      });
 
   }
 

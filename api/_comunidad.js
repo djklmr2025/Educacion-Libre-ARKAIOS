@@ -2,6 +2,7 @@
 // Drive es a la vez almacén de archivos y base de datos (appProperties). Cada usuario se
 // identifica con su cuenta Firebase (Google); los materiales publicados son visibles para todos.
 import crypto from "node:crypto";
+import { isUserKeyFormat, verifyUserKey, issueUserKey } from "./_edukey.js";
 
 const DRIVE = "https://www.googleapis.com/drive/v3";
 const UPLOAD = "https://www.googleapis.com/upload/drive/v3/files";
@@ -177,6 +178,11 @@ async function requireUser(req) {
     const agent = await agentFromKey(m[1].trim());
     if (!agent) throw new HttpError(401, "Llave de agente inválida o revocada.");
     return agent;
+  }
+  if (isUserKeyFormat(m[1])) {
+    const owner = verifyUserKey(m[1]);
+    if (!owner) throw new HttpError(401, "Llave aek_ inválida. Copia de nuevo la llave desde tu panel de inicio.");
+    return { uid: owner.uid, email: "", name: `🤖 IA de ${owner.name || "usuario"}`, isAdmin: false, isAgent: true };
   }
   const r = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${FIREBASE_WEB_KEY}`, {
     method: "POST",
@@ -371,6 +377,13 @@ export default async function handler(req, res) {
       if (action === "me") {
         const user = await requireUser(req);
         return res.status(200).json({ ok: true, user: { uid: user.uid, name: user.name, isAdmin: user.isAdmin }, saved: (await readSaved(user.uid)).saved });
+      }
+      if (action === "my-key") {
+        const user = await requireUser(req);
+        if (user.isAgent) throw new HttpError(403, "Solo la persona dueña de la cuenta puede ver su llave.");
+        let key;
+        try { key = issueUserKey(user); } catch { throw new HttpError(503, "Las llaves de agente no están configuradas en el servidor."); }
+        return res.status(200).json({ ok: true, key });
       }
       if (action === "saved") return res.status(200).json({ ok: true, ...(await listSaved(await requireUser(req))) });
       if (action === "agents") { requireHumanAdmin(await requireUser(req)); return res.status(200).json({ ok: true, ...(await listAgents()) }); }
