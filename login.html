@@ -195,7 +195,7 @@
 <!-- Firebase SDK -->
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-  import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+  import { getAuth, signInWithPopup, signInWithCredential, GoogleAuthProvider, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
   const firebaseConfig = {
     apiKey: "AIzaSyD-ceCiJPVnLlepVBcMBhLABJEC771uypM",
@@ -213,15 +213,69 @@
   provider.addScope('email');
   provider.addScope('profile');
 
+  // ---------- App Android ----------
+  // Google no permite iniciar sesión dentro de un WebView. En la app, el login se hace en el
+  // navegador del teléfono (?app=android) y la credencial vuelve a la app por arkaios-edu://auth.
+  const NATIVE = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()
+    ? window.Capacitor.Plugins.Arkaios : null;
+  const HANDOFF = new URLSearchParams(location.search).get('app') === 'android';
+  const APP_PACKAGE = 'com.arkaios.educacionlibre';
+  const setStatus = (text, color) => {
+    const status = document.getElementById('status');
+    status.textContent = text;
+    status.className = `mt-4 text-center text-[11px] font-mono ${color}`;
+  };
+
+  function showReturnToApp(idToken) {
+    const link = `intent://auth?t=${encodeURIComponent(idToken)}#Intent;scheme=arkaios-edu;package=${APP_PACKAGE};end`;
+    const box = document.createElement('div');
+    box.className = 'my-4 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-center';
+    box.innerHTML = '<p class="text-sm text-slate-200 font-bold mb-3">✅ Sesión iniciada. Vuelve a la app para continuar.</p>' +
+      '<a id="btn-back-app" class="inline-flex items-center justify-center w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold">Volver a la app ARKAIOS</a>';
+    box.querySelector('a').href = link;
+    document.getElementById('auth-section').replaceWith(box);
+    setTimeout(() => { location.href = link; }, 300);
+  }
+
+  async function completeNativeLogin() {
+    const m = /(?:^|&)ark_id_token=([^&]+)/.exec(location.hash.slice(1));
+    if (!m) return;
+    history.replaceState(null, '', location.pathname);
+    setStatus('// Completando inicio de sesión...', 'text-cyan-400');
+    try {
+      const result = await signInWithCredential(auth, GoogleAuthProvider.credential(decodeURIComponent(m[1])));
+      setStatus(`// Autenticado: ${result.user.email}`, 'text-emerald-400');
+      showUserPanel(result.user);
+    } catch (e) {
+      setStatus(`// No se pudo completar el inicio de sesión: ${e.message}. Inténtalo de nuevo.`, 'text-rose-400');
+    }
+  }
+  completeNativeLogin();
+
   // Educación Libre: acceso gratuito por siempre, sin membresías ni pagos.
   window.signInWithGoogle = async function() {
     const btn = document.getElementById('btn-google');
     const status = document.getElementById('status');
+    if (NATIVE) {
+      try {
+        await NATIVE.openAuth({ url: `${location.origin}/login.html?app=android` });
+        setStatus('// Se abrió el navegador: inicia sesión con Google y vuelve a la app.', 'text-cyan-400');
+      } catch (e) {
+        setStatus(`// No se pudo abrir el navegador: ${e.message}`, 'text-rose-400');
+      }
+      return;
+    }
     btn.disabled = true;
     status.textContent = '// Conectando con Google...';
     status.className = 'mt-4 text-center text-[11px] font-mono text-cyan-400';
     try {
       const result = await signInWithPopup(auth, provider);
+      if (HANDOFF) {
+        const cred = GoogleAuthProvider.credentialFromResult(result);
+        if (!cred || !cred.idToken) throw new Error('Google no devolvió la credencial para la app.');
+        showReturnToApp(cred.idToken);
+        return;
+      }
       const user = result.user;
       status.textContent = `// Autenticado: ${user.email}`;
       status.className = 'mt-4 text-center text-[11px] font-mono text-emerald-400';
@@ -283,7 +337,7 @@
   };
 
   onAuthStateChanged(auth, (user) => {
-    if (user) {
+    if (user && !HANDOFF) {
       const status = document.getElementById('status');
       status.textContent = `// Sesión activa: ${user.email}`;
       status.className = 'mt-4 text-center text-[11px] font-mono text-emerald-400';

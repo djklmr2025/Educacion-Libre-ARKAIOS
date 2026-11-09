@@ -45,6 +45,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="js/arkaios-paste-bridge.js" defer></script>
     <script src="js/arkaios-comunidad.js?v=20261109" defer></script>
+    <script src="js/arkaios-app.js?v=20261109" defer></script>
 
     <!-- FUENTES PROFESIONALES -->
     <link
@@ -3143,82 +3144,6 @@ Ejemplo:
         </div>
     </div>
 
-        <div class="puter-ai-body" id="puterTabAutofill">
-            <div style="font-size:12px; color:#475569; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
-                <strong style="color:#2563eb;">📌 Plantilla Detectada:</strong> <span id="currentTemplateNameDisplay">Ninguna seleccionada</span>
-                <br><span id="currentTemplateFieldsCount" style="font-size:11px; opacity:0.8;">Campos detectados: 0</span>
-            </div>
-
-            <div style="display:flex; flex-direction:column; gap:8px;">
-                <label style="font-size:12px; font-weight:600; color:#334155;">Tema o Instrucción para la Plantilla:</label>
-                <textarea id="aiAutofillPrompt" placeholder="Ej: Rellena esta plantilla con información sobre la Revolución Mexicana, o los datos del elemento Titanio..." style="width:100%; height:80px; padding:10px; border-radius:8px; border:1px solid #cbd5e1; font-size:12px; resize:none;"></textarea>
-            </div>
-
-            <div class="quick-actions">
-                <button class="quick-btn" onclick="setQuickPrompt('Rellena la plantilla con contenido sobre Ciencias Naturales para primaria')">🔬 Ciencias</button>
-                <button class="quick-btn" onclick="setQuickPrompt('Genera datos históricos detallados para esta plantilla')">📜 Historia</button>
-                <button class="quick-btn" onclick="setQuickPrompt('Rellena con un ejercicio práctico de matemáticas')">📐 Matemáticas</button>
-            </div>
-
-            <button class="btn-premium btn-primary" onclick="runPuterAutoFill()" id="btnPuterAutoFill" style="width:100%; margin-top:8px;">
-                <span>🪄</span>
-                <span>Generar y Rellenar Plantilla</span>
-            </button>
-
-            <div id="autofillStatus" style="font-size:11px; color:#64748b; text-align:center; display:none;"></div>
-        </div>
-
-        <div class="puter-ai-body" id="puterTabImage" style="display:none;">
-            <div style="font-size:12px; color:#475569; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
-                <strong style="color:#2563eb;">🎨 Generador de Imágenes IA (Puter)</strong>
-                <br><span style="font-size:11px; opacity:0.8;">Crea ilustraciones educativas para insertar en tus documentos.</span>
-            </div>
-
-            <div style="display:flex; flex-direction:column; gap:8px;">
-                <label style="font-size:12px; font-weight:600; color:#334155;">Descripción de la Imagen:</label>
-                <textarea id="aiImagePrompt" placeholder="Ej: Un átomo brillante estilo acuarela educativa, o un mapa antiguo..." style="width:100%; height:80px; padding:10px; border-radius:8px; border:1px solid #cbd5e1; font-size:12px; resize:none;"></textarea>
-            </div>
-
-            <button class="btn-premium btn-primary" onclick="runPuterImageGen()" id="btnPuterImageGen" style="width:100%; margin-top:8px;">
-                <span>🎨</span>
-                <span>Generar e Inyectar Imagen</span>
-            </button>
-
-            <div id="imageGenPreview" style="margin-top:10px; text-align:center; display:none;">
-                <img id="generatedImgResult" style="max-width:100%; max-height:160px; border-radius:8px; border:1px solid #e2e8f0;">
-            </div>
-        </div>
-
-        <div class="puter-ai-body" id="puterTabChat" style="display:none;">
-            <div class="puter-ai-chat-messages" id="puterChatMessages">
-                <div class="msg ai">Hola 👋 Soy el Asistente IA de ARKAIOS. ¿En qué te ayudo con esta plantilla?</div>
-            </div>
-            <div class="puter-ai-footer">
-                <input type="text" class="puter-ai-input" id="puterChatInput" placeholder="Hazme una pregunta pedagógica..." onkeydown="if(event.key==='Enter') sendPuterChatMessage()">
-                <button class="puter-ai-send" onclick="sendPuterChatMessage()">Enviar</button>
-            </div>
-        </div>
-
-        <div class="puter-ai-body" id="puterTabCoagent" style="display:none;">
-            <div style="font-size:12px; color:#475569; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
-                <strong style="color:#2563eb;">🤝 Co-Agente Gemini-Lab Omni (AETHYR)</strong>
-                <br><span style="font-size:11px; opacity:0.8;">Solicita tareas complejas, investigación o medios en tiempo real entre ambos agentes.</span>
-            </div>
-
-            <div style="display:flex; flex-direction:column; gap:8px;">
-                <label style="font-size:12px; font-weight:600; color:#334155;">Delegar Tarea a Gemini-Lab:</label>
-                <textarea id="coagentTaskPrompt" placeholder="Ej: Busca 9 imágenes en Pexels de volcanes y prepara los datos para la plantilla activa..." style="width:100%; height:80px; padding:10px; border-radius:8px; border:1px solid #cbd5e1; font-size:12px; resize:none;"></textarea>
-            </div>
-
-            <button class="btn-premium btn-primary" onclick="delegateTaskToGeminiLab()" id="btnDelegateGeminiLab" style="width:100%; margin-top:8px;">
-                <span>📡</span>
-                <span>Enviar a Gemini-Lab Omni</span>
-            </button>
-
-            <div id="coagentStatus" style="font-size:11px; color:#64748b; text-align:center; display:none; margin-top:8px;"></div>
-        </div>
-    </div>
-
     <script>
         // ===== CONEXIÓN AL DEMONIO DE AGENTES (ARKAIOS BRIDGE DAEMON) =====
         (function initAgentDaemonBridge() {
@@ -3252,6 +3177,37 @@ Ejemplo:
                 };
             } catch (err) {}
         })();
+
+        // Entrega lo que devuelve un agente (Gemini-Lab, Copiloto) a la plantilla: si ya hay una
+        // plantilla abierta que acepta imágenes, las pone ahí; si no, abre la que sugiere el agente.
+        function waitForTemplateApi(frame, timeoutMs) {
+            return new Promise((resolve) => {
+                const started = Date.now();
+                (function check() {
+                    let w = null;
+                    try { w = frame.contentWindow; } catch (e) { w = null; }
+                    if (w && typeof w.applyExternalImages === 'function' && w.document.readyState === 'complete') return resolve(w);
+                    if (Date.now() - started > timeoutMs) return resolve(null);
+                    setTimeout(check, 250);
+                })();
+            });
+        }
+
+        async function applyAgentResultToTemplate(result) {
+            const urls = (Array.isArray(result.images) ? result.images : [])
+                .map((im) => (typeof im === 'string' ? im : im && im.url))
+                .filter((u) => typeof u === 'string' && /^https:\/\//i.test(u));
+            const frame = document.getElementById('plantillaFrame');
+            const hasOpenTemplate = frame && frame.style.display !== 'none' && currentTemplate;
+            let win = hasOpenTemplate ? await waitForTemplateApi(frame, 300) : null;
+            if (!win && result.templateFile && /^[\w.-]+\.html$/.test(result.templateFile)) {
+                loadTemplate(result.templateFile);
+                win = await waitForTemplateApi(frame, 8000);
+            }
+            if (!win || !urls.length) return 0;
+            const r = win.applyExternalImages(urls, result.topic || '');
+            return typeof r === 'number' ? r : urls.length;
+        }
 
         async function delegateTaskToGeminiLab() {
             const promptInput = document.getElementById('coagentTaskPrompt').value.trim();
@@ -3287,20 +3243,10 @@ Ejemplo:
                     statusDiv.textContent = '✅ ¡Conectado con éxito a Gemini-Lab Online!';
                     
                     const result = data.geminiLabResult || data;
-                    if (result.templateFile) {
-                        loadTemplate(result.templateFile);
-                    }
-                    if (result.images && Array.isArray(result.images)) {
-                        const iframe = document.getElementById('plantillaFrame');
-                        setTimeout(() => {
-                            if (iframe && iframe.contentDocument) {
-                                const imgs = iframe.contentDocument.querySelectorAll('img');
-                                result.images.forEach((imgObj, i) => {
-                                    if (imgs[i]) imgs[i].src = imgObj.url || imgObj;
-                                });
-                            }
-                        }, 1000);
-                    }
+                    const placed = await applyAgentResultToTemplate(result);
+                    statusDiv.textContent = placed
+                        ? `✅ Gemini-Lab colocó ${placed} imagen(es) en «${result.templateLabel || currentTemplate}».`
+                        : '✅ Gemini-Lab respondió, pero no envió imágenes para colocar.';
                 } else {
                     statusDiv.textContent = '⚠️ ' + (data.error || 'Error al comunicarse con Gemini-Lab Online');
                 }
