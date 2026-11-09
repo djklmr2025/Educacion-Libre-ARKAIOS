@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plantilla Carta Horizontal · 1 grande + 3</title>
+<style>
+  :root {
+    --ink: #1e293b;
+    --muted: #64748b;
+    --accent: #4f46e5;
+    --accent-soft: #eef2ff;
+    --line: #cbd5e1;
+    --bg: #e2e8f0;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; color: var(--ink); background: var(--bg); }
+
+  .toolbar {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center;
+    padding: 10px 16px; background: #fff; border-bottom: 1px solid var(--line);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, .06);
+  }
+  .toolbar label { font-size: 13px; font-weight: 600; display: flex; gap: 6px; align-items: center; }
+  .toolbar select, .toolbar input[type=text], .toolbar input[type=number] {
+    font: inherit; font-size: 13px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: #fff;
+  }
+  .pages-group { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .pages-group button { border: 0; background: #fff; padding: 6px 11px; font-weight: 800; cursor: pointer; }
+  .pages-group button:hover { background: var(--accent-soft); }
+  .pages-group span { padding: 0 10px; font-weight: 700; min-width: 28px; text-align: center; }
+  .btn {
+    border: 0; border-radius: 8px; padding: 8px 14px; font-weight: 700; cursor: pointer; font-size: 13px;
+    background: var(--accent-soft); color: var(--accent);
+  }
+  .btn:hover { filter: brightness(.95); }
+  .btn.primary { background: var(--accent); color: #fff; }
+  .btn:disabled { opacity: .55; cursor: wait; }
+  .hint { font-size: 12px; color: var(--muted); width: 100%; margin: 0; }
+  .ai-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; width: 100%; }
+  .ai-row input[type=text] { flex: 1 1 260px; font: inherit; font-size: 13px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; }
+  .ai-row input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .ai-row input[type=number] { width: 70px; }
+  .ai-status { font-size: 12px; color: var(--muted); }
+
+  .stage { padding: 24px 16px 48px; overflow-x: auto; }
+  .page {
+    position: relative; width: 11in; height: 8.5in; margin: 0 auto 28px; background: #fff;
+    padding: 0.4in; display: flex; flex-direction: column;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, .18);
+  }
+  .page-num { position: absolute; top: -20px; left: 0; font-size: 12px; color: var(--muted); font-weight: 700; }
+  .page-title {
+    margin: 0 0 0.15in; text-align: center; font-size: 20pt; font-weight: 800; outline: none;
+    border-bottom: 2px solid var(--ink); padding-bottom: 4pt; min-height: 1.2em;
+  }
+  .page-title:empty::before { content: attr(data-placeholder); color: #94a3b8; }
+  .no-title .page-title { display: none; }
+  .layout { flex: 1; display: flex; gap: 0.18in; align-items: center; justify-content: center; min-height: 0; }
+  .col-right { display: flex; flex-direction: column; gap: 0.18in; justify-content: center; }
+
+  .slot-wrap { display: flex; flex-direction: column; align-items: center; }
+  .slot {
+    position: relative; overflow: hidden; background: #f8fafc;
+    border: 2px dashed var(--line); border-radius: 6px; cursor: pointer; outline: none;
+    display: flex; align-items: center; justify-content: center; text-align: center;
+  }
+  .slot.selected { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79, 70, 229, .25); }
+  .slot.dragover { background: var(--accent-soft); }
+  .slot.filled { border-style: solid; border-color: transparent; background: #fff; cursor: grab; touch-action: none; }
+  .slot.filled.selected { border-color: var(--accent); }
+  .slot.swap-source { opacity: .45; }
+  .slot.swap-target { outline: 3px dashed var(--accent); outline-offset: 3px; background: var(--accent-soft); }
+  .slot img { width: 100%; height: 100%; display: block; pointer-events: none; }
+  .slot .empty-msg { font-size: 12px; color: var(--muted); padding: 8px; line-height: 1.4; pointer-events: none; }
+  .slot .empty-msg b { color: var(--accent); font-size: 14px; }
+  .slot-actions { position: absolute; top: 6px; right: 6px; display: none; gap: 4px; }
+  .slot:hover .slot-actions { display: flex; }
+  .slot-actions button {
+    border: 0; border-radius: 6px; padding: 4px 7px; font-size: 12px; cursor: pointer;
+    background: rgba(15, 23, 42, .75); color: #fff;
+  }
+  .caption { margin-top: 3pt; font-size: 10pt; text-align: center; outline: none; min-height: 1.2em; width: 100%; }
+  .caption:empty::before { content: "Pie de imagen (opcional)"; color: #94a3b8; }
+  .no-captions .caption { display: none; }
+  .toast {
+    position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff;
+    padding: 8px 14px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 20;
+  }
+  .toast.show { opacity: 1; }
+
+  @page { size: letter landscape; margin: 0; }
+  @media print {
+    body { background: #fff; }
+    .toolbar, .toast, .slot-actions, .empty-msg, .page-num { display: none !important; }
+    .stage { padding: 0; overflow: visible; }
+    .page { box-shadow: none; margin: 0; break-after: page; page-break-after: always; }
+    .page:last-child { break-after: auto; page-break-after: auto; }
+    .slot { border: none !important; box-shadow: none !important; background: transparent; }
+    .slot:not(.filled) { border: 1px dashed #cbd5e1 !important; }
+    .caption:empty, .page-title:empty { visibility: hidden; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+  <div class="toolbar">
+    <label>Hojas:
+      <span class="pages-group">
+        <button id="pageMinus" title="Quitar la última hoja">−</button><span id="pageCount">1</span><button id="pagePlus" title="Agregar hoja">+</button>
+      </span>
+    </label>
+    <label>Foto grande:
+      <select id="bigSel">
+        <option value="full">Todo el alto</option>
+        <option value="1.3333">4:3</option>
+        <option value="1.7778">16:9</option>
+      </select>
+    </label>
+    <label>Fotos chicas:
+      <select id="smallSel">
+        <option value="1.7778">Rectángulo 16:9</option>
+        <option value="1.3333">Rectángulo 4:3</option>
+        <option value="1">Cuadrado</option>
+      </select>
+    </label>
+    <label>Ajuste:
+      <select id="fitSel">
+        <option value="auto">Auto (detecta la foto)</option>
+        <option value="contain">Completa (sin recortar)</option>
+        <option value="cover">Llenar (recorta)</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="titleChk" checked> Título</label>
+    <label><input type="checkbox" id="capChk"> Pies de imagen</label>
+    <button class="btn" id="uploadBtn">📁 Subir fotos</button>
+    <button class="btn" id="clearAllBtn">🧹 Vaciar</button>
+    <button class="btn primary" id="printBtn">🖨️ Imprimir / PDF</button>
+    <div class="ai-row">
+      <input type="text" id="topicInput" placeholder="Tema: ej. volcanes de México, sistema solar…" maxlength="200">
+      <label title="Vacío = llenar los recuadros vacíos (o una hoja nueva si todo está lleno)">Cantidad <input type="number" id="qtyInput" min="1" max="40" placeholder="auto"></label>
+      <button class="btn primary" id="autoFillBtn">🔍 Autollenar</button>
+      <button class="btn" id="aiGenBtn">🎨 Generar con IA</button>
+      <span class="ai-status" id="aiStatus"></span>
+    </div>
+    <p class="hint">Cada hoja tiene <b>1 foto grande + 3 chicas</b>. Si agregas más fotos de las que caben, <b>se crean hojas nuevas</b> solas. <b>Arrastra una imagen a otro recuadro</b> (también de otra hoja) para moverla o intercambiarla. Clic en un recuadro + <b>Ctrl+V</b> para pegar, doble clic para elegir archivos, o arrastra archivos encima.</p>
+  </div>
+
+  <div class="stage" id="pages"></div>
+
+  <input type="file" id="fileInput" accept="image/*" multiple hidden>
+  <div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const PER_PAGE = 4;
+  const MAX_PAGES = 30;
+  const PAGE_IN = { w: 11, h: 8.5, margin: 0.4 };
+  const TITLE_IN = 0.62;
+  const CAPTION_IN = 0.26;
+  const GAP_IN = 0.18;
+  const AUTO_FILL_TOLERANCE = 0.12;
+  const SAFE_SRC = /^(https?:|data:image\/|blob:)/i;
+  const PEXELS_PROXY = '/api/pexels';
+  const PUTER_SDK = 'https://js.puter.com/v2/';
+
+  const blank = (n, v) => Array(n).fill(v);
+  const state = {
+    pages: 1,
+    big: 'full',
+    small: 1.7778,
+    fit: 'auto',
+    showTitle: true,
+    showCaptions: false,
+    titles: [''],
+    images: blank(PER_PAGE, null),
+    fits: blank(PER_PAGE, null),
+    pos: blank(PER_PAGE, null),
+    captions: blank(PER_PAGE, ''),
+    selected: 0
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const pagesEl = $('pages');
+  const fileInput = $('fileInput');
+  const total = () => state.pages * PER_PAGE;
+
+  function toast(msg) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  // ---------- Medidas (pulgadas) ----------
+  function layoutSize() {
+    const W = PAGE_IN.w - PAGE_IN.margin * 2;
+    const H = PAGE_IN.h - PAGE_IN.margin * 2 - (state.showTitle ? TITLE_IN : 0);
+    const cap = state.showCaptions ? CAPTION_IN : 0;
+    const smallH = (H - GAP_IN * 2 - cap * 3) / 3;
+    const smallW = smallH * state.small;
+    const bigW = W - GAP_IN - smallW;
+    let bigH = H - cap;
+    if (state.big !== 'full') bigH = Math.min(bigH, bigW / Number(state.big));
+    return { small: { w: smallW, h: smallH }, big: { w: bigW, h: bigH } };
+  }
+
+  function slotRatio(i) {
+    const s = layoutSize();
+    const box = i % PER_PAGE === 0 ? s.big : s.small;
+    return box.w / box.h;
+  }
+
+  // ---------- Estado ----------
+  function resizeArrays(pages) {
+    const n = pages * PER_PAGE;
+    const fit = (arr, v) => Array.from({ length: n }, (_, i) => (i < arr.length ? arr[i] : v));
+    state.images = fit(state.images, null);
+    state.fits = fit(state.fits, null);
+    state.pos = fit(state.pos, null);
+    state.captions = fit(state.captions, '');
+    state.titles = Array.from({ length: pages }, (_, p) => state.titles[p] || '');
+    state.pages = pages;
+    if (state.selected >= n) state.selected = 0;
+    $('pageCount').textContent = pages;
+  }
+
+  function assignImage(i, src) {
+    state.images[i] = src;
+    state.fits[i] = null;
+    state.pos[i] = null;
+  }
+
+  function syncTextFromDom() {
+    pagesEl.querySelectorAll('.caption').forEach((c) => { state.captions[Number(c.dataset.i)] = c.textContent.trim(); });
+    pagesEl.querySelectorAll('.page-title').forEach((t) => { state.titles[Number(t.dataset.p)] = t.textContent.trim(); });
+  }
+
+  function firstEmpty(from = 0) {
+    for (let i = from; i < total(); i++) if (!state.images[i]) return i;
+    return -1;
+  }
+
+  // Coloca una lista de imágenes: la primera en `start` (si se indica), luego en los vacíos; crea hojas si faltan.
+  function placeImages(list, start = -1) {
+    const queue = (list || []).filter((u) => typeof u === 'string' && SAFE_SRC.test(u));
+    if (!queue.length) return 0;
+    syncTextFromDom();
+    const placed = queue.length;
+    if (start >= 0 && start < total()) assignImage(start, queue.shift());
+    let i = firstEmpty(0);
+    while (queue.length) {
+      if (i === -1) {
+        if (state.pages >= MAX_PAGES) { toast('Máximo ' + MAX_PAGES + ' hojas.'); break; }
+        const before = total();
+        resizeArrays(state.pages + 1);
+        i = before;
+      }
+      assignImage(i, queue.shift());
+      i = firstEmpty(i + 1);
+    }
+    const next = firstEmpty(0);
+    state.selected = next >= 0 ? next : Math.max(0, start);
+    render();
+    return placed;
+  }
+
+  // ---------- Dibujo ----------
+  function buildSlot(i, box) {
+    const wrap = document.createElement('div');
+    wrap.className = 'slot-wrap';
+    wrap.style.width = box.w + 'in';
+
+    const slot = document.createElement('div');
+    slot.className = 'slot' + (state.images[i] ? ' filled' : '') + (i === state.selected ? ' selected' : '');
+    slot.tabIndex = 0;
+    slot.dataset.i = i;
+    slot.style.width = box.w + 'in';
+    slot.style.height = box.h + 'in';
+
+    if (state.images[i]) {
+      const img = document.createElement('img');
+      img.src = state.images[i];
+      img.alt = state.captions[i] || 'Imagen ' + (i + 1);
+      img.draggable = false;
+      applyFit(img, i);
+      if (!img.complete) img.addEventListener('load', () => applyFit(img, i), { once: true });
+      slot.appendChild(img);
+      const actions = document.createElement('div');
+      actions.className = 'slot-actions';
+      actions.innerHTML = '<button data-act="fit" title="Alternar: completa / llenar">⤢</button><button data-act="replace" title="Cambiar">📁</button><button data-act="clear" title="Quitar">✕</button>';
+      slot.appendChild(actions);
+    } else {
+      const msg = document.createElement('div');
+      msg.className = 'empty-msg';
+      const label = i % PER_PAGE === 0 ? 'Foto grande' : 'Foto ' + (i % PER_PAGE + 1);
+      msg.innerHTML = '<b>' + label + '</b><br>Clic + Ctrl+V para pegar<br>doble clic o arrastra un archivo';
+      slot.appendChild(msg);
+    }
+    wrap.appendChild(slot);
+
+    const cap = document.createElement('div');
+    cap.className = 'caption';
+    cap.contentEditable = 'true';
+    cap.dataset.i = i;
+    cap.textContent = state.captions[i];
+    wrap.appendChild(cap);
+    return wrap;
+  }
+
+  function render() {
+    syncTextFromDom();
+    const size = layoutSize();
+    pagesEl.innerHTML = '';
+    for (let p = 0; p < state.pages; p++) {
+      const page = document.createElement('div');
+      page.className = 'page' + (state.showTitle ? '' : ' no-title') + (state.showCaptions ? '' : ' no-captions');
+
+      const num = document.createElement('div');
+      num.className = 'page-num';
+      num.textContent = 'Hoja ' + (p + 1) + ' de ' + state.pages;
+      page.appendChild(num);
+
+      const title = document.createElement('h1');
+      title.className = 'page-title';
+      title.contentEditable = 'true';
+      title.dataset.p = p;
+      title.dataset.placeholder = 'Escribe un título (opcional)';
+      title.textContent = state.titles[p];
+      page.appendChild(title);
+
+      const layout = document.createElement('div');
+      layout.className = 'layout';
+      const base = p * PER_PAGE;
+      layout.appendChild(buildSlot(base, size.big));
+      const right = document.createElement('div');
+      right.className = 'col-right';
+      for (let k = 1; k < PER_PAGE; k++) right.appendChild(buildSlot(base + k, size.small));
+      layout.appendChild(right);
+      page.appendChild(layout);
+      pagesEl.appendChild(page);
+    }
+  }
+
+  function effectiveFit(img, i) {
+    if (state.fits[i]) return state.fits[i];
+    if (state.fit !== 'auto') return state.fit;
+    if (!img || !img.naturalWidth) return 'contain';
+    const diff = Math.abs((img.naturalWidth / img.naturalHeight) / slotRatio(i) - 1);
+    return diff <= AUTO_FILL_TOLERANCE ? 'cover' : 'contain';
+  }
+
+  function applyFit(img, i) {
+    const fit = effectiveFit(img, i);
+    img.style.objectFit = fit;
+    const p = state.pos[i];
+    img.style.objectPosition = p ? p.x + '% ' + p.y + '%' : '50% 50%';
+    img.closest('.slot')?.classList.toggle('pannable', fit === 'cover');
+  }
+
+  function selectSlot(i) {
+    state.selected = i;
+    pagesEl.querySelectorAll('.slot').forEach((s) => s.classList.toggle('selected', Number(s.dataset.i) === i));
+  }
+
+  // ---------- Archivos / pegar ----------
+  function readFiles(files) {
+    const list = Array.from(files || []).filter((f) => f.type.startsWith('image/'));
+    if (!list.length) { toast('Eso no es una imagen.'); return Promise.resolve([]); }
+    return Promise.all(list.map((f) => new Promise((resolve) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result);
+      r.onerror = () => resolve(null);
+      r.readAsDataURL(f);
+    }))).then((srcs) => srcs.filter(Boolean));
+  }
+
+  function loadFilesInto(files, start) {
+    readFiles(files).then((srcs) => {
+      if (!srcs.length) return;
+      const pagesBefore = state.pages;
+      placeImages(srcs, start);
+      if (state.pages > pagesBefore) toast('Se agregaron ' + (state.pages - pagesBefore) + ' hoja(s) nuevas.');
+    });
+  }
+
+  document.addEventListener('paste', (e) => {
+    const active = document.activeElement;
+    if (active && (active.isContentEditable || /^(INPUT|TEXTAREA)$/.test(active.tagName))) return;
+    const files = Array.from(e.clipboardData?.items || [])
+      .filter((it) => it.type.startsWith('image/'))
+      .map((it) => it.getAsFile());
+    if (files.length) { e.preventDefault(); loadFilesInto(files, state.selected); return; }
+    const text = (e.clipboardData?.getData('text') || '').trim();
+    if (SAFE_SRC.test(text) && !/^blob:/i.test(text)) { e.preventDefault(); placeImages([text], state.selected); return; }
+    toast('El portapapeles no contiene una imagen.');
+  });
+
+  pagesEl.addEventListener('click', (e) => {
+    const slot = e.target.closest('.slot');
+    if (!slot) return;
+    const i = Number(slot.dataset.i);
+    const act = e.target.closest('button')?.dataset.act;
+    if (act === 'clear') { syncTextFromDom(); assignImage(i, null); state.selected = i; render(); return; }
+    if (act === 'fit') {
+      const img = slot.querySelector('img');
+      state.fits[i] = effectiveFit(img, i) === 'cover' ? 'contain' : 'cover';
+      applyFit(img, i);
+      toast(state.fits[i] === 'cover' ? 'Llenar: arrastra la foto dentro del recuadro para elegir qué parte se ve.' : 'Completa: se ve la foto entera.');
+      return;
+    }
+    if (act === 'replace') { selectSlot(i); fileInput.click(); return; }
+    selectSlot(i);
+  });
+
+  pagesEl.addEventListener('dblclick', (e) => {
+    const slot = e.target.closest('.slot');
+    if (!slot || e.target.closest('button')) return;
+    selectSlot(Number(slot.dataset.i));
+    fileInput.click();
+  });
+
+  fileInput.addEventListener('change', () => {
+    loadFilesInto(fileInput.files, state.selected);
+    fileInput.value = '';
+  });
+
+  pagesEl.addEventListener('dragover', (e) => {
+    const slot = e.target.closest('.slot');
+    if (!slot) return;
+    e.preventDefault();
+    slot.classList.add('dragover');
+  });
+  pagesEl.addEventListener('dragleave', (e) => e.target.closest('.slot')?.classList.remove('dragover'));
+  pagesEl.addEventListener('drop', (e) => {
+    const slot = e.target.closest('.slot');
+    if (!slot) return;
+    e.preventDefault();
+    slot.classList.remove('dragover');
+    const i = Number(slot.dataset.i);
+    if (e.dataTransfer.files?.length) { loadFilesInto(e.dataTransfer.files, i); return; }
+    const url = (e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text') || '').trim();
+    if (url) placeImages([url], i);
+  });
+
+  // ---------- Arrastrar: encuadrar dentro / mover-intercambiar fuera ----------
+  let gesture = null;
+
+  function slotAt(x, y) {
+    const el = document.elementFromPoint(x, y);
+    const slot = el && el.closest && el.closest('.slot');
+    return slot ? Number(slot.dataset.i) : -1;
+  }
+
+  function swapSlots(a, b) {
+    syncTextFromDom();
+    ['images', 'fits', 'pos', 'captions'].forEach((key) => {
+      const arr = state[key].slice();
+      [arr[a], arr[b]] = [arr[b], arr[a]];
+      state[key] = arr;
+    });
+    state.selected = b;
+    render();
+  }
+
+  function clearSwapMarks() {
+    pagesEl.querySelectorAll('.swap-source, .swap-target').forEach((el) => el.classList.remove('swap-source', 'swap-target'));
+  }
+
+  pagesEl.addEventListener('pointerdown', (e) => {
+    const slot = e.target.closest('.slot.filled');
+    if (!slot || e.target.closest('button') || e.button !== 0) return;
+    const i = Number(slot.dataset.i);
+    gesture = {
+      i, slot, img: slot.querySelector('img'),
+      pannable: slot.classList.contains('pannable'),
+      x0: e.clientX, y0: e.clientY,
+      start: state.pos[i] || { x: 50, y: 50 },
+      origPos: state.pos[i],
+      rect: slot.getBoundingClientRect(),
+      target: -1
+    };
+    slot.setPointerCapture(e.pointerId);
+  });
+
+  pagesEl.addEventListener('pointermove', (e) => {
+    if (!gesture) return;
+    const g = gesture;
+    const over = slotAt(e.clientX, e.clientY);
+    if (over !== g.i) {
+      if (g.pannable) { state.pos[g.i] = g.origPos; applyFit(g.img, g.i); }
+      clearSwapMarks();
+      g.slot.classList.add('swap-source');
+      g.target = over;
+      if (over >= 0) pagesEl.querySelector('.slot[data-i="' + over + '"]')?.classList.add('swap-target');
+      return;
+    }
+    if (g.target !== -1) { clearSwapMarks(); g.target = -1; }
+    if (!g.pannable) return;
+    const clamp = (v) => Math.max(0, Math.min(100, v));
+    const dx = ((e.clientX - g.x0) / g.rect.width) * 100;
+    const dy = ((e.clientY - g.y0) / g.rect.height) * 100;
+    state.pos[g.i] = { x: clamp(g.start.x - dx), y: clamp(g.start.y - dy) };
+    g.img.style.objectPosition = state.pos[g.i].x + '% ' + state.pos[g.i].y + '%';
+  });
+
+  pagesEl.addEventListener('pointerup', () => {
+    if (!gesture) return;
+    const { i, target } = gesture;
+    gesture = null;
+    clearSwapMarks();
+    if (target >= 0 && target !== i) {
+      swapSlots(i, target);
+      toast('Imagen ' + (i + 1) + ' ⇄ recuadro ' + (target + 1));
+    }
+  });
+  pagesEl.addEventListener('pointercancel', () => { gesture = null; clearSwapMarks(); });
+
+  // ---------- Controles ----------
+  $('pagePlus').addEventListener('click', () => {
+    if (state.pages >= MAX_PAGES) { toast('Máximo ' + MAX_PAGES + ' hojas.'); return; }
+    syncTextFromDom();
+    resizeArrays(state.pages + 1);
+    render();
+  });
+  $('pageMinus').addEventListener('click', () => {
+    if (state.pages <= 1) return;
+    syncTextFromDom();
+    const lastHasImages = state.images.slice(total() - PER_PAGE).some(Boolean);
+    if (lastHasImages && !confirm('La última hoja tiene imágenes. ¿Quitarla?')) return;
+    resizeArrays(state.pages - 1);
+    render();
+  });
+  $('bigSel').addEventListener('change', (e) => { state.big = e.target.value; render(); });
+  $('smallSel').addEventListener('change', (e) => { state.small = Number(e.target.value); render(); });
+  $('fitSel').addEventListener('change', (e) => { state.fit = e.target.value; render(); });
+  $('titleChk').addEventListener('change', (e) => { state.showTitle = e.target.checked; render(); });
+  $('capChk').addEventListener('change', (e) => { state.showCaptions = e.target.checked; render(); });
+  $('uploadBtn').addEventListener('click', () => fileInput.click());
+  $('clearAllBtn').addEventListener('click', () => {
+    if (!confirm('¿Vaciar todas las imágenes y dejar una sola hoja?')) return;
+    state.images = []; state.fits = []; state.pos = []; state.captions = []; state.titles = [];
+    resizeArrays(1);
+    state.selected = 0;
+    render();
+  });
+  $('printBtn').addEventListener('click', () => window.print());
+
+  // ---------- Autollenar / IA ----------
+  const setStatus = (msg) => { $('aiStatus').textContent = msg; };
+
+  function getTopic() {
+    const t = $('topicInput').value.trim();
+    if (!t) { toast('Escribe primero un tema.'); $('topicInput').focus(); }
+    return t;
+  }
+
+  function wantedCount() {
+    const asked = parseInt($('qtyInput').value, 10);
+    if (asked > 0) return Math.min(40, asked);
+    const empties = state.images.filter((x) => !x).length;
+    return empties || PER_PAGE;
+  }
+
+  async function searchPexels(q, n) {
+    const res = await fetch(PEXELS_PROXY, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ q, per_page: n, orientation: 'landscape' })
+    });
+    if (!res.ok) throw new Error('Pexels ' + res.status);
+    const data = await res.json();
+    return (data.photos || []).map((p) => p.src?.large2x || p.src?.large).filter(Boolean);
+  }
+
+  async function searchWikimedia(q, n) {
+    const url = 'https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*' +
+      '&generator=search&gsrnamespace=6&gsrlimit=' + Math.min(50, n * 3) +
+      '&gsrsearch=' + encodeURIComponent(q + ' filetype:bitmap') +
+      '&prop=imageinfo&iiprop=url|size&iiurlwidth=1280';
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Wikimedia ' + res.status);
+    const pages = Object.values((await res.json()).query?.pages || {});
+    return pages
+      .map((p) => p.imageinfo?.[0])
+      .filter((ii) => ii && ii.width >= ii.height)
+      .map((ii) => ii.thumburl || ii.url)
+      .slice(0, n);
+  }
+
+  async function autoFill() {
+    const q = getTopic();
+    if (!q) return;
+    const n = wantedCount();
+    const btn = $('autoFillBtn');
+    btn.disabled = true;
+    setStatus('🔍 Buscando ' + n + ' foto(s) de "' + q + '"…');
+    try {
+      let urls = [];
+      let source = 'Pexels';
+      try { urls = await searchPexels(q, n); } catch (err) { console.warn(err); }
+      if (!urls.length) {
+        setStatus('🔍 Buscando en Wikimedia Commons…');
+        urls = await searchWikimedia(q, n);
+        source = 'Wikimedia Commons';
+      }
+      if (!urls.length) { setStatus('⚠️ No se encontraron imágenes. Prueba otro tema.'); return; }
+      const pagesBefore = state.pages;
+      const placed = placeImages(urls);
+      const added = state.pages - pagesBefore;
+      setStatus('✅ ' + placed + ' imagen(es) de ' + source + (added ? ' · ' + added + ' hoja(s) nueva(s)' : ''));
+    } catch (err) {
+      console.error(err);
+      setStatus('❌ No se pudieron buscar imágenes: ' + err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function loadPuter() {
+    if (window.puter) return Promise.resolve(window.puter);
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = PUTER_SDK;
+      s.onload = () => (window.puter ? resolve(window.puter) : reject(new Error('Puter no disponible')));
+      s.onerror = () => reject(new Error('No se pudo cargar Puter'));
+      document.head.appendChild(s);
+    });
+  }
+
+  async function generateAI() {
+    const q = getTopic();
+    if (!q) return;
+    const target = state.selected < total() ? state.selected : 0;
+    const shape = target % PER_PAGE === 0 && state.big === 'full' ? 'vertical' : 'horizontal';
+    const btn = $('aiGenBtn');
+    btn.disabled = true;
+    setStatus('🎨 Generando imagen para el recuadro ' + (target + 1) + '… (puede tardar)');
+    try {
+      const puter = await loadPuter();
+      const imgEl = await puter.ai.txt2img(q + ', ilustración educativa ' + shape + ', colores claros, sin texto');
+      if (!imgEl?.src) throw new Error('La IA no devolvió imagen');
+      placeImages([imgEl.src], target);
+      setStatus('✅ Imagen IA colocada en el recuadro ' + (target + 1));
+    } catch (err) {
+      console.error(err);
+      setStatus('❌ Error al generar: ' + (err.message || err));
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  $('autoFillBtn').addEventListener('click', autoFill);
+  $('aiGenBtn').addEventListener('click', generateAI);
+  $('topicInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') autoFill(); });
+
+  // ---------- Integración con el panel ARKAIOS ----------
+  window.applyExternalImages = function (urls) { return placeImages(urls); };
+
+  window.addEventListener('message', (e) => {
+    const d = e.data || {};
+    if (/^ARKAIOS_(PIXABAY|FREEPIK|PEXELS)_IMAGES$/.test(d.type) && Array.isArray(d.images)) {
+      window.applyExternalImages(d.images);
+    }
+  });
+
+  window.ARKAIOS_getData = function () {
+    syncTextFromDom();
+    return {
+      template: 'plantilla-carta-horizontal-1grande-3',
+      pages: state.pages, big: state.big, small: state.small, fit: state.fit,
+      showTitle: state.showTitle, showCaptions: state.showCaptions,
+      titles: state.titles.slice(), images: state.images.slice(), fits: state.fits.slice(),
+      pos: state.pos.slice(), captions: state.captions.slice()
+    };
+  };
+
+  window.ARKAIOS_setData = function (data) {
+    if (!data || typeof data !== 'object') return;
+    const pages = Math.min(MAX_PAGES, Math.max(1, parseInt(data.pages, 10) || 1));
+    const n = pages * PER_PAGE;
+    const safeSrc = (s) => (typeof s === 'string' && SAFE_SRC.test(s) ? s : null);
+    state.big = ['full', '1.3333', '1.7778'].includes(String(data.big)) ? String(data.big) : 'full';
+    state.small = [1.7778, 1.3333, 1].includes(Number(data.small)) ? Number(data.small) : 1.7778;
+    state.fit = ['auto', 'cover', 'contain'].includes(data.fit) ? data.fit : 'auto';
+    state.showTitle = data.showTitle !== false;
+    state.showCaptions = !!data.showCaptions;
+    state.images = Array.from({ length: n }, (_, i) => safeSrc(data.images?.[i]));
+    state.fits = Array.from({ length: n }, (_, i) => (['cover', 'contain'].includes(data.fits?.[i]) ? data.fits[i] : null));
+    state.pos = Array.from({ length: n }, (_, i) => {
+      const p = data.pos?.[i];
+      return p && Number.isFinite(p.x) && Number.isFinite(p.y) ? { x: p.x, y: p.y } : null;
+    });
+    state.captions = Array.from({ length: n }, (_, i) => String(data.captions?.[i] || ''));
+    state.titles = Array.from({ length: pages }, (_, p) => String(data.titles?.[p] || ''));
+    state.selected = 0;
+    pagesEl.innerHTML = '';
+    resizeArrays(pages);
+    syncControls();
+    render();
+  };
+
+  function syncControls() {
+    $('bigSel').value = state.big;
+    $('smallSel').value = String(state.small);
+    $('fitSel').value = state.fit;
+    $('titleChk').checked = state.showTitle;
+    $('capChk').checked = state.showCaptions;
+    $('pageCount').textContent = state.pages;
+  }
+
+  syncControls();
+  render();
+})();
+</script>
+</body>
+</html>
