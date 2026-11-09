@@ -58,6 +58,16 @@
           "target": "plantilla-imagenes-v2.html"
         },
         {
+          "label": "Carta 1 a 5 Imágenes (16:9)",
+          "icon": "🖨️",
+          "target": "plantilla-carta-1a5-imagenes.html"
+        },
+        {
+          "label": "Carta Horizontal 1 Grande + 3",
+          "icon": "🖼️",
+          "target": "plantilla-carta-horizontal-1grande-3.html"
+        },
+        {
           "label": "Frutas Kínder (tarjetas)",
           "icon": "🍎",
           "target": "plantilla-cuadros-frutas-kinder.html"
