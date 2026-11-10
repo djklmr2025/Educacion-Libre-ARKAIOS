@@ -431,6 +431,9 @@ async function streamPdf(id, res) {
   return res.status(200).send(Buffer.from(await r.arrayBuffer()));
 }
 
+// Reusados por api/_task-inbox.js (misma nube y mismas llaves de agente).
+export { HttpError, drive, uploadFile, requireUser, quote };
+
 export default async function handler(req, res) {
   const action = String(req.query?.action || "list");
   try {

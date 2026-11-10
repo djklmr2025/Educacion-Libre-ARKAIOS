@@ -1503,7 +1503,7 @@
 	                        <div id="reqUploadPrompt">
 	                            <div style="font-size: 32px; margin-bottom: 6px;">📎</div>
 	                            <p style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Haz clic o arrastra tu archivo aquí</p>
-	                            <p style="font-size: 12px; color: var(--text-muted);">Formatos admitidos: PDF, JPG, PNG, WEBP (hasta 15 MB)</p>
+	                            <p style="font-size: 12px; color: var(--text-muted);">Formatos admitidos: foto (JPG, PNG, WEBP; se reduce sola) o PDF hasta 2.8 MB</p>
 	                        </div>
 	                        <div id="reqFilePreview" style="display: none; align-items: center; justify-content: center; gap: 12px;">
 	                            <img id="reqPreviewImg" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-color); display: none;" />
@@ -1520,6 +1520,8 @@
 	                <div id="reqSuccessMsg" style="display: none; padding: 14px 18px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; color: #047857; font-size: 13px; line-height: 1.5; margin-bottom: 14px;">
 	                    🎉 <b>¡Solicitud guardada con éxito!</b> Tu narración y archivo han quedado registrados en el sistema para que Claude y el equipo de Arkaios puedan crear la plantilla.
 	                </div>
+
+	                <div id="reqErrorMsg" role="alert" style="display: none; padding: 14px 18px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; color: #b91c1c; font-size: 13px; line-height: 1.5; margin-bottom: 14px;"></div>
 
 	                <div class="modal-actions" style="margin-top: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
 	                    <button type="button" class="btn-premium btn-secondary" onclick="copyClaudePrompt()" id="btnCopyPrompt" style="display: none; font-size: 12.5px;">
@@ -2260,6 +2262,7 @@
             clearReqFile();
             const successMsg = document.getElementById('reqSuccessMsg');
             if (successMsg) successMsg.style.display = 'none';
+            showReqError('');
             const copyBtn = document.getElementById('btnCopyPrompt');
             if (copyBtn) copyBtn.style.display = 'none';
             const submitBtn = document.getElementById('btnSubmitReq');
@@ -2285,22 +2288,56 @@
             processReqFile(file);
         }
 
-        function processReqFile(file) {
-            if (file.size > 15 * 1024 * 1024) {
-                alert('El archivo supera los 15 MB. Por favor elige uno más ligero.');
-                return;
-            }
-            const reader = new FileReader();
-            reader.onload = function (evt) {
+        const REQ_MAX_FILE_BYTES = 2.8 * 1024 * 1024;
+        const REQ_MAX_IMAGE_SIDE = 1600;
+
+        function showReqError(message) {
+            const box = document.getElementById('reqErrorMsg');
+            if (!box) return;
+            box.textContent = message;
+            box.style.display = message ? 'block' : 'none';
+        }
+
+        function readAsDataUrl(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(reader.error);
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        async function shrinkImage(file) {
+            const bitmap = await createImageBitmap(file);
+            const scale = Math.min(1, REQ_MAX_IMAGE_SIDE / Math.max(bitmap.width, bitmap.height));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(bitmap.width * scale);
+            canvas.height = Math.round(bitmap.height * scale);
+            canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+            bitmap.close();
+            return new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.82));
+        }
+
+        async function processReqFile(file) {
+            showReqError('');
+            try {
+                const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+                if (!isPdf && !file.type.startsWith('image/')) throw new Error('Solo se aceptan fotos (JPG, PNG, WEBP) o PDF.');
+                const blob = isPdf ? file : await shrinkImage(file);
+                if (!blob || blob.size > REQ_MAX_FILE_BYTES) {
+                    throw new Error(isPdf ? 'El PDF pesa más de 2.8 MB. Comprímelo (ej. ilovepdf.com) e inténtalo de nuevo.' : 'No se pudo reducir la imagen lo suficiente.');
+                }
                 reqCurrentFile = {
-                    name: file.name,
-                    size: (file.size / 1024).toFixed(1) + ' KB',
-                    type: file.type,
-                    dataUrl: evt.target.result
+                    name: isPdf ? file.name : file.name.replace(/\.[^.]+$/, '') + '.jpg',
+                    size: (blob.size / 1024).toFixed(1) + ' KB',
+                    type: isPdf ? 'application/pdf' : 'image/jpeg',
+                    dataUrl: await readAsDataUrl(blob)
                 };
                 renderReqFilePreview();
-            };
-            reader.readAsDataURL(file);
+            } catch (err) {
+                clearReqFile();
+                showReqError(err.message || 'No se pudo leer el archivo.');
+            }
         }
 
         function renderReqFilePreview() {
@@ -2335,7 +2372,7 @@
             if (previewBox) previewBox.style.display = 'none';
         }
 
-        function submitTemplateRequest(event) {
+        async function submitTemplateRequest(event) {
             event.preventDefault();
             const title = (document.getElementById('reqTplTitle').value || '').trim();
             const grade = document.getElementById('reqTplGrade').value;
@@ -2343,58 +2380,53 @@
             const narration = (document.getElementById('reqTplNarration').value || '').trim();
 
             if (!title || !narration) {
-                alert('Por favor completa el nombre de la plantilla y la narración.');
+                showReqError('Por favor completa el nombre de la plantilla y la narración.');
                 return;
             }
 
-            const requestData = {
-                id: 'req_' + Date.now(),
-                title,
-                grade,
-                author,
-                narration,
-                file: reqCurrentFile ? { name: reqCurrentFile.name, size: reqCurrentFile.size, type: reqCurrentFile.type } : null,
-                createdAt: new Date().toISOString()
+            const submitBtn = document.getElementById('btnSubmitReq');
+            const restoreBtn = () => {
+                if (!submitBtn) return;
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<span>🚀</span><span>Enviar Solicitud</span>';
             };
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span>⏳</span><span>Enviando…</span>';
+            }
+            showReqError('');
 
-            // 1. Guardar en localStorage
+            let result;
+            try {
+                const res = await fetch('/api/task-inbox', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title, grade, author, narration,
+                        file: reqCurrentFile ? { name: reqCurrentFile.name, dataUrl: reqCurrentFile.dataUrl } : null
+                    })
+                });
+                result = await res.json().catch(() => ({}));
+                if (!res.ok || !result.ok) throw new Error(result.error || 'No se pudo registrar la solicitud.');
+            } catch (err) {
+                restoreBtn();
+                showReqError((err && err.message) || 'No se pudo conectar. Revisa tu internet e inténtalo de nuevo.');
+                return;
+            }
+
             try {
                 const stored = JSON.parse(localStorage.getItem('arkaios_template_requests') || '[]');
-                stored.unshift(requestData);
-                localStorage.setItem('arkaios_template_requests', JSON.stringify(stored));
+                stored.unshift({ id: result.id, title, grade, createdAt: result.createdAt });
+                localStorage.setItem('arkaios_template_requests', JSON.stringify(stored.slice(0, 50)));
             } catch (err) {
                 console.warn('Error guardando en localStorage:', err);
             }
 
-            // 2. Transmitir al Buzón de Tareas de Arkaios World
-            fetch('/api/task-inbox', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(requestData)
-            }).catch(() => {});
-
-            // 3. Notificar en el Foro Cloud de Arkaios bajo el canal #tareas
-            fetch('/api/v1/posts', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    title: `✨ Solicitud de Plantilla: ${title} (${grade})`,
-                    subforum: 'tareas',
-                    author: author,
-                    content: `**Narración y especificaciones para crearla con Claude:**\n\n${narration}\n\n${reqCurrentFile ? `📎 *Archivo de referencia adjunto: ${reqCurrentFile.name} (${reqCurrentFile.size})*` : '*(Sin archivo adjunto)*'}`
-                })
-            }).catch(() => {});
-
-            // 3. Feedback visual
             const successMsg = document.getElementById('reqSuccessMsg');
             if (successMsg) successMsg.style.display = 'block';
             const copyBtn = document.getElementById('btnCopyPrompt');
             if (copyBtn) copyBtn.style.display = 'inline-flex';
-            const submitBtn = document.getElementById('btnSubmitReq');
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<span>✓</span><span>¡Registrada!</span>';
-            }
+            if (submitBtn) submitBtn.innerHTML = '<span>✓</span><span>¡Registrada!</span>';
         }
 
         function copyClaudePrompt() {
