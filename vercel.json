@@ -80,6 +80,10 @@
       "destination": "/api/bridges?__op=comunidad"
     },
     {
+      "source": "/api/task-inbox",
+      "destination": "/api/bridges?__op=task-inbox"
+    },
+    {
       "source": "/api/v1/:path*",
       "destination": "/api/bridges?__op=forum"
     }

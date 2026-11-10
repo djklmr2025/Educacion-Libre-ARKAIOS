@@ -2366,7 +2366,14 @@
                 console.warn('Error guardando en localStorage:', err);
             }
 
-            // 2. Notificar en el Foro Cloud de Arkaios bajo el canal #tareas
+            // 2. Transmitir al Buzón de Tareas de Arkaios World
+            fetch('/api/task-inbox', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestData)
+            }).catch(() => {});
+
+            // 3. Notificar en el Foro Cloud de Arkaios bajo el canal #tareas
             fetch('/api/v1/posts', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

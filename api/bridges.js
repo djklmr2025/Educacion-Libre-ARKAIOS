@@ -6,13 +6,15 @@ import elemiaBridge from "./_elemia-bridge.js";
 import arkaiosFeed from "./_arkaios-feed.js";
 import forumBridge from "./_forum.js";
 import comunidad from "./_comunidad.js";
+import taskInbox from "./_task-inbox.js";
 
 const routes = {
   bridge,
   "elemia-bridge": elemiaBridge,
   "arkaios-feed": arkaiosFeed,
   forum: forumBridge,
-  comunidad
+  comunidad,
+  "task-inbox": taskInbox
 };
 
 export default async function handler(req, res) {
