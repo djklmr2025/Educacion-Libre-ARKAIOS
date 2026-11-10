@@ -27,3 +27,9 @@ allprojects {
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
+
+// lintVital del release truena dentro de AGP (InvocationTargetException en capacitor-android);
+// no aporta a un APK que solo envuelve el sitio web, asi que se omite para todos los modulos.
+subprojects {
+    tasks.matching { it.name.startsWith('lintVital') }.configureEach { enabled = false }
+}

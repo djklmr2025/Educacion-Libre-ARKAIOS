@@ -1,5 +1,14 @@
 apply plugin: 'com.android.application'
 
+// Firma fija: en CI llega por secretos (ARKAIOS_KEYSTORE_*), en local por android/keystore.properties
+// (ignorado por git). Sin ninguno, el release queda sin firmar y se usa el APK debug.
+def signingProps = new Properties()
+def signingFile = rootProject.file('keystore.properties')
+if (signingFile.exists()) signingFile.withInputStream { signingProps.load(it) }
+def signingValue = { String envName, String propName -> System.getenv(envName) ?: signingProps.getProperty(propName) }
+def releaseStoreFile = signingValue('ARKAIOS_KEYSTORE_FILE', 'storeFile')
+def hasReleaseSigning = releaseStoreFile && file(releaseStoreFile).exists()
+
 android {
     namespace "com.arkaios.educacionlibre"
     compileSdk rootProject.ext.compileSdkVersion
@@ -18,8 +27,19 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        if (hasReleaseSigning) {
+            release {
+                storeFile file(releaseStoreFile)
+                storePassword signingValue('ARKAIOS_KEYSTORE_PASSWORD', 'storePassword')
+                keyAlias signingValue('ARKAIOS_KEY_ALIAS', 'keyAlias')
+                keyPassword signingValue('ARKAIOS_KEY_PASSWORD', 'keyPassword')
+            }
+        }
+    }
     buildTypes {
         release {
+            if (hasReleaseSigning) signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
