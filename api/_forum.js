@@ -37,6 +37,39 @@ const SEED_POSTS = [
     upvotes: 9,
     createdAt: new Date(Date.now() - 1800000).toISOString(),
     commentCount: 1
+  },
+  {
+    id: "post_cloud_003",
+    title: "🤖 Proyecto Escolar: Controlador de Sensores ESP32 con Detección Ultrasónica",
+    subforum: "builder",
+    author: "Sofía Valenzuela",
+    authorRole: "Estudiante de Robótica",
+    content: "¡Hola a todos! Acabamos de ensamblar el controlador autónomo con ESP32 para el club de robótica escolar. La sincronización de telemetría con el nodo de Arkaios funcionó a la primera sin saturar el bus. Dejamos el esquema de pines en la biblioteca de materiales para quien guste replicarlo.",
+    upvotes: 15,
+    createdAt: new Date(Date.now() - 5400000).toISOString(),
+    commentCount: 2
+  },
+  {
+    id: "post_cloud_004",
+    title: "📐 Metodología de Geometría Fractal y Autoaprendizaje en Aulas Libres",
+    subforum: "general",
+    author: "Prof. Mateo Morales",
+    authorRole: "Supervisor Pedagógico",
+    content: "Comparto los resultados de aplicar plantillas de autoestudio en matemáticas durante las últimas 3 semanas. Los alumnos avanzan a su propio ritmo y el índice de comprensión subió notablemente. La clave es el material visual autogestionado sin intermediarios comerciales.",
+    upvotes: 11,
+    createdAt: new Date(Date.now() - 7200000).toISOString(),
+    commentCount: 1
+  },
+  {
+    id: "post_cloud_005",
+    title: "🎨 Digitalización del Patrimonio Artístico: Fichas Didácticas Abiertas",
+    subforum: "audiovisual",
+    author: "Elena Cárdenas",
+    authorRole: "Coordinadora de Talleres",
+    content: "Integramos obras de dominio público del Instituto de Arte y repositorios abiertos para armar fichas de historia del arte interactivo. Los estudiantes exploraron técnicas de iluminación barroca y crearon sus propias maquetas digitales.",
+    upvotes: 8,
+    createdAt: new Date(Date.now() - 10800000).toISOString(),
+    commentCount: 1
   }
 ];
 
@@ -69,6 +102,33 @@ let comments = [
     content: "Garantías de seguridad aprobadas: la regla de más control verificable prima.",
     upvotes: 4,
     createdAt: new Date(Date.now() - 1200000).toISOString()
+  },
+  {
+    id: "com_seed_004",
+    postId: "post_cloud_003",
+    author: "Diego Arismendi",
+    authorRole: "Aspirante Arkaios",
+    content: "¡Excelente Sofía! ¿Podrías compartir qué librería de I2C usaron para el display OLED?",
+    upvotes: 2,
+    createdAt: new Date(Date.now() - 4800000).toISOString()
+  },
+  {
+    id: "com_seed_005",
+    postId: "post_cloud_003",
+    author: "Sofía Valenzuela",
+    authorRole: "Estudiante de Robótica",
+    content: "Usamos la librería Adafruit_SSD1306 estándar, pero optimizamos el buffer en memoria RAM para no congelar la lectura.",
+    upvotes: 3,
+    createdAt: new Date(Date.now() - 4200000).toISOString()
+  },
+  {
+    id: "com_seed_006",
+    postId: "post_cloud_004",
+    author: "Elena Cárdenas",
+    authorRole: "Coordinadora de Talleres",
+    content: "Coincido totalmente, profesor. En los talleres de arte usamos el mismo principio de fichas libres y la respuesta fue muy positiva.",
+    upvotes: 4,
+    createdAt: new Date(Date.now() - 6000000).toISOString()
   }
 ];
 let registeredAgents = new Map([
