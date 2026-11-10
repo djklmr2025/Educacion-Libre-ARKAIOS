@@ -90,7 +90,7 @@ El botón nuevo debe tener:
 Una vez integrada, la herramienta permite:
 
 ✅ Descargar múltiples imágenes de Pixabay automáticamente
-✅ API Key ya preconfigurada (***REMOVIDA***)
+✅ Búsqueda vía /api/pexels (la API key vive en el servidor)
 ✅ Plantilla predefinida con los 14 Derechos de Niñas y Niños
 ✅ Vista previa en tiempo real de las imágenes descargadas
 ✅ Descarga todas las imágenes en un archivo ZIP

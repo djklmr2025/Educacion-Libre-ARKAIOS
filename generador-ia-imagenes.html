@@ -252,7 +252,7 @@ input[type=range]{flex:1;accent-color:var(--azul);cursor:pointer;height:6px;}
     </div>
     <div class="fg" id="j2vKeyBox" style="display:none;">
       <label>🔑 JSON2Video API Key</label>
-      <input type="text" id="j2vKey" placeholder="sVbVwf..." autocomplete="off" value="***REMOVIDA***">
+      <input type="password" id="j2vKey" placeholder="Pega tu API key de json2video.com" autocomplete="off">
     </div>
 
     <div class="fg">
@@ -325,7 +325,7 @@ input[type=range]{flex:1;accent-color:var(--azul);cursor:pointer;height:6px;}
 // Motores: Pollinations · Gemini · Secuencial · JSON2Video · Veo
 // ============================================================
 const CHANNEL = 'xnaxg7ceyj';
-const J2V_API_KEY_DEFAULT = '***REMOVIDA***';
+const J2V_KEY_STORAGE = 'arkaios_j2v_key';
 
 let isGenerating = false;
 
@@ -614,7 +614,9 @@ function addAnimatedCard(frames, prompt, resolution) {
 
 // ── MOTOR 4: JSON2VIDEO ───────────────────────────────────────
 async function runJson2Video(prompt, style, resolution) {
-  const apiKey = document.getElementById('j2vKey').value.trim() || J2V_API_KEY_DEFAULT;
+  const apiKey = document.getElementById('j2vKey').value.trim();
+  if (!apiKey) throw new Error('Pega tu API key de JSON2Video (gratis en json2video.com)');
+  try { localStorage.setItem(J2V_KEY_STORAGE, apiKey); } catch (_) {}
   document.getElementById('stxt').textContent = 'Generando imagen base con Pollinations...';
   document.getElementById('progFill').style.width = '20%';
 
@@ -1049,6 +1051,9 @@ function toast(msg) {
   document.body.appendChild(t);
   setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 400); }, 2800);
 }
+</script>
+<script>
+try { const k = localStorage.getItem('arkaios_j2v_key'); if (k) document.getElementById('j2vKey').value = k; } catch (_) {}
 </script>
 </body>
 </html>
