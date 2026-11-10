@@ -568,9 +568,15 @@
                     <button class="btn-main btn-print" onclick="printTemplates()">🖨️ Imprimir Plantillas</button>
                     <button class="btn-main btn-clear-all" onclick="clearAll()">🗑️ Limpiar Todo</button>
                     <!-- Botonera de APIs -->
-                    <div style="display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 10px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">
+                        <button class="btn-main" onclick="searchPicsum()"
+                            style="background: #2563eb; padding: 10px; font-size: 0.85rem;">🖼️ Lorem Picsum</button>
                         <button class="btn-main" onclick="searchPexels()"
-                            style="background: #05a081; padding: 10px; font-size: 0.85rem;">📸 Buscar en Pexels</button>
+                            style="background: #05a081; padding: 10px; font-size: 0.85rem;">📸 Pexels</button>
+                        <button class="btn-main" onclick="searchFreepik()"
+                            style="background: #0284c7; padding: 10px; font-size: 0.85rem;">🎨 Freepik</button>
+                        <button class="btn-main" onclick="searchPixabay()"
+                            style="background: #16a34a; padding: 10px; font-size: 0.85rem;">🌿 Pixabay</button>
                     </div>
                 </div>
             </div>
@@ -628,6 +634,29 @@
         const PEXELS_PROXY = '/api/pexels'; // proxy de Pexels/Pixabay/Freepik: las llaves viven solo en Vercel
 
         // ===== FUNCIONES DE BÚSQUEDA =====
+        async function searchPicsum() {
+            const query = prompt("¿Qué tema o semilla deseas para Lorem Picsum?", "educacion");
+            if (!query) return;
+            const countStr = prompt("¿Cuántas imágenes quieres?", "4");
+            const count = parseInt(countStr) || 4;
+
+            try {
+                const response = await fetch(PEXELS_PROXY, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ provider: 'picsum', q: query, per_page: count })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || response.status);
+                if (data.data && data.data.length > 0) {
+                    const urls = data.data.map(item => item.image.source.url);
+                    assignImagesToRows(urls);
+                } else {
+                    alert('No se encontraron imágenes en Lorem Picsum');
+                }
+            } catch (e) { console.error(e); alert('Error en Lorem Picsum: ' + e.message); }
+        }
+
         async function searchPixabay() {
             const query = prompt("¿Qué imágenes buscas en Pixabay?");
             if (!query) return;

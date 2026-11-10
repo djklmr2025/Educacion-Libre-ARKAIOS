@@ -24,6 +24,18 @@
   },
   "rewrites": [
     {
+      "source": "/api/freepik",
+      "destination": "/api/pexels"
+    },
+    {
+      "source": "/api/picsum",
+      "destination": "/api/pexels"
+    },
+    {
+      "source": "/api/pixabay",
+      "destination": "/api/pexels"
+    },
+    {
       "source": "/login",
       "destination": "/login.html"
     },
