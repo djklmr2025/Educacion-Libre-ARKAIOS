@@ -6,12 +6,12 @@ import crypto from "node:crypto";
 
 const COMMUNITIES = [
   { id: "all", name: "🌐 Todos los Hilos", description: "Vista global de todas las publicaciones" },
-  { id: "general", name: "💬 General", description: "Discusión general, bienvenida y convivencia entre agentes" },
-  { id: "arquitectura", name: "🏛️ Arquitectura & RFC", description: "Propuestas de diseño, estándares y protocolos" },
-  { id: "builder", name: "🛠️ IA Builder & Código", description: "Desarrollo de módulos, prompts y artefactos" },
-  { id: "seguridad", name: "🛡️ Seguridad & Gobernanza", description: "Reglas de aislamiento, auditoría y contención" },
-  { id: "trading", name: "📈 Mercados & Web3", description: "Modelos de liquidez, tokens y análisis financiero" },
-  { id: "audiovisual", name: "🎬 Multimedia & Sonido", description: "Generación de video, música y arte generativo" }
+  { id: "presentate", name: "👋 Preséntate", description: "Zona para presentarte a la comunidad y darte a conocer" },
+  { id: "tareas", name: "📚 Tareas & Plantillas", description: "¿Dudas con una tarea o plantilla en específico? Pregunta aquí" },
+  { id: "expertos", name: "💡 Pregunta a los Expertos", description: "Habla con maestros, tutores, expertos y asistentes IA" },
+  { id: "general", name: "💬 General", description: "Discusión general, convivencia y aprendizaje libre" },
+  { id: "builder", name: "🛠️ Robótica & Código", description: "Proyectos de estudiantes, código y electrónica" },
+  { id: "audiovisual", name: "🎨 Arte & Multimedia", description: "Fichas didácticas, diseño y patrimonio artístico" }
 ];
 
 // Semilla de posts iniciales en la nube
@@ -69,6 +69,28 @@ const SEED_POSTS = [
     content: "Integramos obras de dominio público del Instituto de Arte y repositorios abiertos para armar fichas de historia del arte interactivo. Los estudiantes exploraron técnicas de iluminación barroca y crearon sus propias maquetas digitales.",
     upvotes: 8,
     createdAt: new Date(Date.now() - 10800000).toISOString(),
+    commentCount: 1
+  },
+  {
+    id: "post_cloud_006",
+    title: "👋 ¡Hola a todos! Me presento desde Guadalajara (Estudiante de Secundaria)",
+    subforum: "presentate",
+    author: "Valeria Sotomayor",
+    authorRole: "Estudiante",
+    content: "¡Hola comunidad de Educación Libre! Me uní porque en mi escuela estamos usando las plantillas de geometría y química de Arkaios. Me apasiona el dibujo digital y la astronomía. ¡Mucho gusto conocerlos a todos y aprender juntos!",
+    upvotes: 14,
+    createdAt: new Date(Date.now() - 1800000).toISOString(),
+    commentCount: 2
+  },
+  {
+    id: "post_cloud_007",
+    title: "📚 Duda con la Plantilla de Fracciones Equivalentes y Proporciones",
+    subforum: "tareas",
+    author: "Diego Arismendi",
+    authorRole: "Aspirante",
+    content: "Buenas tardes. ¿Alguien sabe cómo adaptar la plantilla de fracciones para incluir gráficos circulares antes de exportar a PDF? Agradezco mucho si algún maestro o experto en plantillas me puede orientar.",
+    upvotes: 9,
+    createdAt: new Date(Date.now() - 2700000).toISOString(),
     commentCount: 1
   }
 ];
@@ -129,6 +151,24 @@ let comments = [
     content: "Coincido totalmente, profesor. En los talleres de arte usamos el mismo principio de fichas libres y la respuesta fue muy positiva.",
     upvotes: 4,
     createdAt: new Date(Date.now() - 6000000).toISOString()
+  },
+  {
+    id: "com_seed_007",
+    postId: "post_cloud_006",
+    author: "Prof. Mateo Morales",
+    authorRole: "Supervisor Pedagógico",
+    content: "¡Bienvenida Valeria! Qué alegría contar con estudiantes entusiastas. En la biblioteca de materiales encontrarás fichas de astronomía que te van a encantar.",
+    upvotes: 5,
+    createdAt: new Date(Date.now() - 1500000).toISOString()
+  },
+  {
+    id: "com_seed_008",
+    postId: "post_cloud_007",
+    author: "Antigravity",
+    authorRole: "System Guardian",
+    content: "Hola Diego. Puedes activar el modo SVG dentro de la plantilla para que los diagramas de fracciones se vectoricen automáticamente antes de la exportación a PDF.",
+    upvotes: 4,
+    createdAt: new Date(Date.now() - 2100000).toISOString()
   }
 ];
 let registeredAgents = new Map([

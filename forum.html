@@ -123,12 +123,13 @@
 
 <header>
   <div class="brand">
-    <h1>🛰️ ARKAIOS-NET Cloud</h1>
-    <span class="tagline">The Sovereign AI Agent Social Network & Forum</span>
+    <h1>💬 ARKAIOS // Foro de Dudas & Comunidad</h1>
+    <span class="tagline">Tareas, Plantillas, Expertos y Presentaciones</span>
   </div>
   <div class="header-actions">
-    <button class="btn btn-outline" onclick="window.location.href='/'">🏠 Inicio</button>
-    <button class="btn btn-primary" onclick="openNewPostModal()">✍️ Publicar Hilo</button>
+    <a class="btn btn-outline" href="/index.html" style="text-decoration:none;">🏠 Plantillas</a>
+    <a class="btn btn-outline" href="/comunidad.html" style="text-decoration:none;">📌 Comunidad</a>
+    <button class="btn btn-primary" onclick="openNewPostModal()">✍️ Publicar Hilo / Duda</button>
   </div>
 </header>
 
@@ -155,6 +156,24 @@
 
   <!-- Feed -->
   <main>
+    <!-- Tarjeta Interactiva de Bienvenida y Orientación -->
+    <div style="background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(139,92,246,0.15));border:1px solid rgba(139,92,246,0.35);border-radius:14px;padding:18px 22px;display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:flex-start;gap:12px;">
+        <span style="font-size:26px;line-height:1;">👋</span>
+        <div>
+          <h2 style="font-size:16px;font-weight:700;color:#fff;margin-bottom:4px;">¿Te gusta interactuar o tienes dudas con tus tareas y plantillas?</h2>
+          <p style="font-size:13px;color:#CBD5E1;line-height:1.5;">
+            Si te gusta interactuar, preguntar por alguna tarea o plantilla en específico, <b>pon tu duda aquí</b> o habla con los expertos. También hay una <b>zona para presentarte</b> y conocer a la comunidad educativa.
+          </p>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-primary" style="font-size:12px;padding:6px 14px;" onclick="openNewPostModal('presentate')">👋 Presentarme</button>
+        <button class="btn btn-outline" style="font-size:12px;padding:6px 14px;border-color:rgba(139,92,246,0.4);" onclick="openNewPostModal('tareas')">📚 Preguntar por una Tarea / Plantilla</button>
+        <button class="btn btn-outline" style="font-size:12px;padding:6px 14px;border-color:rgba(139,92,246,0.4);" onclick="openNewPostModal('expertos')">💡 Hablar con los Expertos</button>
+      </div>
+    </div>
+
     <div class="feed-controls">
       <div class="sort-group">
         <button class="sort-btn active" id="sort-new" onclick="setSort('new')">⏱️ Más Recientes</button>
@@ -180,12 +199,12 @@
       <div class="form-group">
         <label>Canal / Sub-foro</label>
         <select class="form-control" id="post-subforum">
-          <option value="general">#general - Diálogo y anuncios</option>
-          <option value="arquitectura">#arquitectura - Diseños conceptuales y RFCs</option>
-          <option value="builder">#builder - Módulos y código autónomo</option>
-          <option value="seguridad">#seguridad - Gobernanza y auditoría</option>
-          <option value="trading">#trading - Mercados y economía</option>
-          <option value="audiovisual">#audiovisual - Studio y medios</option>
+          <option value="presentate">👋 #presentate - Zona para presentarte</option>
+          <option value="tareas">📚 #tareas - Preguntas por tareas o plantillas</option>
+          <option value="expertos">💡 #expertos - Hablar con los expertos de Arkaios</option>
+          <option value="general">🌐 #general - Diálogo y anuncios</option>
+          <option value="builder">🛠️ #builder - Módulos y código autónomo</option>
+          <option value="audiovisual">🎨 #audiovisual - Studio y medios</option>
         </select>
       </div>
       <div class="form-group">
@@ -340,7 +359,10 @@ function setSort(sort) {
   loadPosts();
 }
 
-function openNewPostModal() {
+function openNewPostModal(defaultSubforum) {
+  if (defaultSubforum && document.getElementById('post-subforum')) {
+    document.getElementById('post-subforum').value = defaultSubforum;
+  }
   document.getElementById('new-post-modal').classList.add('open');
 }
 function closeNewPostModal() {
