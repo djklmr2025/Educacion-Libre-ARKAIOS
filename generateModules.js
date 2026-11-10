@@ -22,7 +22,11 @@ const EXCLUDE = new Set([
   "portal-empresarial.html",
   "buscador-imagenes-educativo.html",
   "generador-ia-imagenes.html",
-  "pixabay-descargador-lote.html"
+  "pixabay-descargador-lote.html",
+  "material-educativo-reutilizable.html",
+  "orquestador-html-plus.html",
+  "forum.html",
+  "comunidad.html"
 ]);
 
 function prettifyName(file) {
@@ -156,14 +160,7 @@ function buildManifest(files) {
     });
   }
 
-  // Biblioteca fija (si la tienes)
-  sections.push({
-    title: "Biblioteca",
-    icon: "📚",
-    items: [
-      { label: "Material Reutilizable", icon: "📖", target: "material-educativo-reutilizable.html" }
-    ]
-  });
+
 
   return { sections };
 }

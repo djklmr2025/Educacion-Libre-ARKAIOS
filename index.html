@@ -1186,7 +1186,6 @@
                 <option value="plantilla_20_instituciones_editable.html">🏛️ 20 Instituciones (logos editables)</option>
                 <option value="tiras-calcomanias-lapiz.html">✏️ Tiras de Calcomanías para Lápiz</option>
                 <option value="etiquetas-libretas.html">🏷️ Etiquetas para Libretas</option>
-                <option value="material-educativo-reutilizable.html">📖 Material Reutilizable</option>
             </select>
         </div>
 
@@ -1286,17 +1285,6 @@
                     <button class="btn" data-target="plantilla-carta-horizontal-1grande-3.html">
                         <span class="btn-icon">🖼️</span>
                         <span>Carta Horizontal 1 Grande + 3</span>
-                    </button>
-                </div>
-
-                <div class="nav-section">
-                    <div class="nav-title">
-                        <span>📚</span>
-                        <span>Biblioteca</span>
-                    </div>
-                    <button class="btn" data-target="material-educativo-reutilizable.html">
-                        <span class="btn-icon">📖</span>
-                        <span>Material Reutilizable</span>
                     </button>
                 </div>
             </div>
@@ -1472,18 +1460,6 @@
                 });
 
                 container.appendChild(section);
-            }
-
-            if (!sections.some(s => (s.title || '').toLowerCase().includes('biblioteca'))) {
-                const lib = document.createElement('div');
-                lib.className = 'nav-section';
-                lib.innerHTML = `
-                    <div class="nav-title"><span>📚</span><span>Biblioteca</span></div>
-                    <button class="btn" data-target="material-educativo-reutilizable.html">
-                        <span class="btn-icon">📖</span>
-                        <span>Material Reutilizable</span>
-                    </button>`;
-                container.appendChild(lib);
             }
         }
 

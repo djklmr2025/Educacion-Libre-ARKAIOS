@@ -93,22 +93,6 @@
           "target": "tiras-calcomanias-lapiz.html"
         }
       ]
-    },
-    {
-      "title": "Biblioteca y Herramientas",
-      "icon": "📚",
-      "items": [
-        {
-          "label": "Material Reutilizable",
-          "icon": "📖",
-          "target": "material-educativo-reutilizable.html"
-        },
-        {
-          "label": "Orquestador HTML Plus",
-          "icon": "🧩",
-          "target": "orquestador-html-plus.html"
-        }
-      ]
     }
   ]
 }
