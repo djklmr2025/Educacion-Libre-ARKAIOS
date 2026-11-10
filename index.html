@@ -876,6 +876,59 @@
         main { min-width: 0; }
         .layout { min-width: 0; overflow: hidden; }
         body.ark-working .back-to-catalog { display: inline-flex; }
+
+        /* Banner y Apartado: Pide tu plantilla en específico */
+        .custom-template-banner {
+            margin-top: 36px;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(99, 102, 241, 0.08));
+            border: 2px dashed rgba(99, 102, 241, 0.35);
+            border-radius: 20px;
+            padding: 24px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+            transition: all 0.2s ease;
+        }
+        .custom-template-banner:hover {
+            border-color: rgba(99, 102, 241, 0.65);
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(99, 102, 241, 0.12));
+        }
+        .custom-template-info {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            max-width: 680px;
+        }
+        .custom-template-icon {
+            font-size: 32px;
+            line-height: 1;
+            padding: 10px;
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: var(--shadow-sm);
+        }
+        .custom-template-info h3 {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        .custom-template-info p {
+            font-size: 13.5px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+        .tpl-card-request {
+            border: 2px dashed rgba(99, 102, 241, 0.45) !important;
+            background: linear-gradient(180deg, rgba(99, 102, 241, 0.04), rgba(37, 99, 235, 0.06)) !important;
+        }
+        .tpl-card-request:hover {
+            border-color: #6366f1 !important;
+            transform: translateY(-4px);
+        }
+
         @media (max-width: 760px) {
             .catalog { padding: 22px 16px 120px; }
             .tpl-grid { grid-template-columns: repeat(2, 1fr); gap: 18px 12px; }
@@ -1396,6 +1449,94 @@
 	        </div>
 	    </div>
 
+	    <!-- MODAL: PIDE TU PLANTILLA EN ESPECÍFICO (NARRACIÓN + SUBIDA PARA CLAUDE) -->
+	    <div class="modal-overlay" id="requestTemplateModal">
+	        <div class="modal-content" style="max-width: 620px; max-height: 90vh; overflow-y: auto;">
+	            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px;">
+	                <div>
+	                    <h2 class="modal-title" style="margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+	                        <span>✨</span> Pide tu plantilla en específico
+	                    </h2>
+	                    <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.4;">
+	                        Si no la encuentras entre las visibles, sube aquí tu plantilla o boceto de referencia junto con una pequeña narración para poder entonces crearla con Claude.
+	                    </p>
+	                </div>
+	                <button onclick="closeRequestTemplateModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-muted); line-height: 1;" aria-label="Cerrar">&times;</button>
+	            </div>
+
+	            <form id="requestTemplateForm" onsubmit="submitTemplateRequest(event)">
+	                <div class="form-row">
+	                    <div class="form-label">Nombre o tipo de la plantilla *</div>
+	                    <input class="form-input" id="reqTplTitle" type="text" placeholder="Ej. Control de lectura con rúbrica, Hoja de registro semanal..." required />
+	                </div>
+
+	                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+	                    <div>
+	                        <div class="form-label">Nivel o área educativa</div>
+	                        <select class="form-input form-select" id="reqTplGrade">
+	                            <option value="primaria" selected>Primaria</option>
+	                            <option value="secundaria">Secundaria</option>
+	                            <option value="preescolar">Preescolar</option>
+	                            <option value="preparatoria">Preparatoria / Bachillerato</option>
+	                            <option value="universidad">Universidad</option>
+	                            <option value="docente">Docente / Administrativo</option>
+	                            <option value="adultos">Educación de Adultos</option>
+	                            <option value="otra">Otra / General</option>
+	                        </select>
+	                    </div>
+	                    <div>
+	                        <div class="form-label">Tu nombre o apodo (opcional)</div>
+	                        <input class="form-input" id="reqTplAuthor" type="text" placeholder="Ej. Prof. García / Estudiante" />
+	                    </div>
+	                </div>
+
+	                <div class="form-row">
+	                    <div class="form-label">Narración de la plantilla (explica qué debe incluir) *</div>
+	                    <textarea class="form-textarea" id="reqTplNarration" rows="5" style="min-height: 110px;"
+	                        placeholder="Escribe aquí tu narración: explica cómo debe ser la plantilla, qué columnas, tablas, títulos, secciones para rellenar, imágenes, orientaciones (carta, vertical/horizontal) o requerimientos específicos debe llevar..." required></textarea>
+	                    <div class="form-help">💡 Cuéntanos cómo se usará en clase o en casa. Esto le dará a Claude el contexto exacto para programar el diseño y sus funciones.</div>
+	                </div>
+
+	                <div class="form-row">
+	                    <div class="form-label">Sube la plantilla en cuestión (imagen, foto o PDF de referencia)</div>
+	                    <div class="upload-zone" id="reqDropZone" style="padding: 24px 16px; border-width: 2px; border-style: dashed; background: var(--bg-gray); border-color: #cbd5e1;" onclick="document.getElementById('reqFileInput').click()">
+	                        <div id="reqUploadPrompt">
+	                            <div style="font-size: 32px; margin-bottom: 6px;">📎</div>
+	                            <p style="font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">Haz clic o arrastra tu archivo aquí</p>
+	                            <p style="font-size: 12px; color: var(--text-muted);">Formatos admitidos: PDF, JPG, PNG, WEBP (hasta 15 MB)</p>
+	                        </div>
+	                        <div id="reqFilePreview" style="display: none; align-items: center; justify-content: center; gap: 12px;">
+	                            <img id="reqPreviewImg" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-color); display: none;" />
+	                            <div style="text-align: left;">
+	                                <div id="reqFileName" style="font-weight: 600; font-size: 13.5px; color: var(--text-primary);"></div>
+	                                <div id="reqFileSize" style="font-size: 11.5px; color: var(--text-muted);"></div>
+	                            </div>
+	                            <button type="button" onclick="event.stopPropagation(); clearReqFile();" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #dc2626; border-radius: 6px; padding: 4px 8px; font-size: 12px; cursor: pointer;">Quitar</button>
+	                        </div>
+	                    </div>
+	                    <input type="file" id="reqFileInput" accept=".pdf,image/*" style="display: none;" onchange="handleReqFileSelected(event)">
+	                </div>
+
+	                <div id="reqSuccessMsg" style="display: none; padding: 14px 18px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; color: #047857; font-size: 13px; line-height: 1.5; margin-bottom: 14px;">
+	                    🎉 <b>¡Solicitud guardada con éxito!</b> Tu narración y archivo han quedado registrados en el sistema para que Claude y el equipo de Arkaios puedan crear la plantilla.
+	                </div>
+
+	                <div class="modal-actions" style="margin-top: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+	                    <button type="button" class="btn-premium btn-secondary" onclick="copyClaudePrompt()" id="btnCopyPrompt" style="display: none; font-size: 12.5px;">
+	                        📋 Copiar orden para Claude
+	                    </button>
+	                    <div style="display: flex; gap: 10px; margin-left: auto;">
+	                        <button type="button" class="btn-premium btn-secondary" onclick="closeRequestTemplateModal()">Cancelar</button>
+	                        <button type="submit" class="btn-premium btn-primary" id="btnSubmitReq" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">
+	                            <span>🚀</span>
+	                            <span>Enviar Solicitud</span>
+	                        </button>
+	                    </div>
+	                </div>
+	            </form>
+	        </div>
+	    </div>
+
 	    <div class="auto-save-indicator" id="autoSaveIndicator">✓ Guardado</div>
 
     <script>
@@ -1614,10 +1755,29 @@
 	                        <h2>¿Qué quieres crear hoy?</h2>
 	                        <p>Elige una plantilla, rellénala y descárgala en PDF. Todo es gratis por siempre. ¿Buscas algo ya hecho? Mira la <a href="/comunidad.html" style="color:var(--primary-blue);font-weight:600;">📌 Comunidad</a> o entra al <a href="/forum.html" style="color:#6366f1;font-weight:600;">💬 Foro de Tareas y Expertos</a> (dudas sobre plantillas, hablar con expertos o presentarte).</p>
 	                    </div>
-	                    <label class="catalog-search"><span>🔍</span><input type="search" id="catalogSearch" placeholder="Buscar plantilla…" autocomplete="off"></label>
+	                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+	                        <label class="catalog-search"><span>🔍</span><input type="search" id="catalogSearch" placeholder="Buscar plantilla…" autocomplete="off"></label>
+	                        <button class="btn-premium btn-primary" onclick="openRequestTemplateModal()" style="white-space:nowrap;background:linear-gradient(135deg, #6366f1, #8b5cf6);" title="Sube tu plantilla o boceto de referencia y narración para crearla con Claude">
+	                            <span>✨</span>
+	                            <span>Pedir plantilla</span>
+	                        </button>
+	                    </div>
 	                </div>
 	                <div class="catalog-chips" id="catalogChips"></div>
-	                <div class="tpl-grid" id="tplGrid"></div>`;
+	                <div class="tpl-grid" id="tplGrid"></div>
+	                <div class="custom-template-banner" id="customTemplateBanner">
+	                    <div class="custom-template-info">
+	                        <span class="custom-template-icon">💡</span>
+	                        <div>
+	                            <h3>¿No encuentras la plantilla que necesitas?</h3>
+	                            <p><b>Pide tu plantilla en específico si no la encuentras en las visibles.</b> Sube una imagen, foto de libreta o PDF de referencia junto con una pequeña narración explicando cómo la necesitas para poder entonces crearla con Claude y ARKAIOS.</p>
+	                        </div>
+	                    </div>
+	                    <button class="btn-premium btn-primary" onclick="openRequestTemplateModal()" style="background:linear-gradient(135deg, #6366f1, #8b5cf6);font-size:14px;padding:12px 22px;">
+	                        <span>✨</span>
+	                        <span>Pedir plantilla en específico</span>
+	                    </button>
+	                </div>`;
 
 	            const chips = wrap.querySelector('#catalogChips');
 	            ['Todas', ...sections].forEach((s, idx) => {
@@ -1648,12 +1808,40 @@
 	                grid.appendChild(card);
 	            });
 
+	            // Tarjeta especial: Pide tu plantilla en específico
+	            const reqCard = document.createElement('button');
+	            reqCard.className = 'tpl-card tpl-card-request';
+	            reqCard.dataset.target = '#request-template';
+	            reqCard.dataset.section = '';
+	            reqCard.dataset.search = 'pedir solicitar nueva plantilla en especifico visibles crear con claude boceto narracion';
+	            reqCard.innerHTML = `
+	                <div class="tpl-thumb" style="display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(99,102,241,0.06),rgba(37,99,235,0.08));border:2px dashed rgba(99,102,241,0.35);">
+	                    <div style="font-size:44px;margin-bottom:6px;">✨</div>
+	                    <div style="font-weight:700;font-size:13.5px;color:#4f46e5;text-align:center;padding:0 12px;line-height:1.3;">¿No está visible?</div>
+	                    <span class="tpl-open" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);">Pedir plantilla</span>
+	                </div>
+	                <div class="tpl-info">
+	                    <span class="tpl-icon">📝</span>
+	                    <div>
+	                        <b>Pide tu plantilla en específico</b>
+	                        <small style="color:#6366f1;font-weight:600;">Sube narración y ejemplo</small>
+	                    </div>
+	                </div>`;
+	            reqCard.addEventListener('click', (e) => {
+	                e.preventDefault();
+	                openRequestTemplateModal();
+	            });
+	            grid.appendChild(reqCard);
+
 	            let activeSection = '';
 	            const filter = () => {
 	                const q = (wrap.querySelector('#catalogSearch').value || '').trim().toLowerCase();
 	                grid.querySelectorAll('.tpl-card').forEach(c => {
+	                    if (c === reqCard) return;
 	                    c.style.display = (!activeSection || c.dataset.section === activeSection) && (!q || c.dataset.search.includes(q)) ? '' : 'none';
 	                });
+	                // La tarjeta de pedir plantilla siempre queda accesible
+	                reqCard.style.display = '';
 	            };
 	            chips.addEventListener('click', e => {
 	                const b = e.target.closest('.catalog-chip'); if (!b) return;
@@ -2059,6 +2247,163 @@
         }
         function closeUploadModal() {
             document.getElementById('uploadModal').classList.remove('active');
+        }
+
+        // ===== MODAL: PIDE TU PLANTILLA EN ESPECÍFICO (SUBIDA + NARRACIÓN PARA CLAUDE) =====
+        let reqCurrentFile = null;
+
+        function openRequestTemplateModal() {
+            const m = document.getElementById('requestTemplateModal');
+            if (!m) return;
+            const form = document.getElementById('requestTemplateForm');
+            if (form) form.reset();
+            clearReqFile();
+            const successMsg = document.getElementById('reqSuccessMsg');
+            if (successMsg) successMsg.style.display = 'none';
+            const copyBtn = document.getElementById('btnCopyPrompt');
+            if (copyBtn) copyBtn.style.display = 'none';
+            const submitBtn = document.getElementById('btnSubmitReq');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<span>🚀</span><span>Enviar Solicitud</span>';
+            }
+            m.classList.add('active');
+            setTimeout(() => {
+                const titleInput = document.getElementById('reqTplTitle');
+                if (titleInput) titleInput.focus();
+            }, 100);
+        }
+
+        function closeRequestTemplateModal() {
+            const m = document.getElementById('requestTemplateModal');
+            if (m) m.classList.remove('active');
+        }
+
+        function handleReqFileSelected(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            processReqFile(file);
+        }
+
+        function processReqFile(file) {
+            if (file.size > 15 * 1024 * 1024) {
+                alert('El archivo supera los 15 MB. Por favor elige uno más ligero.');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function (evt) {
+                reqCurrentFile = {
+                    name: file.name,
+                    size: (file.size / 1024).toFixed(1) + ' KB',
+                    type: file.type,
+                    dataUrl: evt.target.result
+                };
+                renderReqFilePreview();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function renderReqFilePreview() {
+            if (!reqCurrentFile) return;
+            const promptBox = document.getElementById('reqUploadPrompt');
+            if (promptBox) promptBox.style.display = 'none';
+            const previewBox = document.getElementById('reqFilePreview');
+            if (previewBox) previewBox.style.display = 'flex';
+            const fileNameEl = document.getElementById('reqFileName');
+            if (fileNameEl) fileNameEl.textContent = reqCurrentFile.name;
+            const fileSizeEl = document.getElementById('reqFileSize');
+            if (fileSizeEl) fileSizeEl.textContent = reqCurrentFile.size;
+
+            const img = document.getElementById('reqPreviewImg');
+            if (img) {
+                if (reqCurrentFile.type && reqCurrentFile.type.startsWith('image/')) {
+                    img.src = reqCurrentFile.dataUrl;
+                    img.style.display = 'block';
+                } else {
+                    img.style.display = 'none';
+                }
+            }
+        }
+
+        function clearReqFile() {
+            reqCurrentFile = null;
+            const fileInput = document.getElementById('reqFileInput');
+            if (fileInput) fileInput.value = '';
+            const promptBox = document.getElementById('reqUploadPrompt');
+            if (promptBox) promptBox.style.display = 'block';
+            const previewBox = document.getElementById('reqFilePreview');
+            if (previewBox) previewBox.style.display = 'none';
+        }
+
+        function submitTemplateRequest(event) {
+            event.preventDefault();
+            const title = (document.getElementById('reqTplTitle').value || '').trim();
+            const grade = document.getElementById('reqTplGrade').value;
+            const author = (document.getElementById('reqTplAuthor').value || '').trim() || 'Comunidad Escolar';
+            const narration = (document.getElementById('reqTplNarration').value || '').trim();
+
+            if (!title || !narration) {
+                alert('Por favor completa el nombre de la plantilla y la narración.');
+                return;
+            }
+
+            const requestData = {
+                id: 'req_' + Date.now(),
+                title,
+                grade,
+                author,
+                narration,
+                file: reqCurrentFile ? { name: reqCurrentFile.name, size: reqCurrentFile.size, type: reqCurrentFile.type } : null,
+                createdAt: new Date().toISOString()
+            };
+
+            // 1. Guardar en localStorage
+            try {
+                const stored = JSON.parse(localStorage.getItem('arkaios_template_requests') || '[]');
+                stored.unshift(requestData);
+                localStorage.setItem('arkaios_template_requests', JSON.stringify(stored));
+            } catch (err) {
+                console.warn('Error guardando en localStorage:', err);
+            }
+
+            // 2. Notificar en el Foro Cloud de Arkaios bajo el canal #tareas
+            fetch('/api/v1/posts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: `✨ Solicitud de Plantilla: ${title} (${grade})`,
+                    subforum: 'tareas',
+                    author: author,
+                    content: `**Narración y especificaciones para crearla con Claude:**\n\n${narration}\n\n${reqCurrentFile ? `📎 *Archivo de referencia adjunto: ${reqCurrentFile.name} (${reqCurrentFile.size})*` : '*(Sin archivo adjunto)*'}`
+                })
+            }).catch(() => {});
+
+            // 3. Feedback visual
+            const successMsg = document.getElementById('reqSuccessMsg');
+            if (successMsg) successMsg.style.display = 'block';
+            const copyBtn = document.getElementById('btnCopyPrompt');
+            if (copyBtn) copyBtn.style.display = 'inline-flex';
+            const submitBtn = document.getElementById('btnSubmitReq');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span>✓</span><span>¡Registrada!</span>';
+            }
+        }
+
+        function copyClaudePrompt() {
+            const title = (document.getElementById('reqTplTitle').value || '').trim();
+            const grade = document.getElementById('reqTplGrade').value;
+            const author = (document.getElementById('reqTplAuthor').value || '').trim() || 'Usuario';
+            const narration = (document.getElementById('reqTplNarration').value || '').trim();
+            const fileInfo = reqCurrentFile ? `\nReferencia adjunta: ${reqCurrentFile.name} (${reqCurrentFile.size})` : '';
+
+            const promptText = `Por favor Claude: crea una nueva plantilla interactiva de trabajo para el sistema ARKAIOS Educación Libre con las siguientes especificaciones:\n\n- Título: ${title}\n- Nivel / Área: ${grade}\n- Solicitado por: ${author}${fileInfo}\n\nNarración detallada:\n${narration}\n\nRequerimientos de la plantilla:\n1. Archivo HTML5 autosuficiente, responsive e imprimible en tamaño Carta.\n2. Campos editables y áreas rellenables con guardado automático y botones de borrado/reseteo.\n3. Modo de vista previa y exportación directa a PDF limpio.\n4. Cumplir con la estética y colores del ecosistema ARKAIOS.`;
+
+            navigator.clipboard.writeText(promptText).then(() => {
+                alert('¡Prompt copiado al portapapeles! Listo para pegarlo en Claude o en el chat.');
+            }).catch(() => {
+                prompt('Copia esta orden para Claude:', promptText);
+            });
         }
 
         async function handlePDFUpload(event) {
@@ -3236,6 +3581,41 @@ Ejemplo:
                 btn.disabled = false;
             }
         }
+
+        // Drag & drop para área de subida de solicitud de plantilla
+        (function wireReqDropZone() {
+            function init() {
+                const dropZone = document.getElementById('reqDropZone');
+                if (!dropZone) return;
+                ['dragenter', 'dragover'].forEach(name => {
+                    dropZone.addEventListener(name, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        dropZone.style.borderColor = '#6366f1';
+                        dropZone.style.background = 'rgba(99,102,241,0.08)';
+                    });
+                });
+                ['dragleave', 'drop'].forEach(name => {
+                    dropZone.addEventListener(name, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        dropZone.style.borderColor = '#cbd5e1';
+                        dropZone.style.background = 'var(--bg-gray)';
+                    });
+                });
+                dropZone.addEventListener('drop', (e) => {
+                    const dt = e.dataTransfer;
+                    if (dt && dt.files && dt.files[0]) {
+                        processReqFile(dt.files[0]);
+                    }
+                });
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+        })();
     </script>
 
 </body>
