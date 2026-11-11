@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plantilla de Impresión de Imágenes | ARKAIOS</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .panel-control {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 30px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .header h1 {
+      color: #667eea;
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      color: #666;
+      font-size: 14px;
+    }
+
+    .controles-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .control-group label {
+      font-weight: 600;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .control-group select,
+    .control-group input[type="number"] {
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: all 0.3s;
+      background: white;
+    }
+
+    .control-group select:focus,
+    .control-group input[type="number"]:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .botones-accion {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: #48bb78;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #38a169;
+      transform: translateY(-2px);
+    }
+
+    .btn-danger {
+      background: #f56565;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #e53e3e;
+      transform: translateY(-2px);
+    }
+
+    .stats {
+      display: flex;
+      gap: 20px;
+      padding: 16px;
+      background: #f7fafc;
+      border-radius: 8px;
+      margin-top: 16px;
+    }
+
+    .stat-item {
+      flex: 1;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #667eea;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .hojas-container {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+    }
+
+    .page-wrapper {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    .page-info {
+      text-align: center;
+      margin-bottom: 16px;
+      font-weight: 600;
+      color: #667eea;
+      font-size: 14px;
+    }
+
+    .page-container {
+      width: 21.59cm;
+      height: 27.94cm;
+      background: white;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .cuadricula {
+      display: grid;
+      gap: 0;
+    }
+
+    .celda-imagen {
+      border: 1px dashed #cbd5e0;
+      background: #fafafa;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .celda-imagen:hover {
+      border-color: #667eea;
+      background: #f7fafc;
+    }
+
+    .celda-imagen.dragging {
+      opacity: 0.5;
+      border: 2px solid #667eea;
+    }
+
+    .celda-imagen.drag-over {
+      background: #e6f2ff;
+      border: 2px solid #667eea;
+    }
+
+    .num-celda {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      background: rgba(102, 126, 234, 0.9);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+      z-index: 2;
+    }
+
+    .img-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .img-preview {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      transition: transform 0.3s;
+      user-select: none;
+    }
+
+    .img-preview.moviendo {
+      cursor: move;
+    }
+
+    .botones-celda {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 3;
+    }
+
+    .celda-imagen:hover .botones-celda {
+      opacity: 1;
+    }
+
+    .btn-celda {
+      padding: 6px 10px;
+      border: none;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: white;
+    }
+
+    .btn-editar {
+      background: #48bb78;
+    }
+
+    .btn-editar:hover {
+      background: #38a169;
+    }
+
+    .btn-fijar {
+      background: #4299e1;
+    }
+
+    .btn-fijar:hover {
+      background: #3182ce;
+    }
+
+    .btn-eliminar {
+      background: #f56565;
+    }
+
+    .btn-eliminar:hover {
+      background: #e53e3e;
+      transform: translateY(-2px);
+    }
+
+    .celda-vacia {
+      color: #cbd5e0;
+      font-size: 32px;
+      font-weight: 300;
+    }
+
+    #pixabay-credit {
+      margin: 12px auto;
+      background: #f8fafc;
+      border: 1px solid #d1d5db;
+      padding: 10px 14px;
+      border-radius: 10px;
+      color: #1f2937;
+      font-weight: 600;
+      max-width: 960px;
+      text-align: center;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    }
+
+    .modal-editor {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-editor.activo {
+      display: flex;
+    }
+
+    .modal-contenido {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 800px;
+      width: 90%;
+      max-height: 90vh;
+      overflow: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-header h3 {
+      color: #667eea;
+      font-size: 20px;
+    }
+
+    .btn-cerrar {
+      background: #f56565;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .editor-preview {
+      width: 100%;
+      max-height: 400px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: #fafafa;
+    }
+
+    .editor-preview img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .controles-editor {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .control-zoom {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .control-zoom input[type="range"] {
+      flex: 1;
+      height: 6px;
+      border-radius: 3px;
+      background: #e0e0e0;
+      outline: none;
+    }
+
+    .control-zoom input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #667eea;
+      cursor: pointer;
+    }
+
+    @media print {
+      @page {
+        margin: 0;
+        size: auto;
+      }
+
+      html,
+      body {
+        background: white;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      /* Ocultar elementos de interfaz y textos no deseados */
+      .panel-control,
+      .modal-editor,
+      #pixabay-credit,
+      .no-print,
+      #aiModal,
+      .page-info,
+      .botones-celda,
+      .btn-celda,
+      .num-celda,
+      .celda-vacia {
+        display: none !important;
+      }
+
+      .hojas-container {
+        display: block;
+        margin: 0;
+        padding: 0;
+        gap: 0;
+        gap: 0;
+      }
+
+      .page-wrapper {
+        box-shadow: none;
+        padding: 0;
+        margin: 0;
+        border: none;
+        background: transparent;
+        width: 100%;
+        /* Forzar salto de página excepto en el último */
+        page-break-after: always;
+        break-after: page;
+        display: flex;
+        justify-content: center;
+        align-items: start;
+      }
+
+      .page-wrapper:last-child {
+        page-break-after: auto;
+        break-after: auto;
+      }
+
+      .page-container {
+        box-shadow: none;
+        margin: 0;
+        border: none;
+        overflow: hidden;
+        /* Asegurar que no exceda las dimensiones */
+        max-width: 100%;
+        page-break-inside: avoid;
+      }
+
+      .celda-imagen {
+        border: 1px solid #000 !important;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+
+      .img-preview {
+        max-width: 100%;
+        max-height: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body data-arkaios-template="cuadros-v2-inteligente">
+
+  <div class="container">
+    <div class="panel-control">
+      <div class="header">
+        <h1>🖼️ Plantilla de Impresión de Imágenes</h1>
+        <p>Sube tus imágenes, ajusta el tamaño y genera tu PDF listo para imprimir</p>
+      </div>
+
+      <div class="controles-grid">
+        <div class="control-group">
+          <label>📏 Tamaño de cuadros:</label>
+          <select id="selector-tamano">
+            <option value="3">3 cm (Pasaporte/Infantil)</option>
+            <option value="4">4 cm</option>
+            <option value="5" selected>5 cm (Credencial)</option>
+            <option value="6">6 cm</option>
+            <option value="7">7 cm</option>
+            <option value="8">8 cm</option>
+            <option value="9">9 cm</option>
+            <option value="10">10 cm</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label>📂 Agregar imágenes:</label>
+          <input type="file" id="input-imagenes" multiple accept="image/*" style="display: none;">
+          <button class="btn btn-primary" onclick="document.getElementById('input-imagenes').click()">
+            Seleccionar archivos
+          </button>
+        </div>
+      </div>
+
+      <div class="botones-accion">
+        <button class="btn btn-primary" onclick="searchPexels()" style="background: #05a081;">📸 Buscar en
+          Pexels</button>
+        <button class="btn btn-primary" onclick="surtirTareaArietty('info_cards')" style="background: linear-gradient(135deg, #4f46e5, #7c3aed);">🤖 Surtir Tarea Arietty (20 cuadros 5×5 IA)</button>
+        <button class="btn btn-secondary" onclick="window.print()">🖨️ Imprimir hojas</button>
+        <button class="btn btn-danger" onclick="limpiarTodo()">🗑️ Limpiar todo</button>
+      </div>
+
+      <div id="arietty-mode-bar" class="no-print" style="display:none; margin-bottom:14px; padding:10px 14px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; font-size:12.5px; color:#1e3a8a; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+        <div>
+          <strong>🎓 Modo Tarea Secundaria (Arietty · 5×5 cm · 20 cuadros):</strong>
+          <span>10 Justicia (separado de info) + 2 Moral + 2 Ética + 3 Longitud, Masa y Tiempo (1 c/u) = 17 + 3 cuadros:</span>
+        </div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <button type="button" onclick="surtirTareaArietty('info_cards')" style="padding:5px 10px; border-radius:6px; border:1px solid #2563eb; background:#2563eb; color:#fff; font-weight:700; cursor:pointer; font-size:11.5px;">20/20: 17 Fotos + 3 Fichas Info Justicia</button>
+          <button type="button" onclick="surtirTareaArietty('all_photos')" style="padding:5px 10px; border-radius:6px; border:1px solid #059669; background:#059669; color:#fff; font-weight:700; cursor:pointer; font-size:11.5px;">20/20: 20 Fotografías Puras</button>
+          <button type="button" onclick="surtirTareaArietty('exact_17')" style="padding:5px 10px; border-radius:6px; border:1px solid #475569; background:#fff; color:#334155; font-weight:700; cursor:pointer; font-size:11.5px;">17/20: 17 Fotos + 3 Vacíos</button>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat-item">
+          <div class="stat-value" id="stat-imagenes">0</div>
+          <div class="stat-label">Imágenes</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="stat-hojas">0</div>
+          <div class="stat-label">Hojas</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="stat-cuadros">0</div>
+          <div class="stat-label">Cuadros/Hoja</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="hojas-container" class="hojas-container">
+      <!-- Las hojas se generarán aquí -->
+    </div>
+
+    <div id="hoja-info-justicia-separada" class="page-wrapper" style="margin-top: 24px;">
+      <div class="page-info">Hoja Adicional Separada · Información de la Justicia (Aparte de las 10 imágenes de 5×5 cm)</div>
+      <div class="page-container" style="padding: 1.5cm; font-family: Segoe UI, system-ui, sans-serif; color: #1e293b; line-height: 1.55;">
+        <h2 style="color: #1d4ed8; border-bottom: 3px solid #1d4ed8; padding-bottom: 8px; margin-bottom: 14px; font-size: 22px;">
+          ⚖️ LA JUSTICIA — Información Separada de las 10 Imágenes
+        </h2>
+        <p style="margin-bottom: 12px; font-size: 14px;">
+          <strong>1. ¿Qué es la Justicia?</strong><br>
+          La <strong>justicia</strong> es un valor ético, moral y jurídico fundamental que consiste en dar a cada persona lo que le corresponde o pertenece por derecho, garantizando la igualdad, la equidad, el respeto a la dignidad humana y el bien común dentro de la sociedad.
+        </p>
+        <p style="margin-bottom: 12px; font-size: 14px;">
+          <strong>2. Símbolos de la Justicia (representados en las 10 imágenes de 5×5 cm):</strong><br>
+          • <strong>La Balanza:</strong> Representa el equilibrio, la igualdad y la ponderación justa de los argumentos y derechos.<br>
+          • <strong>La Venda en los ojos:</strong> Simboliza la imparcialidad: la ley se aplica por igual sin importar riqueza, origen o condición.<br>
+          • <strong>La Espada / El Mazo Judicial:</strong> Representa la autoridad y firmeza para hacer cumplir las leyes y proteger los derechos.
+        </p>
+        <p style="margin-bottom: 12px; font-size: 14px;">
+          <strong>3. Tipos principales de Justicia:</strong><br>
+          • <strong>Justicia Distributiva:</strong> Reparto equitativo de los bienes, recursos y cargas en la sociedad según las necesidades y méritos.<br>
+          • <strong>Justicia Conmutativa (o Correctiva):</strong> Igualdad y honestidad en los intercambios, tratos y contratos entre personas.<br>
+          • <strong>Justicia Legal o General:</strong> Cumplimiento de las leyes orientadas al bienestar de toda la comunidad.<br>
+          • <strong>Justicia Social:</strong> Garantía de oportunidades, educación, salud y derechos humanos para todas las personas.
+        </p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px;">
+          <div style="background: #f8fafc; border-left: 4px solid #059669; padding: 10px 14px; border-radius: 6px; font-size: 13.5px;">
+            <strong style="color: #059669;">🤝 Moral (Cuadros 11 y 12):</strong><br>
+            Conjunto de normas, costumbres y valores adquiridos en la comunidad que guían las acciones humanas hacia el bien, la solidaridad y la empatía.
+          </div>
+          <div style="background: #f8fafc; border-left: 4px solid #7c3aed; padding: 10px 14px; border-radius: 6px; font-size: 13.5px;">
+            <strong style="color: #7c3aed;">🧠 Ética (Cuadros 13 y 14):</strong><br>
+            Reflexión racional y filosófica sobre el deber, la rectitud, la honestidad y los principios universales que justifican nuestras normas morales.
+          </div>
+        </div>
+        <div style="background: #eff6ff; border-left: 4px solid #2563eb; padding: 10px 14px; border-radius: 6px; font-size: 13.5px; margin-top: 14px;">
+          <strong style="color: #1d4ed8;">📏 Magnitudes Físicas Fundamentales (Cuadros 15, 16 y 17):</strong><br>
+          • <strong>Longitud (Cuadro 15):</strong> Mide la distancia entre dos puntos; su unidad en el SI es el <em>metro (m)</em> (ej. cinta métrica o regla).<br>
+          • <strong>Masa (Cuadro 16):</strong> Mide la cantidad de materia de un cuerpo; su unidad en el SI es el <em>kilogramo (kg)</em> (ej. balanza o báscula).<br>
+          • <strong>Tiempo (Cuadro 17):</strong> Mide la duración o separación de los acontecimientos; su unidad en el SI es el <em>segundo (s)</em> (ej. reloj o cronómetro).
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Input oculto para cambios individuales -->
+  <input type="file" id="input-individual" accept="image/*" style="display: none;">
+
+  <!-- Modal Editor -->
+  <div id="modal-editor" class="modal-editor">
+    <div class="modal-contenido">
+      <div class="modal-header">
+        <h3>✏️ Editar Imagen</h3>
+        <button class="btn-cerrar" onclick="cerrarEditor()">✕ Cerrar</button>
+      </div>
+      <div class="editor-preview" id="editor-preview">
+        <img id="editor-img" src="" alt="">
+      </div>
+      <div class="controles-editor">
+        <div class="control-zoom">
+          <label>🔍 Zoom:</label>
+          <input type="range" id="zoom-slider" min="100" max="200" value="100" step="1">
+          <span class="zoom-valor" id="zoom-valor">100%</span>
+        </div>
+        <button class="btn btn-primary" onclick="aplicarEdicion()">✓ Aplicar cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE IA REMOVIDO -->
+
+  <script>
+    const inputImagenes = document.getElementById('input-imagenes');
+    const inputIndividual = document.getElementById('input-individual');
+    const hojasContainer = document.getElementById('hojas-container');
+    const selectorTamano = document.getElementById('selector-tamano');
+
+    // Editor
+    const modalEditor = document.getElementById('modal-editor');
+    const editorImg = document.getElementById('editor-img');
+    const zoomSlider = document.getElementById('zoom-slider');
+    const zoomValor = document.getElementById('zoom-valor');
+
+    let imagenes = [];
+    let estadosImagen = []; // { zoom: 100, x: 0, y: 0, fijada: false }
+    let etiquetasImagen = [];
+    let indiceEditando = -1;
+    let indiceDragInicio = -1;
+    let indiceGenerando = -1;
+
+    window.ARKAIOS_setSlotLabels = function (labels) {
+      etiquetasImagen = Array.isArray(labels) ? labels.slice() : [];
+      generarPlantilla();
+    };
+
+    function openArkaiosAI(idx) {
+      if (window.ArkImagenes) {
+        window.ArkImagenes.select(idx);
+        const barInput = document.querySelector('.ark-img-bar .ark-topic');
+        let q = barInput ? barInput.value.trim() : '';
+        if (!q) {
+          q = prompt('¿Qué imagen deseas generar con IA para el cuadro #' + (idx + 1) + '?', 'balanza de la justicia, ilustración educativa');
+          if (!q) return;
+          if (barInput) barInput.value = q;
+        }
+        if (typeof window.ArkImagenes.generateForSlot === 'function') {
+          window.ArkImagenes.generateForSlot(idx);
+        }
+      }
+    }
+
+    // Helper para convertir imagen a Base64 (evita problemas de CORS al imprimir/guardar)
+    function toDataURL(url, callback) {
+      var xhr = new XMLHttpRequest();
+      xhr.onload = function () {
+        var reader = new FileReader();
+        reader.onloadend = function () {
+          callback(reader.result);
+        }
+        reader.readAsDataURL(xhr.response);
+      };
+      xhr.onerror = function () {
+        // Fallback si falla CORS
+        callback(url);
+      };
+      xhr.open('GET', url);
+      xhr.responseType = 'blob';
+      xhr.send();
+    }
+
+    // ===== API KEYS & INTEGRATION =====
+    const PEXELS_PROXY = '/api/pexels'; // la llave vive solo en el servidor (Vercel)
+
+    function applyExternalImages(urls, sourceName) {
+      rellenarConPixabay(urls, sourceName);
+    }
+
+    async function searchPexels() {
+      const query = prompt("¿Qué imágenes buscas en Pexels?");
+      if (!query) return;
+
+      const countStr = prompt("¿Cuántas imágenes quieres?", "1");
+      const count = parseInt(countStr) || 1;
+
+      try {
+        const response = await fetch(PEXELS_PROXY, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ q: query, per_page: count }) });
+        const data = await response.json();
+        const images = data.photos.map(photo => photo.src.large);
+        applyExternalImages(images, `Pexels: ${query}`);
+      } catch (error) {
+        console.error(error);
+        alert('Error al buscar en Pexels');
+      }
+    }
+
+
+
+    // Las funciones de generación con IA local han sido removidas.
+    // Ahora el sistema se comunica globalmente a través de ARKAIOS Principal.
+
+
+    // Event Listeners
+    selectorTamano.addEventListener('change', generarPlantilla);
+
+    inputImagenes.addEventListener('change', function (e) {
+      const archivos = Array.from(e.target.files);
+      let cargados = 0;
+
+      archivos.forEach(archivo => {
+        const reader = new FileReader();
+        reader.onload = function (ev) {
+          const imageData = ev.target.result;
+          const defaultState = { zoom: 100, x: 0, y: 0, fijada: false };
+
+          // Try to find the first empty slot (null) to fill
+          const emptyIndex = imagenes.findIndex(img => img === null);
+          if (emptyIndex !== -1) {
+            imagenes[emptyIndex] = imageData;
+            estadosImagen[emptyIndex] = defaultState;
+          } else {
+            imagenes.push(imageData);
+            estadosImagen.push(defaultState);
+          }
+
+          cargados++;
+          if (cargados === archivos.length) {
+            generarPlantilla();
+          }
+        };
+        reader.readAsDataURL(archivo);
+      });
+      e.target.value = '';
+    });
+
+    inputIndividual.addEventListener('change', function (e) {
+      const archivo = e.target.files[0];
+      if (!archivo) return;
+
+      const reader = new FileReader();
+      reader.onload = function (ev) {
+        if (indiceEditando >= 0) {
+          imagenes[indiceEditando] = ev.target.result;
+          estadosImagen[indiceEditando] = { zoom: 100, x: 0, y: 0, fijada: false };
+          generarPlantilla();
+        }
+      };
+      reader.readAsDataURL(archivo);
+      e.target.value = '';
+    });
+
+    function generarPlantilla() {
+      hojasContainer.innerHTML = '';
+      const tamano = parseInt(selectorTamano.value);
+      const filas = Math.floor(27.94 / tamano);
+      const cols = Math.floor(21.59 / tamano);
+      const cuadrosPorHoja = filas * cols;
+      const hojasNecesarias = Math.max(1, Math.ceil(imagenes.length / cuadrosPorHoja));
+      const validImagesCount = imagenes.filter(img => img !== null).length;
+
+      actualizarEstadisticas(validImagesCount, hojasNecesarias, cuadrosPorHoja);
+
+      for (let h = 0; h < hojasNecesarias; h++) {
+        const pageWrapper = document.createElement('div');
+        pageWrapper.className = 'page-wrapper';
+
+        const pageInfo = document.createElement('div');
+        pageInfo.className = 'page-info';
+        pageInfo.textContent = `Hoja ${h + 1} de ${hojasNecesarias}`;
+        pageWrapper.appendChild(pageInfo);
+
+        const pageContainer = document.createElement('div');
+        pageContainer.className = 'page-container';
+
+        const cuadricula = document.createElement('div');
+        cuadricula.className = 'cuadricula';
+        cuadricula.style.gridTemplateColumns = `repeat(${cols}, ${tamano}cm)`;
+        cuadricula.style.gridTemplateRows = `repeat(${filas}, ${tamano}cm)`;
+
+        const inicio = h * cuadrosPorHoja;
+        const fin = Math.min(inicio + cuadrosPorHoja, imagenes.length);
+
+        for (let i = 0; i < cuadrosPorHoja; i++) {
+          const idx = inicio + i;
+          const celda = crearCelda(idx, tamano);
+          cuadricula.appendChild(celda);
+        }
+
+        pageContainer.appendChild(cuadricula);
+        pageWrapper.appendChild(pageContainer);
+        hojasContainer.appendChild(pageWrapper);
+      }
+    }
+
+    function crearCelda(idx, tamano) {
+      const celda = document.createElement('div');
+      celda.className = 'celda-imagen arkaios-image-slot';
+      celda.style.width = `${tamano}cm`;
+      celda.style.height = `${tamano}cm`;
+      celda.draggable = imagenes[idx] ? true : false;
+      celda.dataset.idx = idx;
+
+      const numCelda = document.createElement('span');
+      numCelda.className = 'num-celda';
+      numCelda.textContent = idx + 1;
+      celda.appendChild(numCelda);
+
+      if (etiquetasImagen[idx]) {
+        const tagCelda = document.createElement('span');
+        tagCelda.className = 'etiqueta-celda no-print';
+        tagCelda.style.cssText = 'position:absolute;top:4px;right:4px;max-width:calc(100% - 34px);background:rgba(15,23,42,0.78);color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;z-index:2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;';
+        tagCelda.textContent = etiquetasImagen[idx];
+        celda.appendChild(tagCelda);
+      }
+
+      if (imagenes[idx]) {
+        const imgContainer = document.createElement('div');
+        imgContainer.className = 'img-container';
+
+        const img = document.createElement('img');
+        img.src = imagenes[idx];
+        img.className = 'img-preview';
+
+        const estado = estadosImagen[idx] || { zoom: 100, x: 0, y: 0, fijada: false };
+        img.style.transform = `scale(${estado.zoom / 100})`;
+
+        imgContainer.appendChild(img);
+        celda.appendChild(imgContainer);
+
+        const botones = document.createElement('div');
+        botones.className = 'botones-celda';
+
+        const btnEditar = document.createElement('button');
+        btnEditar.className = 'btn-celda btn-editar';
+        btnEditar.textContent = '✏️';
+        btnEditar.onclick = (e) => {
+          e.stopPropagation();
+          abrirEditor(idx);
+        };
+
+        const btnFijar = document.createElement('button');
+        btnFijar.className = 'btn-celda btn-fijar';
+        btnFijar.textContent = estado.fijada ? '🔓' : '📌';
+        btnFijar.onclick = (e) => {
+          e.stopPropagation();
+          toggleFijar(idx);
+        };
+
+        const btnEliminar = document.createElement('button');
+        btnEliminar.className = 'btn-celda btn-eliminar';
+        btnEliminar.textContent = '🗑️';
+        btnEliminar.onclick = (e) => {
+          e.stopPropagation();
+          eliminarImagen(idx);
+        };
+
+        botones.appendChild(btnEditar);
+        botones.appendChild(btnFijar);
+        botones.appendChild(btnEliminar);
+        celda.appendChild(botones);
+
+        celda.addEventListener('dragstart', handleDragStart);
+        celda.addEventListener('dragover', handleDragOver);
+        celda.addEventListener('drop', handleDrop);
+        celda.addEventListener('dragend', handleDragEnd);
+      } else {
+        const container = document.createElement('div');
+        container.style.display = 'flex';
+        container.style.flexDirection = 'column';
+        container.style.alignItems = 'center';
+        container.style.justifyContent = 'center';
+        container.style.height = '100%';
+        container.style.gap = '8px';
+
+        const btnGen = document.createElement('button');
+        btnGen.textContent = '✨ Generar';
+        btnGen.className = 'btn-celda btn-generar';
+        btnGen.onclick = (e) => {
+          e.stopPropagation();
+          openArkaiosAI(idx);
+        };
+        container.appendChild(btnGen);
+        celda.appendChild(container);
+      }
+
+      celda.addEventListener('dragover', handleDragOver);
+      celda.addEventListener('drop', handleDrop);
+      return celda;
+    }
+
+    function handleDragStart(e) {
+      const idx = parseInt(e.currentTarget.dataset.idx);
+      indiceDragInicio = idx;
+      e.currentTarget.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.currentTarget.classList.add('drag-over');
+      e.dataTransfer.dropEffect = 'move';
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      e.currentTarget.classList.remove('drag-over');
+      const idxDestino = parseInt(e.currentTarget.dataset.idx);
+
+      if (indiceDragInicio !== -1 && indiceDragInicio !== idxDestino) {
+        const temp = imagenes[indiceDragInicio];
+        const tempEstado = estadosImagen[indiceDragInicio];
+        imagenes[indiceDragInicio] = imagenes[idxDestino];
+        estadosImagen[indiceDragInicio] = estadosImagen[idxDestino];
+        imagenes[idxDestino] = temp;
+        estadosImagen[idxDestino] = tempEstado;
+        generarPlantilla();
+      }
+    }
+
+    function handleDragEnd(e) {
+      e.currentTarget.classList.remove('dragging');
+      document.querySelectorAll('.drag-over').forEach(el => {
+        el.classList.remove('drag-over');
+      });
+      indiceDragInicio = -1;
+    }
+
+    function abrirEditor(idx) {
+      indiceEditando = idx;
+      editorImg.src = imagenes[idx];
+      const estado = estadosImagen[idx] || { zoom: 100 };
+      zoomSlider.value = estado.zoom;
+      zoomValor.textContent = estado.zoom + '%';
+      editorImg.style.transform = `scale(${estado.zoom / 100})`;
+      modalEditor.classList.add('activo');
+    }
+
+    function cerrarEditor() {
+      modalEditor.classList.remove('activo');
+      indiceEditando = -1;
+    }
+
+    zoomSlider.addEventListener('input', function () {
+      const zoom = parseInt(this.value);
+      zoomValor.textContent = zoom + '%';
+      editorImg.style.transform = `scale(${zoom / 100})`;
+    });
+
+    function aplicarEdicion() {
+      if (indiceEditando >= 0) {
+        estadosImagen[indiceEditando].zoom = parseInt(zoomSlider.value);
+        generarPlantilla();
+        cerrarEditor();
+      }
+    }
+
+    function toggleFijar(idx) {
+      if (!estadosImagen[idx]) {
+        estadosImagen[idx] = { zoom: 100, x: 0, y: 0, fijada: false };
+      }
+      estadosImagen[idx].fijada = !estadosImagen[idx].fijada;
+      generarPlantilla();
+    }
+
+    function eliminarImagen(idx) {
+      if (confirm('¿Eliminar esta imagen?')) {
+        imagenes[idx] = null;
+        estadosImagen[idx] = null;
+
+        // Trim trailing nulls to avoid infinite growth
+        while (imagenes.length > 0 && imagenes[imagenes.length - 1] === null) {
+          imagenes.pop();
+          estadosImagen.pop();
+        }
+
+        generarPlantilla();
+      }
+    }
+
+    function limpiarTodo() {
+      if (confirm('¿Eliminar todas las imágenes?')) {
+        imagenes = [];
+        estadosImagen = [];
+        generarPlantilla();
+      }
+    }
+
+    function actualizarEstadisticas(numImagenes, numHojas, cuadrosPorHoja) {
+      document.getElementById('stat-imagenes').textContent = numImagenes;
+      document.getElementById('stat-hojas').textContent = numHojas;
+      document.getElementById('stat-cuadros').textContent = cuadrosPorHoja;
+    }
+
+    function mostrarCreditoPixabay(topic, count) {
+      let credit = document.getElementById('pixabay-credit');
+      if (!credit) {
+        credit = document.createElement('div');
+        credit.id = 'pixabay-credit';
+        credit.classList.add('no-print');
+        const container = document.querySelector('.container');
+        container?.insertBefore(credit, container.firstChild);
+      }
+      const cleanTopic = topic || 'Pixabay';
+      credit.textContent = `Imágenes de Pixabay (${count}) · Tema: ${cleanTopic}`;
+    }
+
+    function rellenarConPixabay(urls, sourceName) {
+      urls.forEach(url => {
+        const defaultState = { zoom: 100, x: 0, y: 0, fijada: false };
+        const emptyIndex = imagenes.findIndex(img => img === null);
+        if (emptyIndex !== -1) {
+          imagenes[emptyIndex] = url;
+          estadosImagen[emptyIndex] = defaultState;
+        } else {
+          imagenes.push(url);
+          estadosImagen.push(defaultState);
+        }
+      });
+      generarPlantilla();
+    }
+
+    // Nuclear fix for printing
+    window.onbeforeprint = function () {
+      const credit = document.getElementById('pixabay-credit');
+      if (credit) credit.style.setProperty('display', 'none', 'important');
+    };
+    window.onafterprint = function () {
+      const credit = document.getElementById('pixabay-credit');
+      if (credit) credit.style.display = 'block';
+    };
+
+
+    // Iniciar
+    generarPlantilla();
+  </script>
+  <script src="js/arkaios-imagenes.js"></script>
+  <script>
+    (function () {
+      const nuevoEstado = () => ({ zoom: 100, x: 0, y: 0, fijada: false });
+
+      function rellenarHasta(i) {
+        while (imagenes.length < i) {
+          imagenes.push(null);
+          estadosImagen.push(null);
+        }
+      }
+
+      function recortarVacios() {
+        while (imagenes.length > 0 && !imagenes[imagenes.length - 1]) {
+          imagenes.pop();
+          estadosImagen.pop();
+        }
+      }
+
+      ArkImagenes.init({
+        slots: () => [...hojasContainer.querySelectorAll('.celda-imagen')],
+        get: (i) => imagenes[i] || null,
+        set: (i, src) => {
+          rellenarHasta(i);
+          imagenes[i] = src || null;
+          estadosImagen[i] = src ? nuevoEstado() : null;
+          recortarVacios();
+          generarPlantilla();
+        },
+        swap: (a, b) => {
+          rellenarHasta(Math.max(a, b) + 1);
+          [imagenes[a], imagenes[b]] = [imagenes[b] || null, imagenes[a] || null];
+          [estadosImagen[a], estadosImagen[b]] = [estadosImagen[b] || null, estadosImagen[a] || null];
+          [etiquetasImagen[a], etiquetasImagen[b]] = [etiquetasImagen[b] || null, etiquetasImagen[a] || null];
+          recortarVacios();
+          generarPlantilla();
+        },
+        toolbar: '.botones-accion',
+        toolbarPosition: 'after',
+        orientation: 'square',
+        dragSwap: false
+      });
+
+      // Catálogo verificado de alta resolución para la tarea de secundaria de Arietty (5x5 cm · 20 cuadros)
+      const ARIETTY_PROMPT = '[2:18 p.m., 11/11/2026] Arietty: 10 imágenes de la justicia separado de la información de a justicia\n2 imágenes de moral y 2 de ética\n3 imágenes de ejemplos de la longitud, masa y tiempo (una cada una)\n[2:18 p.m., 11/11/2026] Arietty: De 5x5';
+
+      const ARIETTY_CURATED_17 = [
+        // 1 a 10: 10 imágenes de la Justicia (separadas de la información escrita)
+        { label: 'Justicia (1/10) · Balanza y Mazo', url: 'https://images.pexels.com/photos/5668882/pexels-photo-5668882.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Justicia (2/10) · Tribunal y Ley', url: 'https://images.pexels.com/photos/5669619/pexels-photo-5669619.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Justicia (3/10) · Equilibrio Judicial', url: 'https://images.pexels.com/photos/5669602/pexels-photo-5669602.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Justicia (4/10) · Dama de la Justicia', url: 'https://images.pexels.com/photos/6077123/pexels-photo-6077123.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Justicia (5/10) · Estatua Iustitia', url: 'https://images.pexels.com/photos/6077091/pexels-photo-6077091.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Justicia (6/10) · Imparcialidad', url: 'https://images.pexels.com/photos/6077430/pexels-photo-6077430.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Justicia (7/10) · Derecho y Corte', url: 'https://images.pexels.com/photos/6077381/pexels-photo-6077381.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Justicia (8/10) · Símbolo de Equidad', url: 'https://images.pexels.com/photos/8112195/pexels-photo-8112195.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Justicia (9/10) · Balanza Dorada', url: 'https://images.pexels.com/photos/6077797/pexels-photo-6077797.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Justicia (10/10) · Código y Mazo', url: 'https://images.pexels.com/photos/7876093/pexels-photo-7876093.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        // 11 a 12: 2 imágenes de Moral
+        { label: 'Moral (1/2) · Solidaridad y Bondad', url: 'https://images.pexels.com/photos/6646815/pexels-photo-6646815.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Moral (2/2) · Empatía y Ayuda', url: 'https://images.pexels.com/photos/6646816/pexels-photo-6646816.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        // 13 a 14: 2 imágenes de Ética
+        { label: 'Ética (1/2) · Igualdad y Principios', url: 'https://images.pexels.com/photos/10617691/pexels-photo-10617691.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Ética (2/2) · Respeto y Rectitud', url: 'https://images.pexels.com/photos/9301860/pexels-photo-9301860.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        // 15 a 17: 3 imágenes de ejemplos de Longitud, Masa y Tiempo (una cada una)
+        { label: 'Longitud (1/1) · Cinta Métrica (cm/m)', url: 'https://images.pexels.com/photos/4919433/pexels-photo-4919433.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Masa (1/1) · Báscula / Balanza (kg/g)', url: 'https://images.pexels.com/photos/11465984/pexels-photo-11465984.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Tiempo (1/1) · Relojes (s/min/h)', url: 'https://images.pexels.com/photos/5563404/pexels-photo-5563404.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' }
+      ];
+
+      const ARIETTY_EXTRA_3_PHOTOS = [
+        { label: 'Longitud (Extra) · Flexómetro Escolar', url: 'https://images.pexels.com/photos/19585984/pexels-photo-19585984.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Masa (Extra) · Balanza de Precisión', url: 'https://images.pexels.com/photos/8667532/pexels-photo-8667532.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Tiempo (Extra) · Reloj de Arena', url: 'https://images.pexels.com/photos/17139860/pexels-photo-17139860.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' }
+      ];
+
+      function makeInfoCardSvg(title, subtitle, lines, color) {
+        const itemsSvg = lines.map((l, i) => `<text x="28" y="${175 + i * 56}" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="600" fill="#1e293b">• ${l}</text>`).join('');
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500">
+          <rect width="500" height="500" rx="16" fill="#ffffff" stroke="${color}" stroke-width="10"/>
+          <rect x="0" y="0" width="500" height="94" rx="12" fill="${color}"/>
+          <text x="250" y="44" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="800" fill="#ffffff">${title}</text>
+          <text x="250" y="75" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="600" fill="#e0e7ff">${subtitle}</text>
+          ${itemsSvg}
+          <rect x="24" y="432" width="452" height="42" rx="8" fill="#eff6ff"/>
+          <text x="250" y="459" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="${color}">INFORMACIÓN SEPARADA DE LAS 10 IMÁGENES</text>
+        </svg>`;
+        return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+      }
+
+      const ARIETTY_INFO_3_CARDS = [
+        {
+          label: 'Info Justicia (1/3) · Definición',
+          url: makeInfoCardSvg('¿QUÉ ES LA JUSTICIA?', 'Información Separada · Cuadro 18', [
+            'Valor ético, moral y jurídico supremo',
+            'Dar a cada quien lo que le corresponde',
+            'Garantiza igualdad e imparcialidad',
+            'Base de la paz y los derechos humanos',
+            'Protege el bien común en la sociedad'
+          ], '#1d4ed8')
+        },
+        {
+          label: 'Info Justicia (2/3) · Tipos',
+          url: makeInfoCardSvg('TIPOS DE JUSTICIA', 'Información Separada · Cuadro 19', [
+            'Distributiva: reparto equitativo',
+            'Conmutativa: trato justo en acuerdos',
+            'Legal: respeto y aplicación de leyes',
+            'Social: oportunidades y dignidad',
+            'Restaurativa: reparación del daño'
+          ], '#4338ca')
+        },
+        {
+          label: 'Info Justicia (3/3) · Símbolos',
+          url: makeInfoCardSvg('SÍMBOLOS Y VALORES', 'Información Separada · Cuadro 20', [
+            'Balanza: equilibrio entre derechos',
+            'Venda: imparcialidad sin privilegios',
+            'Espada: fuerza para cumplir la ley',
+            'Moral: normas de conducta y bien',
+            'Ética: reflexión sobre el deber justo'
+          ], '#0f766e')
+        }
+      ];
+
+      window.surtirTareaArietty = function (mode) {
+        const chosenMode = mode || 'info_cards';
+        selectorTamano.value = '5';
+        const barInput = document.querySelector('.ark-img-bar .ark-topic');
+        if (barInput) barInput.value = ARIETTY_PROMPT;
+        const modeBar = document.getElementById('arietty-mode-bar');
+        if (modeBar) modeBar.style.display = 'flex';
+
+        let list = ARIETTY_CURATED_17.slice();
+        if (chosenMode === 'info_cards') {
+          list = list.concat(ARIETTY_INFO_3_CARDS);
+        } else if (chosenMode === 'all_photos') {
+          list = list.concat(ARIETTY_EXTRA_3_PHOTOS);
+        }
+
+        imagenes = list.map((it) => it.url);
+        estadosImagen = list.map(() => nuevoEstado());
+        etiquetasImagen = list.map((it) => it.label);
+        generarPlantilla();
+
+        const status = document.querySelector('.ark-img-bar .ark-status');
+        if (status) {
+          status.textContent = `✅ Tarea de Arietty surtida (${imagenes.length}/20 cuadros de 5×5 cm): 10 Justicia + 2 Moral + 2 Ética + 3 Longitud/Masa/Tiempo` +
+            (chosenMode === 'info_cards' ? ' + 3 Fichas de Información de la Justicia separadas.' : chosenMode === 'all_photos' ? ' + 3 fotos extra.' : ' + 3 vacíos.');
+        }
+      };
+
+      const params = new URLSearchParams(location.search);
+      if (true || params.get('tarea') === 'arietty') {
+        window.surtirTareaArietty(params.get('modo') || 'info_cards');
+      } else if (params.get('prompt')) {
+        const barInput = document.querySelector('.ark-img-bar .ark-topic');
+        if (barInput) {
+          barInput.value = params.get('prompt');
+          if (window.ArkImagenes && window.ArkImagenes.fillHomework) {
+            window.ArkImagenes.fillHomework(params.get('prompt'));
+          }
+        }
+      }
+    })();
+  </script>
+  <script src="arkaios-biblioteca.js"></script>
+  <script src="arkaios-orquestador.js"></script>
+</body>
+
+</html>

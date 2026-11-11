@@ -23,10 +23,188 @@
   'use strict';
 
   const PEXELS_PROXY = '/api/pexels';
+  const PEXELS_REMOTE_PROXY = 'https://eduacion-libre-proyecto-arkaios.vercel.app/api/pexels';
   const PUTER_SDK = 'https://js.puter.com/v2/';
   const DRAG_THRESHOLD_PX = 6;
   const WIKI_OVERFETCH = 3;
   const SAFE_SRC = /^(https?:|data:image\/|blob:)/i;
+
+  // Diccionario pedagógico ES -> EN para búsqueda visual limpia (sin diapositivas de texto)
+  const SCHOOL_TOPIC_MAP = [
+    { re: /\bjusticia\b/i, q: 'justice scale gavel law courthouse lady justice', label: 'Justicia', ai: 'Lady Justice holding golden balance scales and gavel, clean educational illustration, no text' },
+    { re: /\bmoral\b/i, q: 'helping hands volunteer kindness charity empathy community', label: 'Moral', ai: 'people helping each other with kindness and empathy, moral values educational illustration, no text' },
+    { re: /\b[eé]tica\b/i, q: 'handshake agreement equality respect teamwork integrity', label: 'Ética', ai: 'fairness integrity handshake and ethical teamwork, clean educational illustration, no text' },
+    { re: /\blongitud\b/i, q: 'measuring tape ruler centimeter distance meter', label: 'Longitud (Magnitud Física)', ai: 'measuring tape and school ruler measuring length in centimeters and meters, clean educational illustration' },
+    { re: /\bmasa\b/i, q: 'weighing scale balance weight kilogram gram', label: 'Masa (Magnitud Física)', ai: 'precision balance scale measuring mass in kilograms, clean educational illustration' },
+    { re: /\btiempo\b/i, q: 'analog clock hourglass stopwatch time', label: 'Tiempo (Magnitud Física)', ai: 'analog clock stopwatch and hourglass measuring time, clean educational illustration' },
+    { re: /\bderechos\s*humanos\b/i, q: 'human rights peace freedom equality hands', label: 'Derechos Humanos', ai: 'human rights peace and equality symbol, educational illustration' },
+    { re: /\bdemocracia\b/i, q: 'voting ballot box democracy citizens', label: 'Democracia', ai: 'citizens voting in ballot box democracy, educational illustration' }
+  ];
+
+  function enrichSchoolTopic(rawTopic) {
+    const clean = String(rawTopic || '')
+      .replace(/\b(im[aá]genes|imagen|fotos|foto|cuadros|cuadro|ejemplos|ejemplo|de|del|la|el|los|las|un|una|unos|unas|sobre|tema|para|con|sin)\b/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    for (const item of SCHOOL_TOPIC_MAP) {
+      if (item.re.test(rawTopic) || item.re.test(clean)) {
+        return { raw: clean || item.label, label: item.label, query: item.q, aiPrompt: item.ai };
+      }
+    }
+    const label = clean ? clean.charAt(0).toUpperCase() + clean.slice(1) : 'Educación';
+    return { raw: clean || 'educacion', label, query: clean || 'education school', aiPrompt: (clean || 'education') + ', clean educational illustration, no text' };
+  }
+
+  /**
+   * Analiza instrucciones escolares compuestas (ej. mensajes de WhatsApp con múltiples temas y cantidades).
+   * Retorna: { isMulti, sizeCm, separatedInfoTopics, items: [{ count, label, query, aiPrompt, raw }] }
+   */
+  function parseHomeworkTasks(rawInput) {
+    let text = String(rawInput || '')
+      // Quitar encabezados de WhatsApp tipo "[2:18 p.m., 11/11/2026] Nombre:"
+      .replace(/\[\d{1,2}:\d{2}[^\]]*\]\s*[^:\n]+:\s*/gi, '\n')
+      .trim();
+
+    // Detectar medida en cm o formato NxN (ej. "De 5x5" o "5 cm")
+    let sizeCm = null;
+    const sizeMatch = text.match(/\bde\s*(\d+)\s*[x×]\s*(\d+)\b/i) || text.match(/\b(\d+)\s*cm\b/i);
+    if (sizeMatch) {
+      const val = parseInt(sizeMatch[1], 10);
+      if (val >= 3 && val <= 10) sizeCm = val;
+    }
+
+    // Detectar si pide separar imágenes de la información escrita (ej. "separado de la información de la justicia")
+    const separatedInfoTopics = [];
+    const sepRegex = /separad[oa]s?\s+de\s+la\s+informaci[oó]n\s+de\s+(?:la|el|los|las|a)?\s*([a-záéíóúñü]+)/gi;
+    let sepM;
+    while ((sepM = sepRegex.exec(text)) !== null) {
+      separatedInfoTopics.push(sepM[1].trim());
+    }
+
+    // Limpiar frases de medida y "separado de la información..." para no contaminar los temas
+    let working = text
+      .replace(/separad[oa]s?\s+de\s+la\s+informaci[oó]n\s+de\s+(?:la|el|los|las|a)?\s*[a-záéíóúñü]+/gi, ' ')
+      .replace(/\bde\s*\d+\s*[x×]\s*\d+\b/gi, ' ');
+
+    const items = [];
+    // Dividir por saltos de línea o punto y coma
+    const lines = working.split(/[\n;]+/).map((s) => s.trim()).filter(Boolean);
+
+    for (const line of lines) {
+      // Caso 1: "3 imágenes de ejemplos de la longitud, masa y tiempo (una cada una)"
+      const eachMatch = line.match(/(\d+)\s*(?:im[aá]genes|imagen|fotos|foto|cuadros|ilustraciones)?\s*(?:de\s+)?(?:ejemplos?\s+de\s+)?([^()]+?)\s*\(\s*(?:una|uno|1)\s+(?:de\s+)?cada\s+un[oa]\s*\)/i);
+      if (eachMatch) {
+        const subTopics = eachMatch[2]
+          .split(/,|\s+y\s+|\s+e\s+/i)
+          .map((s) => s.trim())
+          .filter((s) => s.length >= 2);
+        if (subTopics.length > 0) {
+          subTopics.forEach((st) => {
+            const info = enrichSchoolTopic(st);
+            items.push({ count: 1, label: info.label, query: info.query, aiPrompt: info.aiPrompt, raw: st });
+          });
+          continue;
+        }
+      }
+
+      // Caso 2: Múltiples cantidades en una misma línea: "2 imágenes de moral y 2 de ética"
+      const multiMatches = [...line.matchAll(/(\d+)\s*(?:im[aá]genes|imagen|fotos|foto|cuadros|ejemplos)?\s*(?:de\s+|sobre\s+)([a-záéíóúñü\s,]+?)(?=(?:\s+y\s+\d+\b|\s*,\s*\d+\b|$))/gi)];
+      if (multiMatches.length >= 1) {
+        for (const m of multiMatches) {
+          const count = Math.max(1, Math.min(30, parseInt(m[1], 10) || 1));
+          const rawSub = m[2].replace(/\(\s*una\s+cada\s+una\s*\)/gi, '').trim();
+          // Si dice "3 imágenes de ejemplos de longitud, masa y tiempo" con exactamente 3 subtemas separados por coma/y
+          const parts = rawSub.split(/,|\s+y\s+/i).map((s) => s.replace(/^\s*(la|el|los|las|ejemplos?\s+de)\s+/i, '').trim()).filter((s) => s.length >= 2);
+          if (parts.length > 1 && parts.length === count) {
+            parts.forEach((p) => {
+              const info = enrichSchoolTopic(p);
+              items.push({ count: 1, label: info.label, query: info.query, aiPrompt: info.aiPrompt, raw: p });
+            });
+          } else {
+            const info = enrichSchoolTopic(rawSub);
+            items.push({ count, label: info.label, query: info.query, aiPrompt: info.aiPrompt, raw: rawSub });
+          }
+        }
+      }
+    }
+
+    const totalRequested = items.reduce((acc, it) => acc + it.count, 0);
+    return {
+      isMulti: items.length > 1 || separatedInfoTopics.length > 0 || sizeCm !== null,
+      sizeCm,
+      separatedInfoTopics,
+      items,
+      totalRequested
+    };
+  }
+
+  function createInfoSvgDataUrl(title, subtitle, bullets, accentColor) {
+    const color = accentColor || '#1e40af';
+    const linesHtml = (bullets || []).map((b, idx) => {
+      const y = 185 + idx * 58;
+      return `<text x="32" y="${y}" font-family="Segoe UI, Arial, sans-serif" font-size="21" font-weight="600" fill="#1e293b">• ${b}</text>`;
+    }).join('');
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500">
+      <rect width="500" height="500" rx="18" fill="#f8fafc" stroke="${color}" stroke-width="10"/>
+      <rect x="0" y="0" width="500" height="96" rx="14" fill="${color}"/>
+      <text x="250" y="46" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="25" font-weight="800" fill="#ffffff">${title}</text>
+      <text x="250" y="78" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="600" fill="#dbeafe">${subtitle}</text>
+      ${linesHtml}
+      <rect x="24" y="430" width="452" height="44" rx="10" fill="#eff6ff"/>
+      <text x="250" y="458" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="700" fill="${color}">INFORMACIÓN SEPARADA DE LAS IMÁGENES</text>
+    </svg>`;
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  }
+
+  function buildJusticeInfoCards() {
+    return [
+      {
+        label: 'Info Justicia 1/3: ¿Qué es?',
+        src: createInfoSvgDataUrl(
+          '¿QUÉ ES LA JUSTICIA?',
+          'Ficha Informativa 1 (Separada)',
+          [
+            'Principio ético, moral y jurídico',
+            'Dar a cada persona lo que corresponde',
+            'Trato equitativo sin discriminación',
+            'Base de la paz y convivencia social',
+            'Protege la dignidad y los derechos'
+          ],
+          '#1d4ed8'
+        )
+      },
+      {
+        label: 'Info Justicia 2/3: Tipos',
+        src: createInfoSvgDataUrl(
+          'TIPOS DE JUSTICIA',
+          'Ficha Informativa 2 (Separada)',
+          [
+            'Distributiva: reparto justo de bienes',
+            'Conmutativa: igualdad en acuerdos',
+            'Legal: cumplimiento de las leyes',
+            'Social: bienestar y derechos para todos',
+            'Restaurativa: reparar el daño causado'
+          ],
+          '#4338ca'
+        )
+      },
+      {
+        label: 'Info Justicia 3/3: Símbolos',
+        src: createInfoSvgDataUrl(
+          'SÍMBOLOS DE LA JUSTICIA',
+          'Ficha Informativa 3 (Separada)',
+          [
+            'La Balanza: equilibrio e igualdad',
+            'La Venda: imparcialidad ante todos',
+            'La Espada: firmeza para aplicar la ley',
+            'Ética: reflexión sobre lo justo y recto',
+            'Moral: normas de conducta humana'
+          ],
+          '#0f766e'
+        )
+      }
+    ];
+  }
 
   let cfg = null;
   let selected = -1;
@@ -216,14 +394,25 @@
   }
 
   async function searchPexels(q, n) {
-    const body = { q, per_page: n };
-    if (cfg.orientation) body.orientation = cfg.orientation;
-    const res = await fetch(PEXELS_PROXY, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
-    });
-    if (!res.ok) throw new Error('Pexels ' + res.status);
-    const data = await res.json();
-    return (data.photos || []).map((p) => p.src && (p.src.large2x || p.src.large)).filter(Boolean);
+    const body = { q, per_page: Math.min(40, Math.max(3, n + 2)) };
+    if (cfg && cfg.orientation) body.orientation = cfg.orientation;
+    const endpoints = [PEXELS_PROXY, PEXELS_REMOTE_PROXY];
+    let lastErr = null;
+    for (const ep of endpoints) {
+      try {
+        const res = await fetch(ep, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+        });
+        if (!res.ok) throw new Error('Pexels ' + res.status);
+        const data = await res.json();
+        const urls = (data.photos || []).map((p) => p.src && (p.src.large || p.src.large2x)).filter(Boolean);
+        if (urls.length) return urls.slice(0, n);
+      } catch (err) {
+        lastErr = err;
+      }
+    }
+    if (lastErr) throw lastErr;
+    return [];
   }
 
   async function searchWikimedia(q, n) {
@@ -234,13 +423,19 @@
     const res = await fetch(url);
     if (!res.ok) throw new Error('Wikimedia ' + res.status);
     const pages = Object.values(((await res.json()).query || {}).pages || {});
-    const wantLandscape = cfg.orientation === 'landscape';
-    const wantPortrait = cfg.orientation === 'portrait';
+    const wantLandscape = cfg && cfg.orientation === 'landscape';
+    const wantPortrait = cfg && cfg.orientation === 'portrait';
     return pages
       .map((p) => p.imageinfo && p.imageinfo[0])
       .filter((ii) => ii && (!wantLandscape || ii.width > ii.height) && (!wantPortrait || ii.height > ii.width))
       .map((ii) => ii.thumburl || ii.url)
       .slice(0, n);
+  }
+
+  function buildPollinationsUrl(promptText, seedOffset) {
+    const seed = Math.floor(Math.random() * 1000000) + (seedOffset || 0) * 137;
+    const clean = encodeURIComponent(promptText + ', educational school illustration, high quality, clean background, no text');
+    return 'https://image.pollinations.ai/prompt/' + clean + '?width=512&height=512&seed=' + seed + '&nologo=true';
   }
 
   function wantedCount() {
@@ -251,22 +446,111 @@
     return empties || n;
   }
 
+  async function fetchImagesForSubtask(item, usedUrls) {
+    const needed = item.count;
+    let found = [];
+    try {
+      const pex = await searchPexels(item.query, needed + 4);
+      found = pex.filter((u) => !usedUrls.has(u));
+    } catch (err) {
+      console.warn('[ArkImagenes] Pexels subtask:', err);
+    }
+    if (found.length < needed) {
+      try {
+        const wiki = await searchWikimedia(item.query, needed + 4);
+        wiki.forEach((u) => { if (!usedUrls.has(u) && found.length < needed) found.push(u); });
+      } catch (err) {
+        console.warn('[ArkImagenes] Wikimedia subtask:', err);
+      }
+    }
+    while (found.length < needed) {
+      found.push(buildPollinationsUrl(item.aiPrompt || item.query, found.length + 1));
+    }
+    const selectedUrls = found.slice(0, needed);
+    selectedUrls.forEach((u) => usedUrls.add(u));
+    return selectedUrls;
+  }
+
+  async function fillHomework(rawPrompt, opts) {
+    const plan = parseHomeworkTasks(rawPrompt);
+    const bar = (opts && opts.bar) || document.querySelector('.ark-img-bar');
+    const status = bar ? bar.querySelector('.ark-status') : null;
+    const setStatus = (msg) => { if (status) status.textContent = msg; };
+
+    // Ajustar tamaño de cuadros si el prompt pide ej. "De 5x5"
+    if (plan.sizeCm) {
+      const selTamano = document.getElementById('selector-tamano');
+      if (selTamano && String(selTamano.value) !== String(plan.sizeCm)) {
+        selTamano.value = String(plan.sizeCm);
+        selTamano.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    }
+
+    if (!plan.items.length) return null;
+
+    const usedUrls = new Set();
+    const finalSlots = [];
+    const finalLabels = [];
+
+    for (let idx = 0; idx < plan.items.length; idx++) {
+      const it = plan.items[idx];
+      setStatus(`🤖 Agente IA (${idx + 1}/${plan.items.length}): buscando ${it.count} de "${it.label}"…`);
+      const urls = await fetchImagesForSubtask(it, usedUrls);
+      urls.forEach((u, k) => {
+        finalSlots.push(u);
+        finalLabels.push(it.count > 1 ? `${it.label} (${k + 1}/${it.count})` : `${it.label}`);
+      });
+    }
+
+    // Si hay huecos para completar los 20 cuadros de 5x5 y se pidió "separado de la información de la justicia"
+    const totalGridSlots = slotCount() || 20;
+    const fillRemainingMode = (opts && opts.remainingMode) || 'info_cards';
+    if (plan.separatedInfoTopics.length > 0 && finalSlots.length < totalGridSlots && fillRemainingMode === 'info_cards') {
+      const infoCards = buildJusticeInfoCards();
+      let cardIdx = 0;
+      while (finalSlots.length < totalGridSlots && cardIdx < infoCards.length) {
+        finalSlots.push(infoCards[cardIdx].src);
+        finalLabels.push(infoCards[cardIdx].label);
+        cardIdx++;
+      }
+    }
+
+    // Colocar en la plantilla
+    for (let i = 0; i < finalSlots.length; i++) {
+      cfg.set(i, finalSlots[i]);
+    }
+    if (typeof window.ARKAIOS_setSlotLabels === 'function') {
+      window.ARKAIOS_setSlotLabels(finalLabels, plan);
+    }
+
+    const summary = plan.items.map((it) => `${it.count} ${it.label}`).join(' + ');
+    setStatus(`✅ Agente IA surtió ${finalSlots.length} cuadros: ${summary}`);
+    toast(`✅ Plantilla surtida (${finalSlots.length} cuadros)`);
+    return { placed: finalSlots.length, plan, urls: finalSlots, labels: finalLabels };
+  }
+
   async function autoFill(bar) {
     const q = bar.querySelector('.ark-topic').value.trim();
-    if (!q) { toast('Escribe primero un tema.'); bar.querySelector('.ark-topic').focus(); return; }
+    if (!q) { toast('Escribe primero un tema o pega las instrucciones de la tarea.'); bar.querySelector('.ark-topic').focus(); return; }
     const btn = bar.querySelector('.ark-fill');
     const status = bar.querySelector('.ark-status');
-    const n = Math.max(1, Math.min(40, wantedCount()));
     btn.disabled = true;
-    status.textContent = '🔍 Buscando fotos de "' + q + '"…';
     try {
+      const plan = parseHomeworkTasks(q);
+      if (plan.items.length > 1 || (plan.items.length === 1 && plan.items[0].count >= 1 && /\d/.test(q))) {
+        await fillHomework(q, { bar });
+        return;
+      }
+      const enriched = enrichSchoolTopic(q);
+      const n = Math.max(1, Math.min(40, wantedCount()));
+      status.textContent = '🔍 Buscando fotos de "' + enriched.label + '"…';
       let urls = [];
       let source = 'Pexels';
-      try { urls = await searchPexels(q, n); } catch (err) { console.warn('[ArkImagenes] Pexels:', err); }
+      try { urls = await searchPexels(enriched.query, n); } catch (err) { console.warn('[ArkImagenes] Pexels:', err); }
       if (!urls.length) {
         source = 'Wikimedia Commons';
         status.textContent = '🔍 Buscando en Wikimedia Commons…';
-        urls = await searchWikimedia(q, n);
+        urls = await searchWikimedia(enriched.query, n);
       }
       if (!urls.length) { status.textContent = '⚠️ No se encontraron imágenes. Prueba otro tema.'; return; }
       const placed = putMany(urls);
@@ -290,21 +574,33 @@
     });
   }
 
-  async function generateAI(bar) {
+  async function generateAI(bar, explicitSlot) {
     const q = bar.querySelector('.ark-topic').value.trim();
     if (!q) { toast('Escribe primero un tema.'); bar.querySelector('.ark-topic').focus(); return; }
     const btn = bar.querySelector('.ark-ai');
     const status = bar.querySelector('.ark-status');
-    const i = targetSlot();
+    const i = typeof explicitSlot === 'number' && explicitSlot >= 0 ? explicitSlot : targetSlot();
     btn.disabled = true;
-    status.textContent = '🎨 Generando imagen' + (i >= 0 ? ' para el recuadro ' + (i + 1) : '') + '… (puede tardar)';
+    status.textContent = '🎨 Generando imagen IA' + (i >= 0 ? ' para el recuadro ' + (i + 1) : '') + '…';
     try {
-      const puter = await loadPuter();
-      const prompt = q + ', ' + (cfg.aiHint || 'ilustración educativa, colores claros, sin texto');
-      const imgEl = await puter.ai.txt2img(prompt);
-      if (!imgEl || !imgEl.src) throw new Error('La IA no devolvió imagen');
-      if (i >= 0) put(i, imgEl.src);
-      else if (cfg.add) cfg.add([imgEl.src]);
+      const enriched = enrichSchoolTopic(q);
+      let imgSrc = '';
+      try {
+        const puter = await loadPuter();
+        const prompt = enriched.aiPrompt + ', ' + (cfg.aiHint || 'ilustración educativa, colores claros, sin texto');
+        const imgEl = await Promise.race([
+          puter.ai.txt2img(prompt),
+          new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 9000))
+        ]);
+        if (imgEl && imgEl.src) imgSrc = imgEl.src;
+      } catch (puterErr) {
+        console.warn('[ArkImagenes] Puter fallback a Pollinations FLUX:', puterErr.message);
+      }
+      if (!imgSrc) {
+        imgSrc = buildPollinationsUrl(enriched.aiPrompt, i + 1);
+      }
+      if (i >= 0) put(i, imgSrc);
+      else if (cfg.add) cfg.add([imgSrc]);
       status.textContent = '✅ Imagen IA colocada' + (i >= 0 ? ' en el recuadro ' + (i + 1) : '');
     } catch (err) {
       console.error('[ArkImagenes] IA:', err);
@@ -318,12 +614,12 @@
     const bar = document.createElement('div');
     bar.className = 'ark-img-bar no-print';
     bar.innerHTML =
-      '<input type="text" class="ark-topic" maxlength="200" placeholder="Tema: ej. animales de la selva, sistema solar…">' +
-      '<button type="button" class="ark-fill ark-primary">🔍 Autollenar</button>' +
+      '<input type="text" class="ark-topic" maxlength="1000" placeholder="Tema o pega tu tarea completa (ej. 10 imágenes de justicia, 2 de moral, 2 de ética, 3 de longitud, masa y tiempo de 5x5)…">' +
+      '<button type="button" class="ark-fill ark-primary">🤖 Autollenar / Surtir Tarea</button>' +
       '<button type="button" class="ark-ai">🎨 Generar con IA</button>' +
       '<span class="ark-status"></span>' +
-      '<p class="ark-hint"><b>Autollenar</b> llena los recuadros vacíos (o todos si ya están llenos). ' +
-      '<b>Generar con IA</b> pone la imagen en el recuadro seleccionado. ' +
+      '<p class="ark-hint"><b>Autollenar / Surtir Tarea</b> entiende un tema simple o una lista escolar con varias cantidades (ej. WhatsApp). ' +
+      '<b>Generar con IA</b> crea una ilustración en el recuadro seleccionado. ' +
       'Clic en un recuadro + <b>Ctrl+V</b> para pegar' +
       (cfg.dragSwap ? '; <b>arrastra una imagen a otro recuadro</b> para moverla o intercambiarla.' : '.') + '</p>';
     bar.querySelector('.ark-fill').addEventListener('click', () => autoFill(bar));
@@ -375,6 +671,12 @@
     get: (i) => (cfg ? cfg.get(i) || null : null),
     slots: () => (cfg ? slotEls() : []),
     dragSwapEnabled: () => !!(cfg && cfg.dragSwap),
+    parseHomeworkTasks,
+    fillHomework: (promptText, opts) => (cfg ? fillHomework(promptText, opts) : Promise.resolve(null)),
+    generateForSlot: (i) => {
+      const bar = document.querySelector('.ark-img-bar');
+      if (bar) return generateAI(bar, i);
+    },
     toast
   };
 })();

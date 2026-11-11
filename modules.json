@@ -53,6 +53,11 @@
           "target": "plantilla-cuadros-imagenes-v2.html"
         },
         {
+          "label": "Tarea Arietty (20 Cuadros 5×5 IA)",
+          "icon": "⚖️",
+          "target": "plantilla-tarea-arietty-20-imagenes-5x5.html"
+        },
+        {
           "label": "Plantilla Imágenes v2",
           "icon": "🎨",
           "target": "plantilla-imagenes-v2.html"

@@ -546,8 +546,21 @@
       <div class="botones-accion">
         <button class="btn btn-primary" onclick="searchPexels()" style="background: #05a081;">📸 Buscar en
           Pexels</button>
+        <button class="btn btn-primary" onclick="surtirTareaArietty('info_cards')" style="background: linear-gradient(135deg, #4f46e5, #7c3aed);">🤖 Surtir Tarea Arietty (20 cuadros 5×5 IA)</button>
         <button class="btn btn-secondary" onclick="window.print()">🖨️ Imprimir hojas</button>
         <button class="btn btn-danger" onclick="limpiarTodo()">🗑️ Limpiar todo</button>
+      </div>
+
+      <div id="arietty-mode-bar" class="no-print" style="display:none; margin-bottom:14px; padding:10px 14px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; font-size:12.5px; color:#1e3a8a; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+        <div>
+          <strong>🎓 Modo Tarea Secundaria (Arietty · 5×5 cm · 20 cuadros):</strong>
+          <span>10 Justicia (separado de info) + 2 Moral + 2 Ética + 3 Longitud, Masa y Tiempo (1 c/u) = 17 + 3 cuadros:</span>
+        </div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <button type="button" onclick="surtirTareaArietty('info_cards')" style="padding:5px 10px; border-radius:6px; border:1px solid #2563eb; background:#2563eb; color:#fff; font-weight:700; cursor:pointer; font-size:11.5px;">20/20: 17 Fotos + 3 Fichas Info Justicia</button>
+          <button type="button" onclick="surtirTareaArietty('all_photos')" style="padding:5px 10px; border-radius:6px; border:1px solid #059669; background:#059669; color:#fff; font-weight:700; cursor:pointer; font-size:11.5px;">20/20: 20 Fotografías Puras</button>
+          <button type="button" onclick="surtirTareaArietty('exact_17')" style="padding:5px 10px; border-radius:6px; border:1px solid #475569; background:#fff; color:#334155; font-weight:700; cursor:pointer; font-size:11.5px;">17/20: 17 Fotos + 3 Vacíos</button>
+        </div>
       </div>
 
       <div class="stats">
@@ -611,9 +624,31 @@
 
     let imagenes = [];
     let estadosImagen = []; // { zoom: 100, x: 0, y: 0, fijada: false }
+    let etiquetasImagen = [];
     let indiceEditando = -1;
     let indiceDragInicio = -1;
     let indiceGenerando = -1;
+
+    window.ARKAIOS_setSlotLabels = function (labels) {
+      etiquetasImagen = Array.isArray(labels) ? labels.slice() : [];
+      generarPlantilla();
+    };
+
+    function openArkaiosAI(idx) {
+      if (window.ArkImagenes) {
+        window.ArkImagenes.select(idx);
+        const barInput = document.querySelector('.ark-img-bar .ark-topic');
+        let q = barInput ? barInput.value.trim() : '';
+        if (!q) {
+          q = prompt('¿Qué imagen deseas generar con IA para el cuadro #' + (idx + 1) + '?', 'balanza de la justicia, ilustración educativa');
+          if (!q) return;
+          if (barInput) barInput.value = q;
+        }
+        if (typeof window.ArkImagenes.generateForSlot === 'function') {
+          window.ArkImagenes.generateForSlot(idx);
+        }
+      }
+    }
 
     // Helper para convertir imagen a Base64 (evita problemas de CORS al imprimir/guardar)
     function toDataURL(url, callback) {
@@ -769,6 +804,14 @@
       numCelda.className = 'num-celda';
       numCelda.textContent = idx + 1;
       celda.appendChild(numCelda);
+
+      if (etiquetasImagen[idx]) {
+        const tagCelda = document.createElement('span');
+        tagCelda.className = 'etiqueta-celda no-print';
+        tagCelda.style.cssText = 'position:absolute;top:4px;right:4px;max-width:calc(100% - 34px);background:rgba(15,23,42,0.78);color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;z-index:2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;';
+        tagCelda.textContent = etiquetasImagen[idx];
+        celda.appendChild(tagCelda);
+      }
 
       if (imagenes[idx]) {
         const imgContainer = document.createElement('div');
@@ -1023,6 +1066,7 @@
           rellenarHasta(Math.max(a, b) + 1);
           [imagenes[a], imagenes[b]] = [imagenes[b] || null, imagenes[a] || null];
           [estadosImagen[a], estadosImagen[b]] = [estadosImagen[b] || null, estadosImagen[a] || null];
+          [etiquetasImagen[a], etiquetasImagen[b]] = [etiquetasImagen[b] || null, etiquetasImagen[a] || null];
           recortarVacios();
           generarPlantilla();
         },
@@ -1031,6 +1075,126 @@
         orientation: 'square',
         dragSwap: false
       });
+
+      // Catálogo verificado de alta resolución para la tarea de secundaria de Arietty (5x5 cm · 20 cuadros)
+      const ARIETTY_PROMPT = '[2:18 p.m., 11/11/2026] Arietty: 10 imágenes de la justicia separado de la información de a justicia\n2 imágenes de moral y 2 de ética\n3 imágenes de ejemplos de la longitud, masa y tiempo (una cada una)\n[2:18 p.m., 11/11/2026] Arietty: De 5x5';
+
+      const ARIETTY_CURATED_17 = [
+        // 1 a 10: 10 imágenes de la Justicia (separadas de la información escrita)
+        { label: 'Justicia (1/10) · Balanza y Mazo', url: 'https://images.pexels.com/photos/5668882/pexels-photo-5668882.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Justicia (2/10) · Tribunal y Ley', url: 'https://images.pexels.com/photos/5669619/pexels-photo-5669619.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Justicia (3/10) · Equilibrio Judicial', url: 'https://images.pexels.com/photos/5669602/pexels-photo-5669602.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Justicia (4/10) · Dama de la Justicia', url: 'https://images.pexels.com/photos/6077123/pexels-photo-6077123.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Justicia (5/10) · Estatua Iustitia', url: 'https://images.pexels.com/photos/6077091/pexels-photo-6077091.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Justicia (6/10) · Imparcialidad', url: 'https://images.pexels.com/photos/6077430/pexels-photo-6077430.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Justicia (7/10) · Derecho y Corte', url: 'https://images.pexels.com/photos/6077381/pexels-photo-6077381.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Justicia (8/10) · Símbolo de Equidad', url: 'https://images.pexels.com/photos/8112195/pexels-photo-8112195.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Justicia (9/10) · Balanza Dorada', url: 'https://images.pexels.com/photos/6077797/pexels-photo-6077797.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Justicia (10/10) · Código y Mazo', url: 'https://images.pexels.com/photos/7876093/pexels-photo-7876093.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        // 11 a 12: 2 imágenes de Moral
+        { label: 'Moral (1/2) · Solidaridad y Bondad', url: 'https://images.pexels.com/photos/6646815/pexels-photo-6646815.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Moral (2/2) · Empatía y Ayuda', url: 'https://images.pexels.com/photos/6646816/pexels-photo-6646816.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        // 13 a 14: 2 imágenes de Ética
+        { label: 'Ética (1/2) · Igualdad y Principios', url: 'https://images.pexels.com/photos/10617691/pexels-photo-10617691.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Ética (2/2) · Respeto y Rectitud', url: 'https://images.pexels.com/photos/9301860/pexels-photo-9301860.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        // 15 a 17: 3 imágenes de ejemplos de Longitud, Masa y Tiempo (una cada una)
+        { label: 'Longitud (1/1) · Cinta Métrica (cm/m)', url: 'https://images.pexels.com/photos/4919433/pexels-photo-4919433.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Masa (1/1) · Báscula / Balanza (kg/g)', url: 'https://images.pexels.com/photos/11465984/pexels-photo-11465984.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Tiempo (1/1) · Relojes (s/min/h)', url: 'https://images.pexels.com/photos/5563404/pexels-photo-5563404.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' }
+      ];
+
+      const ARIETTY_EXTRA_3_PHOTOS = [
+        { label: 'Longitud (Extra) · Flexómetro Escolar', url: 'https://images.pexels.com/photos/19585984/pexels-photo-19585984.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Masa (Extra) · Balanza de Precisión', url: 'https://images.pexels.com/photos/8667532/pexels-photo-8667532.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+        { label: 'Tiempo (Extra) · Reloj de Arena', url: 'https://images.pexels.com/photos/17139860/pexels-photo-17139860.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' }
+      ];
+
+      function makeInfoCardSvg(title, subtitle, lines, color) {
+        const itemsSvg = lines.map((l, i) => `<text x="28" y="${175 + i * 56}" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="600" fill="#1e293b">• ${l}</text>`).join('');
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500">
+          <rect width="500" height="500" rx="16" fill="#ffffff" stroke="${color}" stroke-width="10"/>
+          <rect x="0" y="0" width="500" height="94" rx="12" fill="${color}"/>
+          <text x="250" y="44" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="800" fill="#ffffff">${title}</text>
+          <text x="250" y="75" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="600" fill="#e0e7ff">${subtitle}</text>
+          ${itemsSvg}
+          <rect x="24" y="432" width="452" height="42" rx="8" fill="#eff6ff"/>
+          <text x="250" y="459" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" fill="${color}">INFORMACIÓN SEPARADA DE LAS 10 IMÁGENES</text>
+        </svg>`;
+        return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+      }
+
+      const ARIETTY_INFO_3_CARDS = [
+        {
+          label: 'Info Justicia (1/3) · Definición',
+          url: makeInfoCardSvg('¿QUÉ ES LA JUSTICIA?', 'Información Separada · Cuadro 18', [
+            'Valor ético, moral y jurídico supremo',
+            'Dar a cada quien lo que le corresponde',
+            'Garantiza igualdad e imparcialidad',
+            'Base de la paz y los derechos humanos',
+            'Protege el bien común en la sociedad'
+          ], '#1d4ed8')
+        },
+        {
+          label: 'Info Justicia (2/3) · Tipos',
+          url: makeInfoCardSvg('TIPOS DE JUSTICIA', 'Información Separada · Cuadro 19', [
+            'Distributiva: reparto equitativo',
+            'Conmutativa: trato justo en acuerdos',
+            'Legal: respeto y aplicación de leyes',
+            'Social: oportunidades y dignidad',
+            'Restaurativa: reparación del daño'
+          ], '#4338ca')
+        },
+        {
+          label: 'Info Justicia (3/3) · Símbolos',
+          url: makeInfoCardSvg('SÍMBOLOS Y VALORES', 'Información Separada · Cuadro 20', [
+            'Balanza: equilibrio entre derechos',
+            'Venda: imparcialidad sin privilegios',
+            'Espada: fuerza para cumplir la ley',
+            'Moral: normas de conducta y bien',
+            'Ética: reflexión sobre el deber justo'
+          ], '#0f766e')
+        }
+      ];
+
+      window.surtirTareaArietty = function (mode) {
+        const chosenMode = mode || 'info_cards';
+        selectorTamano.value = '5';
+        const barInput = document.querySelector('.ark-img-bar .ark-topic');
+        if (barInput) barInput.value = ARIETTY_PROMPT;
+        const modeBar = document.getElementById('arietty-mode-bar');
+        if (modeBar) modeBar.style.display = 'flex';
+
+        let list = ARIETTY_CURATED_17.slice();
+        if (chosenMode === 'info_cards') {
+          list = list.concat(ARIETTY_INFO_3_CARDS);
+        } else if (chosenMode === 'all_photos') {
+          list = list.concat(ARIETTY_EXTRA_3_PHOTOS);
+        }
+
+        imagenes = list.map((it) => it.url);
+        estadosImagen = list.map(() => nuevoEstado());
+        etiquetasImagen = list.map((it) => it.label);
+        generarPlantilla();
+
+        const status = document.querySelector('.ark-img-bar .ark-status');
+        if (status) {
+          status.textContent = `✅ Tarea de Arietty surtida (${imagenes.length}/20 cuadros de 5×5 cm): 10 Justicia + 2 Moral + 2 Ética + 3 Longitud/Masa/Tiempo` +
+            (chosenMode === 'info_cards' ? ' + 3 Fichas de Información de la Justicia separadas.' : chosenMode === 'all_photos' ? ' + 3 fotos extra.' : ' + 3 vacíos.');
+        }
+      };
+
+      const params = new URLSearchParams(location.search);
+      if (params.get('tarea') === 'arietty') {
+        window.surtirTareaArietty(params.get('modo') || 'info_cards');
+      } else if (params.get('prompt')) {
+        const barInput = document.querySelector('.ark-img-bar .ark-topic');
+        if (barInput) {
+          barInput.value = params.get('prompt');
+          if (window.ArkImagenes && window.ArkImagenes.fillHomework) {
+            window.ArkImagenes.fillHomework(params.get('prompt'));
+          }
+        }
+      }
     })();
   </script>
   <script src="arkaios-biblioteca.js"></script>

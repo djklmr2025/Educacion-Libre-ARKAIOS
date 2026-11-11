@@ -2968,21 +2968,25 @@ Petici\u00F3n: """${promptInput}"""`;
             }
         }
 
-        /** Pexels solo v\u00EDa el proxy del servidor: la llave nunca viaja al navegador. */
+        /** Pexels solo vía el proxy del servidor (con respaldo al proxy oficial en Vercel). */
         async function fetchPexelsImages(query, count) {
-            try {
-                const res = await fetch('/api/pexels', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ q: query, per_page: Math.min(count, MAX_IMAGES) })
-                });
-                if (!res.ok) return [];
-                const data = await res.json();
-                return (data.photos || []).map(p => p.src?.large || p.src?.medium || p.src?.original).filter(Boolean);
-            } catch (e) {
-                console.warn('Pexels no disponible:', e.message);
-                return [];
+            const endpoints = ['/api/pexels', 'https://eduacion-libre-proyecto-arkaios.vercel.app/api/pexels'];
+            for (const ep of endpoints) {
+                try {
+                    const res = await fetch(ep, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ q: query, per_page: Math.min(count, MAX_IMAGES) })
+                    });
+                    if (!res.ok) continue;
+                    const data = await res.json();
+                    const urls = (data.photos || []).map(p => p.src?.large || p.src?.medium || p.src?.original).filter(Boolean);
+                    if (urls.length) return urls;
+                } catch (e) {
+                    console.warn('Pexels endpoint fallback:', ep, e.message);
+                }
             }
+            return [];
         }
 
         /** Wikimedia Commons: im\u00E1genes reales y libres; ideal para retratos de personas hist\u00F3ricas. */
@@ -3031,7 +3035,7 @@ Petici\u00F3n: """${promptInput}"""`;
             const routes = {
                 persona_real: [wikimedia(`${plan.sujeto} portrait`), wikimedia(plan.sujeto), ai],
                 ficcion: [ai, wikimedia(plan.sujeto)],
-                mundo_real: [wikimedia(plan.busqueda), ['Pexels', () => fetchPexelsImages(plan.busqueda, count)], ai],
+                mundo_real: [['Pexels', () => fetchPexelsImages(plan.busqueda, count)], wikimedia(plan.busqueda), ai],
             };
             for (const [source, search] of routes[plan.tipo] || routes.mundo_real) {
                 setStatus(`\u23F3 Buscando "${plan.etiqueta}" en ${source}...`);
@@ -3061,7 +3065,11 @@ Petici\u00F3n: """${promptInput}"""`;
                 return;
             }
 
-            if (!iframe || iframe.style.display === 'none') {
+            const promptWantsImagesEarly = /(imagen|imágenes|imagenes|foto|fotos|cuadro|cuadros|descargar|pegar|dibujo|\d+\s*[x×]\s*\d+)/i.test(promptInput);
+            if ((!iframe || iframe.style.display === 'none') && promptWantsImagesEarly) {
+                loadTemplate('plantilla-cuadros-imagenes-v2.html');
+                await waitForTemplateApi(iframe, 6000);
+            } else if (!iframe || iframe.style.display === 'none') {
                 alert('Por favor abre primero un módulo o plantilla .html desde el menú.');
                 return;
             }
@@ -3073,11 +3081,27 @@ Petici\u00F3n: """${promptInput}"""`;
                 const win = iframe.contentWindow;
                 const doc = iframe.contentDocument || win.document;
                 const isImageTpl = isCurrentTemplateImageBased();
-                const promptWantsImages = /(imagen|imágenes|imagenes|foto|fotos|cuadro|cuadros|descargar|pegar|dibujo)/i.test(promptInput);
+                const promptWantsImages = promptWantsImagesEarly;
 
                 // ===== RUTA A: AUTORRELLENADO DE IMÁGENES / CUADRÍCULA MULTIMEDIA =====
                 if (isImageTpl || promptWantsImages) {
-                    statusDiv.textContent = '🔍 Analizando petición y buscando imágenes educativas de alta calidad...';
+                    statusDiv.textContent = '🔍 Analizando petición escolar y desglosando temas e imágenes...';
+
+                    // Si la plantilla tiene ArkImagenes con desglose inteligente de tareas multi-tema
+                    if (win.ArkImagenes && typeof win.ArkImagenes.parseHomeworkTasks === 'function') {
+                        const hwPlan = win.ArkImagenes.parseHomeworkTasks(promptInput);
+                        if (hwPlan && hwPlan.items && hwPlan.items.length >= 1) {
+                            const barInput = doc.querySelector('.ark-img-bar .ark-topic');
+                            if (barInput) barInput.value = promptInput;
+                            const hwResult = await win.ArkImagenes.fillHomework(promptInput);
+                            if (hwResult && hwResult.placed > 0) {
+                                const breakdown = hwPlan.items.map(it => `${it.count} de ${it.label}`).join(', ');
+                                statusDiv.textContent = `✅ ¡Listo! Agente IA surtió ${hwResult.placed} cuadros (${breakdown}).`;
+                                btn.disabled = false;
+                                return;
+                            }
+                        }
+                    }
                     
                     // Extraer cantidad deseada del texto o usar 12 por defecto
                     const countMatch = promptInput.match(/(\d+)\s*(im[aá]genes|fotos|cuadros|veces|copias)?/i);

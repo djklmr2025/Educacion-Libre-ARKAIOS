@@ -934,6 +934,27 @@
                 toolbarPosition: 'after',
                 dragSwap: false
             });
+
+            // Soporte para parámetros URL enviados por Generador IA / Agentes (?grid=5x5&images=url1|url2&topic=...)
+            const params = new URLSearchParams(location.search);
+            const qGrid = params.get('grid');
+            if (qGrid && /^\d+x\d+$/.test(qGrid)) {
+                const gridSelect = document.getElementById('gridSize');
+                if (gridSelect && [...gridSelect.options].some(o => o.value === qGrid)) {
+                    gridSelect.value = qGrid;
+                }
+                const [r, c] = qGrid.split('x').map(Number);
+                if (r && c) gridConfig = { rows: r, cols: c };
+            }
+            const qImages = params.get('images');
+            if (qImages) {
+                const urls = qImages.split('|').map(s => s.trim()).filter(Boolean);
+                if (urls.length) {
+                    applyExternalImages(urls, params.get('topic') || 'Agente IA');
+                }
+            } else if (params.get('prompt') && window.ArkImagenes && window.ArkImagenes.fillHomework) {
+                window.ArkImagenes.fillHomework(params.get('prompt'));
+            }
         })();
     </script>
 </body>
