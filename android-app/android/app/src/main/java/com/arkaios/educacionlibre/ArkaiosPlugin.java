@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Environment;
 import android.print.PrintAttributes;
 import android.print.PrintDocumentAdapter;
@@ -40,19 +41,50 @@ public class ArkaiosPlugin extends Plugin {
     private static final String SITE_HOST = "eduacion-libre-proyecto-arkaios.vercel.app";
     private static final int MAX_PRINT_HTML_CHARS = 40_000_000;
     private static final long PRINT_SETTLE_MS = 600;
+    private static final String EXTRA_CUSTOM_TABS_SESSION = "android.support.customtabs.extra.SESSION";
+    private static final String EXTRA_CUSTOM_TABS_TOOLBAR_COLOR = "android.support.customtabs.extra.TOOLBAR_COLOR";
+    private static final String EXTRA_CUSTOM_TABS_TITLE_VISIBILITY = "android.support.customtabs.extra.TITLE_VISIBILITY";
+    private static final String EXTRA_CUSTOM_TABS_URLBAR_HIDING = "android.support.customtabs.extra.ENABLE_URLBAR_HIDING";
+
+    // Token de Google pendiente de consumir cuando la app regresa desde el navegador (cold/warm start).
+    private static volatile String pendingAuthToken = null;
 
     // Se conserva hasta que termina la impresión para que el recolector de basura no lo destruya.
     private WebView printWebView;
+
+    static void setPendingAuthToken(String token) {
+        pendingAuthToken = token;
+    }
+
+    static String peekPendingAuthToken() {
+        return pendingAuthToken;
+    }
+
+    @PluginMethod
+    public void consumePendingAuth(PluginCall call) {
+        String token = pendingAuthToken;
+        pendingAuthToken = null;
+        JSObject ret = new JSObject();
+        if (token != null && !token.isEmpty()) {
+            ret.put("token", token);
+        } else {
+            ret.put("token", JSObject.NULL);
+        }
+        call.resolve(ret);
+    }
 
     @PluginMethod
     public void openAuth(PluginCall call) {
         String url = call.getString("url", "");
         Uri uri = Uri.parse(url);
-        if (!"https".equals(uri.getScheme()) || !SITE_HOST.equals(uri.getHost())) {
+        String host = uri.getHost();
+        boolean allowedHost = SITE_HOST.equals(host)
+            || (host != null && host.startsWith("eduacion-libre-proyecto-arkaios-") && host.endsWith(".vercel.app"));
+        if (!"https".equals(uri.getScheme()) || !allowedHost) {
             call.reject("URL de inicio de sesión no permitida");
             return;
         }
-        openInBrowser(call, uri);
+        openAuthCustomTab(call, uri);
     }
 
     @PluginMethod
@@ -63,6 +95,23 @@ public class ArkaiosPlugin extends Plugin {
             return;
         }
         openInBrowser(call, uri);
+    }
+
+    private void openAuthCustomTab(PluginCall call, Uri uri) {
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+            intent.addCategory(Intent.CATEGORY_BROWSABLE);
+            Bundle extras = new Bundle();
+            extras.putBinder(EXTRA_CUSTOM_TABS_SESSION, null);
+            intent.putExtras(extras);
+            intent.putExtra(EXTRA_CUSTOM_TABS_TOOLBAR_COLOR, 0xFF0F172A);
+            intent.putExtra(EXTRA_CUSTOM_TABS_TITLE_VISIBILITY, 1);
+            intent.putExtra(EXTRA_CUSTOM_TABS_URLBAR_HIDING, true);
+            getActivity().startActivity(intent);
+            call.resolve();
+        } catch (ActivityNotFoundException e) {
+            openInBrowser(call, uri);
+        }
     }
 
     private void openInBrowser(PluginCall call, Uri uri) {

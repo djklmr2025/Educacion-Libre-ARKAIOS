@@ -29,6 +29,12 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="arkaios-edu" android:host="auth" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="com.arkaios.educacionlibre" android:host="auth" />
+            </intent-filter>
 
         </activity>
 
@@ -87,6 +93,9 @@
             <action android:name="android.intent.action.VIEW" />
             <category android:name="android.intent.category.BROWSABLE" />
             <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.support.customtabs.action.CustomTabsService" />
         </intent>
         <intent>
             <action android:name="android.speech.action.RECOGNIZE_SPEECH" />

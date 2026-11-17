@@ -195,7 +195,7 @@
 <!-- Firebase SDK -->
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-  import { getAuth, signInWithPopup, signInWithCredential, GoogleAuthProvider, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+  import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, signInWithCredential, GoogleAuthProvider, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
   const firebaseConfig = {
     apiKey: "AIzaSyD-ceCiJPVnLlepVBcMBhLABJEC771uypM",
@@ -212,10 +212,11 @@
   const provider = new GoogleAuthProvider();
   provider.addScope('email');
   provider.addScope('profile');
+  provider.setCustomParameters({ prompt: 'select_account' });
 
   // ---------- App Android ----------
-  // Google no permite iniciar sesión dentro de un WebView. En la app, el login se hace en el
-  // navegador del teléfono (?app=android) y la credencial vuelve a la app por arkaios-edu://auth.
+  // Google no permite iniciar sesión dentro de un WebView. En la app, el login se hace en
+  // Custom Tabs / navegador (?app=android) y la credencial vuelve a la app por arkaios-edu://auth.
   const NATIVE = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()
     ? window.Capacitor.Plugins.Arkaios : null;
   const HANDOFF = new URLSearchParams(location.search).get('app') === 'android';
@@ -227,30 +228,99 @@
   };
 
   function showReturnToApp(idToken) {
-    const link = `intent://auth?t=${encodeURIComponent(idToken)}#Intent;scheme=arkaios-edu;package=${APP_PACKAGE};end`;
+    const customUrl = `arkaios-edu://auth?t=${encodeURIComponent(idToken)}`;
+    const intentUrl = `intent://auth?t=${encodeURIComponent(idToken)}#Intent;scheme=arkaios-edu;package=${APP_PACKAGE};end`;
     const box = document.createElement('div');
-    box.className = 'my-4 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-center';
-    box.innerHTML = '<p class="text-sm text-slate-200 font-bold mb-3">✅ Sesión iniciada. Vuelve a la app para continuar.</p>' +
-      '<a id="btn-back-app" class="inline-flex items-center justify-center w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold">Volver a la app ARKAIOS</a>';
-    box.querySelector('a').href = link;
-    document.getElementById('auth-section').replaceWith(box);
-    setTimeout(() => { location.href = link; }, 300);
+    box.className = 'my-4 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-center space-y-2';
+    box.innerHTML = '<p class="text-sm text-slate-200 font-bold mb-2">✅ Sesión iniciada. Regresando a la app ARKAIOS...</p>' +
+      '<a id="btn-back-app" class="inline-flex items-center justify-center w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-bold shadow-lg">Volver a la app ARKAIOS</a>' +
+      '<a id="btn-back-app-direct" class="block text-xs text-emerald-300 underline pt-1">¿No regresó automáticamente? Toca aquí</a>';
+    box.querySelector('#btn-back-app').href = intentUrl;
+    box.querySelector('#btn-back-app-direct').href = customUrl;
+    const authSection = document.getElementById('auth-section');
+    if (authSection) authSection.replaceWith(box);
+    setStatus('// Credencial lista. Regresando a la app ARKAIOS...', 'text-emerald-400');
+
+    // En Custom Tabs, navegar de inmediato al esquema custom cierra la pestaña y vuelve a MainActivity.
+    try { window.location.href = customUrl; } catch {}
+    setTimeout(() => { try { window.location.href = intentUrl; } catch {} }, 450);
+  }
+
+  let activeAuthPromise = null;
+  let lastHandledToken = '';
+
+  async function completeNativeLoginWithToken(rawToken) {
+    const token = typeof rawToken === 'string' ? rawToken.trim() : '';
+    if (!token || token === lastHandledToken) return;
+    if (activeAuthPromise) return activeAuthPromise;
+
+    lastHandledToken = token;
+    activeAuthPromise = (async () => {
+      try {
+        history.replaceState(null, '', '/login.html');
+      } catch {}
+      if (NATIVE && typeof NATIVE.consumePendingAuth === 'function') {
+        try { await NATIVE.consumePendingAuth(); } catch {}
+      }
+      setStatus('// Completando inicio de sesión...', 'text-cyan-400');
+      try {
+        const result = await signInWithCredential(auth, GoogleAuthProvider.credential(token));
+        setStatus(`// Autenticado: ${result.user.email} — Entrando a la app...`, 'text-emerald-400');
+        showUserPanel(result.user);
+        setTimeout(() => { window.location.href = '/index.html'; }, 900);
+      } catch (e) {
+        lastHandledToken = '';
+        setStatus(`// No se pudo completar el inicio de sesión: ${e.message}. Inténtalo de nuevo.`, 'text-rose-400');
+      } finally {
+        activeAuthPromise = null;
+      }
+    })();
+    return activeAuthPromise;
+  }
+
+  window.__arkCompleteNativeAuth = completeNativeLoginWithToken;
+
+  function extractTokenFromLocation() {
+    const hashMatch = /(?:^|&)ark_id_token=([^&]+)/.exec(location.hash.slice(1));
+    if (hashMatch) return decodeURIComponent(hashMatch[1]);
+    const searchToken = new URLSearchParams(location.search).get('ark_id_token');
+    return searchToken || '';
   }
 
   async function completeNativeLogin() {
-    const m = /(?:^|&)ark_id_token=([^&]+)/.exec(location.hash.slice(1));
-    if (!m) return;
-    history.replaceState(null, '', location.pathname);
-    setStatus('// Completando inicio de sesión...', 'text-cyan-400');
-    try {
-      const result = await signInWithCredential(auth, GoogleAuthProvider.credential(decodeURIComponent(m[1])));
-      setStatus(`// Autenticado: ${result.user.email}`, 'text-emerald-400');
-      showUserPanel(result.user);
-    } catch (e) {
-      setStatus(`// No se pudo completar el inicio de sesión: ${e.message}. Inténtalo de nuevo.`, 'text-rose-400');
+    const urlToken = extractTokenFromLocation();
+    if (urlToken) {
+      await completeNativeLoginWithToken(urlToken);
+      return;
+    }
+    if (NATIVE && typeof NATIVE.consumePendingAuth === 'function') {
+      try {
+        const pending = await NATIVE.consumePendingAuth();
+        if (pending && pending.token) {
+          await completeNativeLoginWithToken(pending.token);
+        }
+      } catch {}
     }
   }
-  completeNativeLogin();
+
+  window.addEventListener('hashchange', () => {
+    const t = extractTokenFromLocation();
+    if (t) completeNativeLoginWithToken(t);
+  });
+
+  if (HANDOFF) {
+    getRedirectResult(auth).then((result) => {
+      if (!result) return;
+      const cred = GoogleAuthProvider.credentialFromResult(result);
+      if (cred && cred.idToken) {
+        showReturnToApp(cred.idToken);
+      }
+    }).catch((e) => {
+      setStatus(`// Error al regresar de Google: ${e.message}`, 'text-rose-400');
+    });
+  } else {
+    completeNativeLogin();
+  }
 
   // Educación Libre: acceso gratuito por siempre, sin membresías ni pagos.
   window.signInWithGoogle = async function() {
@@ -281,6 +351,11 @@
       status.className = 'mt-4 text-center text-[11px] font-mono text-emerald-400';
       showUserPanel(user);
     } catch(e) {
+      if (HANDOFF && (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment')) {
+        status.textContent = '// Redirigiendo a Google...';
+        await signInWithRedirect(auth, provider);
+        return;
+      }
       status.textContent = `// Error: ${e.message}`;
       status.className = 'mt-4 text-center text-[11px] font-mono text-rose-400';
       btn.disabled = false;
