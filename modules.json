@@ -1,6 +1,17 @@
 {
   "sections": [
     {
+      "title": "Academia Arkaios (Cursos y Certificación)",
+      "icon": "🎓",
+      "items": [
+        {
+          "label": "Fundamentos de IA (ARK-AI-101)",
+          "icon": "🤖",
+          "target": "academia-ia-fundamentos.html"
+        }
+      ]
+    },
+    {
       "title": "Módulos de Ciencias e Interactivos",
       "icon": "⚛️",
       "items": [
@@ -51,11 +62,6 @@
           "label": "Cuadros Imágenes v2",
           "icon": "🖼️",
           "target": "plantilla-cuadros-imagenes-v2.html"
-        },
-        {
-          "label": "Tarea Arietty (20 Cuadros 5×5 IA)",
-          "icon": "⚖️",
-          "target": "plantilla-tarea-arietty-20-imagenes-5x5.html"
         },
         {
           "label": "Plantilla Imágenes v2",
