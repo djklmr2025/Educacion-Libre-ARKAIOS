@@ -3295,6 +3295,16 @@ Ejemplo:
                 btn.textContent = engine === 'flux' ? '⚡ Generando con Motor FLUX (Yukiho)...' : '⏳ Generando imagen con Puter IA...';
 
                 let imgSrc = '';
+                const probeImg = (url, ms = 8500) => new Promise((res) => {
+                    const im = new Image();
+                    let d = false;
+                    const fin = (ok) => { if (!d) { d = true; res(ok); } };
+                    const t = setTimeout(() => fin(false), ms);
+                    im.onload = () => { clearTimeout(t); fin(true); };
+                    im.onerror = () => { clearTimeout(t); fin(false); };
+                    im.src = url;
+                });
+
                 if (engine === 'puter' && typeof puter !== 'undefined' && puter.ai?.txt2img) {
                     try {
                         const safePrompt = `${promptInput}, ${styleHint}, family friendly, safe for kids, PG rated, no text`;
@@ -3305,8 +3315,24 @@ Ejemplo:
                     }
                 }
                 if (!imgSrc) {
-                    imgSrc = buildFluxSafeUrl(promptInput, styleHint, 1);
+                    const candidateFlux = buildFluxSafeUrl(promptInput, styleHint, 1);
+                    if (await probeImg(candidateFlux, 8500)) {
+                        imgSrc = candidateFlux;
+                    }
                 }
+                if (!imgSrc && typeof puter !== 'undefined' && puter.ai?.txt2img) {
+                    try {
+                        btn.textContent = '☁️ FLUX ocupado, generando con Puter IA...';
+                        const safePrompt = `${promptInput}, ${styleHint}, family friendly, safe for kids, no text`;
+                        const imageElement = await withTimeout(puter.ai.txt2img(safePrompt), 8000);
+                        if (imageElement?.src) imgSrc = imageElement.src;
+                    } catch (e) { /* continuar a Pexels */ }
+                }
+                if (!imgSrc) {
+                    const pexUrls = await fetchPexelsImages(extractTopicHeuristic(promptInput), 3);
+                    if (pexUrls.length) imgSrc = pexUrls[0];
+                }
+                if (!imgSrc) throw new Error('Los motores de imagen están ocupados temporalmente. Intenta de nuevo.');
 
                 previewImg.src = imgSrc;
                 previewDiv.style.display = 'block';

@@ -515,6 +515,14 @@
         console.warn('[ArkImagenes] Wikimedia subtask:', err);
       }
     }
+    if (found.length < needed) {
+      try {
+        const pix = await searchPixabaySafe(item.raw || item.query, needed + 4);
+        pix.forEach((u) => { if (!usedUrls.has(u) && found.length < needed) found.push(u); });
+      } catch (err) {
+        console.warn('[ArkImagenes] Pixabay subtask:', err);
+      }
+    }
     while (found.length < needed) {
       found.push(buildPollinationsUrl(item.aiPrompt || item.query, found.length + 1));
     }
@@ -650,6 +658,39 @@
     return url;
   }
 
+  function probeImageUrl(url, timeoutMs) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      let done = false;
+      const finish = (ok) => {
+        if (done) return;
+        done = true;
+        resolve(ok);
+      };
+      const t = setTimeout(() => finish(false), timeoutMs || 8500);
+      img.onload = () => { clearTimeout(t); finish(true); };
+      img.onerror = () => { clearTimeout(t); finish(false); };
+      img.src = url;
+    });
+  }
+
+  async function searchPixabaySafe(q, n) {
+    const body = { provider: 'pixabay', q, per_page: Math.min(40, Math.max(3, n + 2)) };
+    const endpoints = [PEXELS_PROXY, PEXELS_REMOTE_PROXY];
+    for (const ep of endpoints) {
+      try {
+        const res = await fetch(ep, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+        });
+        if (!res.ok) continue;
+        const data = await res.json();
+        const urls = (data.hits || []).map((h) => h.largeImageURL || h.webformatURL).filter(Boolean);
+        if (urls.length) return urls.slice(0, n);
+      } catch (e) { /* siguiente endpoint */ }
+    }
+    return [];
+  }
+
   async function generateAI(bar, explicitSlot, engineOverride) {
     const q = bar.querySelector('.ark-topic').value.trim();
     if (!q) { toast('Escribe primero un tema escolar.'); bar.querySelector('.ark-topic').focus(); return; }
@@ -679,6 +720,9 @@
     try {
       const enriched = enrichSchoolTopic(q);
       let imgSrc = '';
+      let usedEngineName = engine === 'flux' ? 'FLUX' : 'Puter IA';
+
+      // 1. Si eligió Puter IA, intentar primero Puter txt2img
       if (engine === 'puter') {
         try {
           const puter = await loadPuter();
@@ -689,15 +733,55 @@
           ]);
           if (imgEl && imgEl.src) imgSrc = imgEl.src;
         } catch (puterErr) {
-          console.warn('[ArkImagenes] Puter fallback a Pollinations FLUX:', puterErr.message);
+          console.warn('[ArkImagenes] Puter fallback a FLUX:', puterErr.message);
+        }
+      }
+
+      // 2. Si eligió FLUX (o Puter dio timeout), probar URL de FLUX verificando que no devuelva 503
+      if (!imgSrc) {
+        const candidateFlux = buildPollinationsUrl(enriched.aiPrompt, (i >= 0 ? i : 0) + Math.floor(Math.random() * 500));
+        const fluxOk = await probeImageUrl(candidateFlux, 8500);
+        if (fluxOk) {
+          imgSrc = candidateFlux;
+          usedEngineName = 'FLUX';
+        }
+      }
+
+      // 3. Si FLUX está saturado (HTTP 503), rescatar automáticamente con Puter IA -> Pixabay SafeSearch -> Pexels
+      if (!imgSrc && engine === 'flux') {
+        try {
+          status.textContent = '☁️ FLUX ocupado, generando con respaldo Puter IA…';
+          const puter = await loadPuter();
+          const prompt = sanitizeEducationalPrompt(enriched.aiPrompt) + ', educational school illustration, family friendly, no text';
+          const imgEl = await Promise.race([
+            puter.ai.txt2img(prompt),
+            new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000))
+          ]);
+          if (imgEl && imgEl.src) {
+            imgSrc = imgEl.src;
+            usedEngineName = 'Puter IA';
+          }
+        } catch (e) { /* continuar a Pixabay/Pexels */ }
+      }
+      if (!imgSrc) {
+        const pix = await searchPixabaySafe(enriched.raw || q, 6);
+        if (pix.length) {
+          imgSrc = pix[(i >= 0 ? i : 0) % pix.length];
+          usedEngineName = 'Pixabay SafeSearch';
         }
       }
       if (!imgSrc) {
-        imgSrc = buildPollinationsUrl(enriched.aiPrompt, (i >= 0 ? i : 0) + Math.floor(Math.random() * 500));
+        const pex = await searchPexels(enriched.query, 6);
+        if (pex.length) {
+          imgSrc = pex[(i >= 0 ? i : 0) % pex.length];
+          usedEngineName = 'Pexels HD';
+        }
       }
+
+      if (!imgSrc) throw new Error('Ningún motor devolvió imagen en este momento.');
       if (i >= 0) put(i, imgSrc);
       else if (cfg.add) cfg.add([imgSrc]);
-      status.textContent = '✅ Ilustración IA (' + (engine === 'flux' ? 'FLUX' : 'IA') + ' · Filtro NO +18) colocada' + (i >= 0 ? ' en el recuadro ' + (i + 1) : '');
+      status.textContent = '✅ Imagen (' + usedEngineName + ' · Filtro NO +18) colocada' + (i >= 0 ? ' en el recuadro ' + (i + 1) : '');
     } catch (err) {
       console.error('[ArkImagenes] IA:', err);
       status.textContent = '❌ Error al generar: ' + (err.message || err);
