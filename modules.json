@@ -1,17 +1,6 @@
 {
   "sections": [
     {
-      "title": "Academia Arkaios (Cursos y Certificación)",
-      "icon": "🎓",
-      "items": [
-        {
-          "label": "Fundamentos de IA (ARK-AI-101)",
-          "icon": "🤖",
-          "target": "academia-ia-fundamentos.html"
-        }
-      ]
-    },
-    {
       "title": "Módulos de Ciencias e Interactivos",
       "icon": "⚛️",
       "items": [
