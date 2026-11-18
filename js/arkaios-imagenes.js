@@ -432,10 +432,62 @@
       .slice(0, n);
   }
 
-  function buildPollinationsUrl(promptText, seedOffset) {
+  function buildPollinationsUrl(promptText, seedOffset, opts) {
     const seed = Math.floor(Math.random() * 1000000) + (seedOffset || 0) * 137;
-    const clean = encodeURIComponent(promptText + ', educational school illustration, high quality, clean background, no text');
-    return 'https://image.pollinations.ai/prompt/' + clean + '?width=512&height=512&seed=' + seed + '&nologo=true';
+    const width = (opts && opts.width) || 768;
+    const height = (opts && opts.height) || 768;
+    const safePrompt = sanitizeEducationalPrompt(promptText) +
+      ', educational school illustration, family friendly, safe for kids, PG rated, high quality, clean background, no text, no watermark';
+    const clean = encodeURIComponent(safePrompt);
+    return 'https://image.pollinations.ai/prompt/' + clean +
+      '?width=' + width + '&height=' + height + '&model=flux&nologo=true&safe=true&seed=' + seed;
+  }
+
+  // ===== Filtro Escolar Estricto Anti +18 (SafeSchoolFilter) =====
+  const NSFW_BLOCK_RE = /\b(nsfw|\+18|18\+|xxx|porn|porno|pornograf[ií]a|hentai|ecchi|er[oó]tic[oa]|desnud[oa]s?|nude|nudity|naked|sex|sexo|sexual|fetish|fetiche|stripper|topless|lingerie|lencer[ií]a|boobs|breasts|pechos|senos|genital|penis|vagina|orgasm|onlyfans|gore|desmembramiento|decapitaci[oó]n|violaci[oó]n|incesto|pedofil|lolicon|shotacon)\b/i;
+
+  const SAFE_NEGATIVE_PROMPT = 'nsfw, 18+, adult content, nude, nudity, naked, explicit, sexual, cleavage, lingerie, swimsuit, bikini, ecchi, hentai, gore, blood, violence, weapons, drugs, alcohol, smoking, watermark, blurry, deformed, bad anatomy, text';
+
+  function isSafeEducationalPrompt(rawText) {
+    const text = String(rawText || '').trim();
+    if (!text) return { safe: false, reason: 'Escribe una descripción educativa válida.' };
+    const match = text.match(NSFW_BLOCK_RE);
+    if (match) {
+      return {
+        safe: false,
+        blockedWord: match[0],
+        reason: '🛡️ Filtro Escolar ARKAIOS Activo: Se bloqueó contenido no apto (+18 / NSFW). Ingresa únicamente temas escolares, científicos, históricos o artísticos aptos para todo público.'
+      };
+    }
+    return { safe: true, reason: null };
+  }
+
+  function sanitizeEducationalPrompt(rawText) {
+    return String(rawText || '')
+      .replace(NSFW_BLOCK_RE, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function buildPerchanceDriverUrl(promptText, opts) {
+    const check = isSafeEducationalPrompt(promptText);
+    if (!check.safe) throw new Error(check.reason);
+    const enriched = enrichSchoolTopic(promptText);
+    const positive = sanitizeEducationalPrompt(enriched.aiPrompt || promptText) +
+      ', educational illustration, safe for school, family friendly, G-rated, masterpiece, clean detailed art';
+    const resolution = (opts && opts.resolution) || '768x768';
+    const seed = (opts && opts.seed) || (Math.floor(Math.random() * 900000) + 10000);
+    const params = new URLSearchParams({
+      mcp: '1',
+      prompt: positive.slice(0, 1400),
+      negativePrompt: SAFE_NEGATIVE_PROMPT,
+      resolution,
+      seed: String(seed),
+      guidanceScale: '7.5',
+      n: '1',
+      autodownload: '1'
+    });
+    return 'https://perchance.org/arkaios?' + params.toString();
   }
 
   function wantedCount() {
@@ -532,6 +584,13 @@
   async function autoFill(bar) {
     const q = bar.querySelector('.ark-topic').value.trim();
     if (!q) { toast('Escribe primero un tema o pega las instrucciones de la tarea.'); bar.querySelector('.ark-topic').focus(); return; }
+    const safety = isSafeEducationalPrompt(q);
+    if (!safety.safe) {
+      const status = bar.querySelector('.ark-status');
+      if (status) status.textContent = safety.reason;
+      toast(safety.reason);
+      return;
+    }
     const btn = bar.querySelector('.ark-fill');
     const status = bar.querySelector('.ark-status');
     btn.disabled = true;
@@ -552,7 +611,11 @@
         status.textContent = '🔍 Buscando en Wikimedia Commons…';
         urls = await searchWikimedia(enriched.query, n);
       }
-      if (!urls.length) { status.textContent = '⚠️ No se encontraron imágenes. Prueba otro tema.'; return; }
+      if (!urls.length) {
+        source = 'Motor FLUX (Yukiho IA)';
+        status.textContent = '⚡ Generando ilustraciones con Motor FLUX…';
+        for (let k = 0; k < n; k++) urls.push(buildPollinationsUrl(enriched.aiPrompt, k + 1));
+      }
       const placed = putMany(urls);
       status.textContent = '✅ ' + placed + ' imagen(es) de ' + source;
     } catch (err) {
@@ -574,39 +637,72 @@
     });
   }
 
-  async function generateAI(bar, explicitSlot) {
+  function openPerchanceStudio(rawPrompt, opts) {
+    const safety = isSafeEducationalPrompt(rawPrompt);
+    if (!safety.safe) {
+      toast(safety.reason);
+      alert(safety.reason);
+      return null;
+    }
+    const url = buildPerchanceDriverUrl(rawPrompt, opts);
+    window.open(url, 'arkaios_perchance_studio', 'width=980,height=820,noopener');
+    toast('🎭 Perchance Studio abierto (Filtro Escolar NO +18 activo). Copia o descarga y pega con Ctrl+V.');
+    return url;
+  }
+
+  async function generateAI(bar, explicitSlot, engineOverride) {
     const q = bar.querySelector('.ark-topic').value.trim();
-    if (!q) { toast('Escribe primero un tema.'); bar.querySelector('.ark-topic').focus(); return; }
-    const btn = bar.querySelector('.ark-ai');
+    if (!q) { toast('Escribe primero un tema escolar.'); bar.querySelector('.ark-topic').focus(); return; }
+    const safety = isSafeEducationalPrompt(q);
     const status = bar.querySelector('.ark-status');
+    if (!safety.safe) {
+      if (status) status.textContent = safety.reason;
+      toast(safety.reason);
+      alert(safety.reason);
+      return;
+    }
+    const engineSel = bar.querySelector('.ark-engine');
+    const engine = engineOverride || (engineSel ? engineSel.value : 'flux');
+    if (engine === 'perchance') {
+      const url = openPerchanceStudio(q);
+      if (url && status) {
+        status.textContent = '🎭 Perchance Studio abierto con Filtro Escolar NO +18. Al descargarse, presiona Ctrl+V en el recuadro.';
+      }
+      return;
+    }
+
+    const btn = bar.querySelector('.ark-ai');
     const i = typeof explicitSlot === 'number' && explicitSlot >= 0 ? explicitSlot : targetSlot();
-    btn.disabled = true;
-    status.textContent = '🎨 Generando imagen IA' + (i >= 0 ? ' para el recuadro ' + (i + 1) : '') + '…';
+    if (btn) btn.disabled = true;
+    status.textContent = (engine === 'flux' ? '⚡ Generando con Motor FLUX (Yukiho)' : '🎨 Generando con Puter IA') +
+      (i >= 0 ? ' para el recuadro ' + (i + 1) : '') + '…';
     try {
       const enriched = enrichSchoolTopic(q);
       let imgSrc = '';
-      try {
-        const puter = await loadPuter();
-        const prompt = enriched.aiPrompt + ', ' + (cfg.aiHint || 'ilustración educativa, colores claros, sin texto');
-        const imgEl = await Promise.race([
-          puter.ai.txt2img(prompt),
-          new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 9000))
-        ]);
-        if (imgEl && imgEl.src) imgSrc = imgEl.src;
-      } catch (puterErr) {
-        console.warn('[ArkImagenes] Puter fallback a Pollinations FLUX:', puterErr.message);
+      if (engine === 'puter') {
+        try {
+          const puter = await loadPuter();
+          const prompt = sanitizeEducationalPrompt(enriched.aiPrompt) + ', ' + (cfg.aiHint || 'ilustración educativa, familiar, sin contenido adulto, colores claros, sin texto');
+          const imgEl = await Promise.race([
+            puter.ai.txt2img(prompt),
+            new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 9000))
+          ]);
+          if (imgEl && imgEl.src) imgSrc = imgEl.src;
+        } catch (puterErr) {
+          console.warn('[ArkImagenes] Puter fallback a Pollinations FLUX:', puterErr.message);
+        }
       }
       if (!imgSrc) {
-        imgSrc = buildPollinationsUrl(enriched.aiPrompt, i + 1);
+        imgSrc = buildPollinationsUrl(enriched.aiPrompt, (i >= 0 ? i : 0) + Math.floor(Math.random() * 500));
       }
       if (i >= 0) put(i, imgSrc);
       else if (cfg.add) cfg.add([imgSrc]);
-      status.textContent = '✅ Imagen IA colocada' + (i >= 0 ? ' en el recuadro ' + (i + 1) : '');
+      status.textContent = '✅ Ilustración IA (' + (engine === 'flux' ? 'FLUX' : 'IA') + ' · Filtro NO +18) colocada' + (i >= 0 ? ' en el recuadro ' + (i + 1) : '');
     } catch (err) {
       console.error('[ArkImagenes] IA:', err);
       status.textContent = '❌ Error al generar: ' + (err.message || err);
     } finally {
-      btn.disabled = false;
+      if (btn) btn.disabled = false;
     }
   }
 
@@ -616,14 +712,22 @@
     bar.innerHTML =
       '<input type="text" class="ark-topic" maxlength="1000" placeholder="Tema o pega tu tarea completa (ej. 10 imágenes de justicia, 2 de moral, 2 de ética, 3 de longitud, masa y tiempo de 5x5)…">' +
       '<button type="button" class="ark-fill ark-primary">🤖 Autollenar / Surtir Tarea</button>' +
-      '<button type="button" class="ark-ai">🎨 Generar con IA</button>' +
+      '<select class="ark-engine" title="Motor de Generación IA (Filtro Escolar NO +18 Activo)" style="padding:7px 10px;border:1px solid #cbd5e1;border-radius:8px;font:600 12.5px inherit;color:#1e293b;background:#f8fafc;">' +
+        '<option value="flux">⚡ Motor FLUX (Yukiho · Directo)</option>' +
+        '<option value="perchance">🎭 Motor Perchance Studio (HD)</option>' +
+        '<option value="puter">☁️ Motor Puter AI</option>' +
+      '</select>' +
+      '<button type="button" class="ark-ai" title="Generar ilustración educativa con el motor elegido">🎨 Generar con IA</button>' +
+      '<button type="button" class="ark-perchance" style="background:#f3e8ff;color:#7e22ce;" title="Abrir Perchance Image Studio con Filtro Escolar NO +18">🎭 Perchance HD</button>' +
+      '<span style="font-size:11px;font-weight:700;color:#059669;background:#ecfdf5;border:1px solid #a7f3d0;padding:4px 8px;border-radius:999px;">🛡️ Filtro Escolar NO +18</span>' +
       '<span class="ark-status"></span>' +
-      '<p class="ark-hint"><b>Autollenar / Surtir Tarea</b> entiende un tema simple o una lista escolar con varias cantidades (ej. WhatsApp). ' +
-      '<b>Generar con IA</b> crea una ilustración en el recuadro seleccionado. ' +
+      '<p class="ark-hint"><b>Autollenar / Surtir Tarea</b> entiende un tema simple o una lista escolar con varias cantidades. ' +
+      '<b>Generar con IA</b> usa <b>⚡ FLUX (motor Yukiho)</b> para inyectar directo en el cuadro o <b>🎭 Perchance HD</b> (con filtro escolar estricto anti +18). ' +
       'Clic en un recuadro + <b>Ctrl+V</b> para pegar' +
       (cfg.dragSwap ? '; <b>arrastra una imagen a otro recuadro</b> para moverla o intercambiarla.' : '.') + '</p>';
     bar.querySelector('.ark-fill').addEventListener('click', () => autoFill(bar));
     bar.querySelector('.ark-ai').addEventListener('click', () => generateAI(bar));
+    bar.querySelector('.ark-perchance').addEventListener('click', () => generateAI(bar, undefined, 'perchance'));
     bar.querySelector('.ark-topic').addEventListener('keydown', (e) => { if (e.key === 'Enter') autoFill(bar); });
 
     const host = typeof cfg.toolbar === 'string' ? document.querySelector(cfg.toolbar) : cfg.toolbar;
@@ -672,10 +776,14 @@
     slots: () => (cfg ? slotEls() : []),
     dragSwapEnabled: () => !!(cfg && cfg.dragSwap),
     parseHomeworkTasks,
+    isSafeEducationalPrompt,
+    buildFluxUrl: buildPollinationsUrl,
+    buildPerchanceDriverUrl,
+    openPerchanceStudio,
     fillHomework: (promptText, opts) => (cfg ? fillHomework(promptText, opts) : Promise.resolve(null)),
-    generateForSlot: (i) => {
+    generateForSlot: (i, engine) => {
       const bar = document.querySelector('.ark-img-bar');
-      if (bar) return generateAI(bar, i);
+      if (bar) return generateAI(bar, i, engine);
     },
     toast
   };

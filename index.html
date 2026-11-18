@@ -3012,18 +3012,68 @@ Petici\u00F3n: """${promptInput}"""`;
             }
         }
 
-        /** Genera pocas im\u00E1genes con IA (cuestan tiempo y cr\u00E9ditos); el resto se llena repiti\u00E9ndolas. */
+        // ===== Filtro Escolar Estricto Anti +18 (SafeSchoolFilter) =====
+        const ARK_NSFW_BLOCK_RE = /\b(nsfw|\+18|18\+|xxx|porn|porno|pornograf[ií]a|hentai|ecchi|er[oó]tic[oa]|desnud[oa]s?|nude|nudity|naked|sex|sexo|sexual|fetish|fetiche|stripper|topless|lingerie|lencer[ií]a|boobs|breasts|pechos|senos|genital|penis|vagina|orgasm|onlyfans|gore|desmembramiento|decapitaci[oó]n|violaci[oó]n|incesto|pedofil|lolicon|shotacon)\b/i;
+        const ARK_SAFE_NEGATIVE = 'nsfw, 18+, adult content, nude, nudity, naked, explicit, sexual, cleavage, lingerie, swimsuit, bikini, ecchi, hentai, gore, blood, violence, weapons, drugs, alcohol, smoking, watermark, blurry, deformed, bad anatomy, text';
+
+        function isSafeSchoolImagePrompt(rawText) {
+            const text = String(rawText || '').trim();
+            if (!text) return { safe: false, reason: 'Escribe una descripción educativa para la imagen.' };
+            const m = text.match(ARK_NSFW_BLOCK_RE);
+            if (m) {
+                return {
+                    safe: false,
+                    reason: '🛡️ Filtro Escolar ARKAIOS Activo: Se bloqueó contenido no apto (+18 / NSFW). Solo se permiten ilustraciones escolares, históricas, científicas o artísticas aptas para todo público.'
+                };
+            }
+            return { safe: true, reason: null };
+        }
+
+        function buildFluxSafeUrl(promptText, styleHint = '', seedOffset = 0) {
+            const cleanText = String(promptText || '').replace(ARK_NSFW_BLOCK_RE, '').trim();
+            const seed = (Date.now() % 100000) + (seedOffset * 137);
+            const fullPrompt = `${cleanText}, ${styleHint || 'educational school illustration, clean detailed art'}, family friendly, safe for kids, PG rated, masterpiece, high quality, no text, no watermark`;
+            return `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=768&height=768&model=flux&nologo=true&safe=true&seed=${seed}`;
+        }
+
+        function buildPerchanceSafeUrl(promptText, styleHint = '') {
+            const cleanText = String(promptText || '').replace(ARK_NSFW_BLOCK_RE, '').trim();
+            const fullPrompt = `${cleanText}, ${styleHint || 'educational school illustration, clean detailed art'}, family friendly, safe for school, PG rated, masterpiece, high quality`;
+            const params = new URLSearchParams({
+                mcp: '1',
+                prompt: fullPrompt.slice(0, 1400),
+                negativePrompt: ARK_SAFE_NEGATIVE,
+                resolution: '768x768',
+                seed: String(Math.floor(Math.random() * 900000) + 10000),
+                guidanceScale: '7.5',
+                n: '1',
+                autodownload: '1'
+            });
+            return `https://perchance.org/arkaios?${params.toString()}`;
+        }
+
+        /** Genera imágenes con IA (FLUX Yukiho + Puter AI) protegidas con Filtro Escolar NO +18. */
         async function generateAiImages(prompt, count) {
+            const check = isSafeSchoolImagePrompt(prompt);
+            if (!check.safe) {
+                console.warn(check.reason);
+                return [];
+            }
             const urls = [];
-            if (typeof puter === 'undefined' || !puter.ai?.txt2img) return urls;
-            for (let i = 0; i < Math.min(count, MAX_AI_IMAGES); i++) {
+            const target = Math.min(count || 1, 6);
+            // 1. Intentar primera imagen con Puter AI si está disponible rápido
+            if (typeof puter !== 'undefined' && puter.ai?.txt2img) {
                 try {
-                    const img = await puter.ai.txt2img(prompt);
+                    const safePrompt = `${prompt}, educational school illustration, family friendly, safe for kids, no text`;
+                    const img = await withTimeout(puter.ai.txt2img(safePrompt), 7000);
                     if (img?.src) urls.push(img.src);
                 } catch (e) {
-                    console.warn('Generaci\u00F3n con IA no disponible:', e.message);
-                    break;
+                    console.warn('Puter txt2img fallback a Motor FLUX (Yukiho):', e.message);
                 }
+            }
+            // 2. Completar con Motor FLUX (el generador de Yukiho con filtro safe=true)
+            while (urls.length < target) {
+                urls.push(buildFluxSafeUrl(prompt, 'educational school illustration', urls.length + 1));
             }
             return urls;
         }
@@ -3210,24 +3260,53 @@ Ejemplo:
             }
         }
 
-        async function runPuterImageGen() {
+        async function runPuterImageGen(engineOverride) {
             const promptInput = document.getElementById('aiImagePrompt').value.trim();
             const btn = document.getElementById('btnPuterImageGen');
             const previewDiv = document.getElementById('imageGenPreview');
             const previewImg = document.getElementById('generatedImgResult');
             const iframe = document.getElementById('plantillaFrame');
+            const engineSel = document.getElementById('aiImageEngineSelect');
+            const styleSel = document.getElementById('aiImageStyleSelect');
+            const engine = engineOverride || (engineSel ? engineSel.value : 'flux');
+            const styleHint = styleSel ? styleSel.value : 'educational school illustration, clean detailed art';
 
             if (!promptInput) {
                 alert('Escribe una descripción para la imagen.');
                 return;
             }
 
+            // Validación estricta del Filtro Escolar Activo (NO +18)
+            const safety = isSafeSchoolImagePrompt(promptInput);
+            if (!safety.safe) {
+                alert(safety.reason);
+                return;
+            }
+
+            if (engine === 'perchance') {
+                const perchanceUrl = buildPerchanceSafeUrl(promptInput, styleHint);
+                window.open(perchanceUrl, 'arkaios_perchance_studio', 'width=980,height=820,noopener');
+                alert('🎭 Perchance Image Studio v1.7.0 abierto con Filtro Escolar NO +18 y auto-descarga activa.\n\nCuando se genere tu imagen, pégala directamente en cualquier cuadro de tu plantilla con Ctrl+V.');
+                return;
+            }
+
             try {
                 btn.disabled = true;
-                btn.textContent = '⏳ Generando imagen...';
+                btn.textContent = engine === 'flux' ? '⚡ Generando con Motor FLUX (Yukiho)...' : '⏳ Generando imagen con Puter IA...';
 
-                const imageElement = await puter.ai.txt2img(promptInput);
-                const imgSrc = imageElement.src;
+                let imgSrc = '';
+                if (engine === 'puter' && typeof puter !== 'undefined' && puter.ai?.txt2img) {
+                    try {
+                        const safePrompt = `${promptInput}, ${styleHint}, family friendly, safe for kids, PG rated, no text`;
+                        const imageElement = await withTimeout(puter.ai.txt2img(safePrompt), 9000);
+                        if (imageElement?.src) imgSrc = imageElement.src;
+                    } catch (e) {
+                        console.warn('Puter fallback a Motor FLUX:', e.message);
+                    }
+                }
+                if (!imgSrc) {
+                    imgSrc = buildFluxSafeUrl(promptInput, styleHint, 1);
+                }
 
                 previewImg.src = imgSrc;
                 previewDiv.style.display = 'block';
@@ -3271,7 +3350,7 @@ Ejemplo:
                     }
 
                     if (inyectada) {
-                        alert('🎨 ¡Imagen generada e inyectada exitosamente en la plantilla activa!');
+                        alert('🎨 ¡Imagen generada con ' + (engine === 'flux' ? 'Motor FLUX (Yukiho)' : 'Puter IA') + ' e inyectada en la plantilla activa!');
                     } else {
                         alert('🎨 Imagen generada con éxito (se muestra en la vista previa del copiloto).');
                     }
@@ -3463,20 +3542,48 @@ Ejemplo:
         </div>
 
         <div class="puter-ai-body" id="puterTabImage" style="display:none;">
-            <div style="font-size:12px; color:#475569; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
-                <strong style="color:#2563eb;">🎨 Generador de Imágenes IA (Puter)</strong>
-                <br><span style="font-size:11px; opacity:0.8;">Crea ilustraciones educativas para insertar en tus documentos o cuadros.</span>
+            <div style="font-size:12px; color:#475569; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                <div>
+                    <strong style="color:#2563eb;">🎨 Estudio de Imágenes IA (FLUX + Perchance + Puter)</strong>
+                    <br><span style="font-size:11px; opacity:0.8;">Crea e inyecta ilustraciones educativas en tus plantillas o cuadros.</span>
+                </div>
+                <span style="font-size:10px; font-weight:800; color:#059669; background:#ecfdf5; border:1px solid #a7f3d0; padding:4px 8px; border-radius:999px; white-space:nowrap;">🛡️ Filtro NO +18 Activo</span>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    <label style="font-size:11px; font-weight:700; color:#334155;">Motor de Generación:</label>
+                    <select id="aiImageEngineSelect" style="padding:7px 8px; border-radius:8px; border:1px solid #cbd5e1; font-size:11.5px; font-weight:600; color:#1e293b; background:#fff;">
+                        <option value="flux">⚡ Motor FLUX (Yukiho · Directo)</option>
+                        <option value="perchance">🎭 Perchance Studio v1.7 (HD)</option>
+                        <option value="puter">☁️ Puter AI (txt2img)</option>
+                    </select>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    <label style="font-size:11px; font-weight:700; color:#334155;">Estilo Visual:</label>
+                    <select id="aiImageStyleSelect" style="padding:7px 8px; border-radius:8px; border:1px solid #cbd5e1; font-size:11.5px; color:#1e293b; background:#fff;">
+                        <option value="educational school illustration, clean detailed art, bright colors">📚 Ilustración Escolar Clara</option>
+                        <option value="retro 80s anime style, classic Japanese visual novel art, Makoto Shinkai lighting, aesthetic masterpiece">🌸 Anime Clásico / Novela Visual (Yukiho)</option>
+                        <option value="scientific diagram illustration, textbook style, ultra detailed, clean white background">🔬 Esquema Científico / Didáctico</option>
+                        <option value="historical oil painting and watercolor illustration, museum quality">🎨 Acuarela / Pintura Histórica</option>
+                    </select>
+                </div>
             </div>
 
             <div style="display:flex; flex-direction:column; gap:8px;">
-                <label style="font-size:12px; font-weight:600; color:#334155;">Descripción de la Imagen:</label>
-                <textarea id="aiImagePrompt" placeholder="Ej: Un átomo brillante estilo acuarela educativa, o un mapa antiguo..." style="width:100%; height:80px; padding:10px; border-radius:8px; border:1px solid #cbd5e1; font-size:12px; resize:none;"></textarea>
+                <label style="font-size:12px; font-weight:600; color:#334155;">Descripción de la Imagen (Escolar / Todo Público):</label>
+                <textarea id="aiImagePrompt" placeholder="Ej: Un átomo brillante estilo acuarela educativa, el Sistema Solar, o una escena histórica de la Independencia..." style="width:100%; height:74px; padding:10px; border-radius:8px; border:1px solid #cbd5e1; font-size:12px; resize:none;"></textarea>
             </div>
 
-            <button class="btn-premium btn-primary" onclick="runPuterImageGen()" id="btnPuterImageGen" style="width:100%; margin-top:8px;">
-                <span>🎨</span>
-                <span>Generar e Inyectar Imagen</span>
-            </button>
+            <div style="display:flex; gap:8px; margin-top:6px;">
+                <button class="btn-premium btn-primary" onclick="runPuterImageGen()" id="btnPuterImageGen" style="flex:1;">
+                    <span>⚡</span>
+                    <span>Generar e Inyectar</span>
+                </button>
+                <button class="btn-premium" onclick="runPuterImageGen('perchance')" id="btnPerchanceImageGen" style="background:linear-gradient(135deg,#7e22ce,#a855f7); color:#fff; border:0; padding:10px 14px; border-radius:10px; font-weight:700; font-size:12px; cursor:pointer;" title="Abrir en Perchance Image Studio v1.7.0 con Filtro Escolar NO +18">
+                    🎭 Perchance HD
+                </button>
+            </div>
 
             <div id="imageGenPreview" style="margin-top:10px; text-align:center; display:none;">
                 <img id="generatedImgResult" style="max-width:100%; max-height:160px; border-radius:8px; border:1px solid #e2e8f0;">

@@ -32,7 +32,9 @@ jobs:
         run: npx cap sync android
 
       - name: Dar permiso de ejecucion a gradlew
-        run: chmod +x android/gradlew
+        run: |
+          sed -i 's/\r$//' android/gradlew
+          chmod +x android/gradlew
 
       - name: Preparar llave de firma
         env:
