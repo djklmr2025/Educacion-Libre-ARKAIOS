@@ -91,6 +91,11 @@
           "label": "Tiras de Calcomanías para Lápiz",
           "icon": "✏️",
           "target": "tiras-calcomanias-lapiz.html"
+        },
+        {
+          "label": "Gestión de Espacios y Planificación (20 imgs 5×5)",
+          "icon": "🏠",
+          "target": "plantilla-gestion-espacios-planificacion-20-imagenes-5x5.html"
         }
       ]
     }
