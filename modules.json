@@ -93,30 +93,9 @@
           "target": "plantilla-imagenes-v2.html"
         },
         {
-          "label": "Plantilla Tarea Arietty 20 Imagenes 5x5",
-          "icon": "🎨",
-          "target": "plantilla-tarea-arietty-20-imagenes-5x5.html"
-        },
-        {
           "label": "Tiras Calcomanias Lapiz",
           "icon": "✏️",
           "target": "tiras-calcomanias-lapiz.html"
-        }
-      ]
-    },
-    {
-      "title": "Otros",
-      "icon": "🧩",
-      "items": [
-        {
-          "label": "Conectar Agente",
-          "icon": "📄",
-          "target": "conectar-agente.html"
-        },
-        {
-          "label": "Plantilla Vida Libre Violencia Mexico 20 Logos",
-          "icon": "📄",
-          "target": "plantilla-vida-libre-violencia-mexico-20-logos.html"
         }
       ]
     }

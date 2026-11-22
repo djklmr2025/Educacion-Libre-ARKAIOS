@@ -26,7 +26,8 @@ const EXCLUDE = new Set([
   "material-educativo-reutilizable.html",
   "orquestador-html-plus.html",
   "forum.html",
-  "comunidad.html"
+  "comunidad.html",
+  "conectar-agente.html"
 ]);
 
 function prettifyName(file) {
