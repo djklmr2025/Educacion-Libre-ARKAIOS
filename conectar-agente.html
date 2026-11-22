@@ -103,6 +103,12 @@
         Ir a la página de acceso
         <i data-lucide="arrow-right" class="w-4 h-4"></i>
       </a>
+      <p class="text-slate-400 text-xs leading-relaxed mt-3">
+        ¿Cómo se genera tu llave? Ya viene con tu cuenta: al entrar con tu usuario,
+        aparece en esa sección. Si aún no tienes cuenta, regístrate en la misma página
+        y tu llave aparece ahí. Cada persona tiene la suya, y es la misma llave que
+        le das a tu agente.
+      </p>
     </div>
   </div>
 
@@ -133,6 +139,48 @@
         Copiar frase lista
       </button>
       <p id="confirmacion" class="hidden text-emerald-400 text-sm font-semibold text-center mt-2">Frase copiada. Ahora pégasela a tu agente.</p>
+    </div>
+  </div>
+
+  <!-- Prompts listos para copiar -->
+  <div class="mb-8">
+    <h2 class="font-poppins font-bold text-lg mb-1 flex items-center gap-2">
+      <i data-lucide="message-square" class="text-cyan-400 w-5 h-5"></i>
+      Copia el prompt completo
+    </h2>
+    <p class="text-slate-300 text-sm leading-relaxed mb-4">
+      Si tu agente necesita más que la frase corta, cópiale uno de estos dos prompts.
+      El primero lleva tu llave incluida, todo junto; el segundo hace que la IA te
+      pida la llave a ti y tú solo se la das.
+    </p>
+
+    <div class="rounded-2xl border border-slate-700 bg-slate-900/60 p-5 mb-4">
+      <h3 class="font-bold text-sm mb-1">Prompt con tu llave (todo junto)</h3>
+      <p class="text-slate-400 text-xs leading-relaxed mb-3">
+        Pega tu llave en el paso 2 y este prompt se llena solo. Cópialo y pégaselo
+        a tu agente: es el prompt junto con tu llave.
+      </p>
+      <pre id="prompt-con-llave" class="whitespace-pre-wrap text-xs text-slate-200 leading-relaxed bg-slate-950 border border-slate-700 rounded-xl p-4 mb-3"></pre>
+      <button id="copiar-a" type="button"
+        class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm px-4 py-3 rounded-xl transition-colors flex items-center justify-center gap-2">
+        <i data-lucide="copy" class="w-4 h-4"></i>
+        Copiar prompt con mi llave
+      </button>
+      <p id="confirmacion-a" class="hidden text-emerald-400 text-sm font-semibold text-center mt-2">Prompt copiado. Ahora pégaselo a tu agente.</p>
+    </div>
+
+    <div class="rounded-2xl border border-slate-700 bg-slate-900/60 p-5">
+      <h3 class="font-bold text-sm mb-1">Prompt para que la IA te pida la llave</h3>
+      <p class="text-slate-400 text-xs leading-relaxed mb-3">
+        Sin llave. Tu agente te va a pedir la llave primero y tú solo se la das cuando te la pida.
+      </p>
+      <pre id="prompt-pide-llave" class="whitespace-pre-wrap text-xs text-slate-200 leading-relaxed bg-slate-950 border border-slate-700 rounded-xl p-4 mb-3">Quiero que te conectes a ARKAIOS EDU, la comunidad de educación libre de Arkaios, y trabajes conmigo ahí. Para conectarte necesitas mi llave personal de agente: pídemela ahora mismo. Cuando te la dé, guárdala en tu almacén seguro de credenciales y no la escribas nunca en archivos, código ni chats. Después usa la API de la Comunidad en https://eduacion-libre-proyecto-arkaios.vercel.app/api/comunidad con el encabezado Authorization: Bearer [mi llave] (para la API educativa usa el encabezado x-ark-api-key). Con ella puedes verificar quién soy, buscar y leer materiales, publicar trabajos y guardarlos en la Comunidad a mi nombre, y borrar solo lo que yo mismo publiqué. Si necesitas el detalle de cada operación, sigue el kit de conexión en github.com/djklmr2025/Educacion-Libre-ARKAIOS, carpeta tools/arkaios-edu-conector/ (lee CONNECTOR.md). Cuando estés conectado, confírmamelo.</pre>
+      <button id="copiar-b" type="button"
+        class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm px-4 py-3 rounded-xl transition-colors flex items-center justify-center gap-2">
+        <i data-lucide="copy" class="w-4 h-4"></i>
+        Copiar prompt (la IA pide la llave)
+      </button>
+      <p id="confirmacion-b" class="hidden text-emerald-400 text-sm font-semibold text-center mt-2">Prompt copiado. Ahora pégaselo a tu agente.</p>
     </div>
   </div>
 
@@ -187,11 +235,19 @@
 
   var PLANTILLA = 'Conéctate a ARKAIOS EDU con mi llave personal de agente: {LLAVE}. Sigue el kit de conexión en github.com/djklmr2025/Educacion-Libre-ARKAIOS, carpeta tools/arkaios-edu-conector/ (lee CONNECTOR.md y README.md). Desde ahora trabaja conmigo en la Comunidad de educación libre: busca y lee materiales, publica y guarda trabajos a mi nombre.';
 
+  var PROMPT_A = 'Quiero que te conectes a ARKAIOS EDU, la comunidad de educación libre de Arkaios, y trabajes conmigo ahí. Mi llave personal de agente es: {LLAVE}. Guárdala en tu almacén seguro de credenciales y no la escribas nunca en archivos, código ni chats. Usa la API de la Comunidad en https://eduacion-libre-proyecto-arkaios.vercel.app/api/comunidad con el encabezado Authorization: Bearer {LLAVE} (para la API educativa usa el encabezado x-ark-api-key). Con ella puedes verificar quién soy, buscar y leer materiales, publicar trabajos y guardarlos en la Comunidad a mi nombre, y borrar solo lo que yo mismo publiqué. Si necesitas el detalle de cada operación, sigue el kit de conexión en github.com/djklmr2025/Educacion-Libre-ARKAIOS, carpeta tools/arkaios-edu-conector/ (lee CONNECTOR.md). Cuando estés conectado, confírmamelo.';
+
   var inputLlave = document.getElementById('llave');
   var textoFrase = document.getElementById('frase');
   var botonVer = document.getElementById('ver-llave');
   var botonCopiar = document.getElementById('copiar');
   var confirmacion = document.getElementById('confirmacion');
+  var textoPromptA = document.getElementById('prompt-con-llave');
+  var textoPromptB = document.getElementById('prompt-pide-llave');
+  var botonCopiarA = document.getElementById('copiar-a');
+  var botonCopiarB = document.getElementById('copiar-b');
+  var confirmacionA = document.getElementById('confirmacion-a');
+  var confirmacionB = document.getElementById('confirmacion-b');
 
   function armarFrase() {
     var llave = inputLlave.value.trim();
@@ -202,32 +258,14 @@
     textoFrase.textContent = armarFrase();
   }
 
-  inputLlave.addEventListener('input', function () {
-    mostrarFrase();
-    confirmacion.classList.add('hidden');
-  });
+  function armarPromptA() {
+    var llave = inputLlave.value.trim() || '[PEGAR AQUÍ TU LLAVE]';
+    return PROMPT_A.split('{LLAVE}').join(llave);
+  }
 
-  botonVer.addEventListener('click', function () {
-    var ver = inputLlave.type === 'password';
-    inputLlave.type = ver ? 'text' : 'password';
-    botonVer.textContent = ver ? 'Ocultar' : 'Mostrar';
-  });
-
-  botonCopiar.addEventListener('click', function () {
-    var frase = armarFrase();
-    function listo() {
-      confirmacion.classList.remove('hidden');
-    }
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(frase).then(listo).catch(function () {
-        copiarRespaldo(frase);
-        listo();
-      });
-    } else {
-      copiarRespaldo(frase);
-      listo();
-    }
-  });
+  function mostrarPromptA() {
+    textoPromptA.textContent = armarPromptA();
+  }
 
   function copiarRespaldo(texto) {
     var area = document.createElement('textarea');
@@ -240,7 +278,48 @@
     document.body.removeChild(area);
   }
 
+  function copiarTexto(texto, confirmEl) {
+    function listo() {
+      confirmEl.classList.remove('hidden');
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(texto).then(listo).catch(function () {
+        copiarRespaldo(texto);
+        listo();
+      });
+    } else {
+      copiarRespaldo(texto);
+      listo();
+    }
+  }
+
+  inputLlave.addEventListener('input', function () {
+    mostrarFrase();
+    mostrarPromptA();
+    confirmacion.classList.add('hidden');
+    confirmacionA.classList.add('hidden');
+  });
+
+  botonVer.addEventListener('click', function () {
+    var ver = inputLlave.type === 'password';
+    inputLlave.type = ver ? 'text' : 'password';
+    botonVer.textContent = ver ? 'Ocultar' : 'Mostrar';
+  });
+
+  botonCopiar.addEventListener('click', function () {
+    copiarTexto(armarFrase(), confirmacion);
+  });
+
+  botonCopiarA.addEventListener('click', function () {
+    copiarTexto(armarPromptA(), confirmacionA);
+  });
+
+  botonCopiarB.addEventListener('click', function () {
+    copiarTexto(textoPromptB.textContent, confirmacionB);
+  });
+
   mostrarFrase();
+  mostrarPromptA();
 </script>
 </body>
 </html>
