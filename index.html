@@ -45,7 +45,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="js/arkaios-paste-bridge.js" defer></script>
     <script src="js/arkaios-comunidad.js?v=20261109" defer></script>
+    <script src="js/arkaios-my-works.js?v=20261122" defer></script>
     <script src="js/arkaios-app.js?v=20261109" defer></script>
+    <link rel="stylesheet" href="css/arkaios-word-mode.css?v=20261122">
 
     <!-- FUENTES PROFESIONALES -->
     <link
@@ -1243,6 +1245,14 @@
         </div>
 
         <div class="header-actions">
+            <button class="btn-premium btn-primary" id="btnHeaderMyWorks" onclick="showMyWorksView()" style="background: linear-gradient(135deg, #059669, #10b981); text-decoration:none;" title="Ver todos mis trabajos guardados y editables">
+                <span>📁</span>
+                <span>Mis Trabajos</span>
+            </button>
+            <button class="btn-premium btn-secondary" id="btnHeaderCatalog" onclick="showDashboardView()" title="Explorar catálogo de plantillas">
+                <span>🖼️</span>
+                <span>Plantillas</span>
+            </button>
             <!-- Educación Libre: gratis por siempre -->
             <div id="eduFreeBadge" style="display:flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:20px;font-size:12px;font-weight:700;color:#059669;cursor:pointer;" title="Gratis por siempre para la comunidad educativa" onclick="alert('🎓 Educación Libre ARKAIOS — Gratis por siempre.\n\nEstudiantes, niñas y niños, adultos que estudian, maestros, directivos y todo el personal escolar usan la plataforma sin ningún costo, sin membresías y sin vencimiento.\n\nLos costos reales de operación (tokens de IA, internet, luz, adaptaciones y demás gastos) se cubren al 100% por el ecosistema autosustentable ARKAIOS, que desde su creación trabaja para ayudar, apoyar e impulsar la verdadera educación.')">
                 <span>🎓</span>
@@ -1354,9 +1364,17 @@
         <main>
             <div class="view-controls">
                 <button class="btn-premium btn-secondary back-to-catalog" onclick="showDashboardView()" title="Volver al catálogo de plantillas">
-                    <span>←</span>
+                    <span>🖼️</span>
                     <span>Plantillas</span>
                 </button>
+                <button class="btn-premium btn-secondary" onclick="showMyWorksView()" style="border-color:#10b981; color:#059669;" title="Ir a Mis Trabajos">
+                    <span>📁</span>
+                    <span>Mis Trabajos</span>
+                </button>
+                <div class="word-work-title-badge" title="Título de tu trabajo">
+                    <span>📝</span>
+                    <input id="activeWorkTitleInput" type="text" value="Documento sin título" title="Haz clic para renombrar tu trabajo" />
+                </div>
                 <div class="zoom-controls">
                     <span>🔍</span>
                     <input type="range" min="50" max="150" value="100" class="zoom-slider" id="zoomSlider"
@@ -1371,20 +1389,52 @@
                     <span>⛶</span>
                     <span>Pantalla Completa</span>
                 </button>
-                <button class="btn-premium btn-primary" id="downloadBtn">
+                <button class="btn-premium btn-primary" id="editorSaveWorkBtn" onclick="saveCurrentWork()" style="background: linear-gradient(135deg, #2563eb, #1d4ed8);" title="Guarda este trabajo editable para seguir después">
+                    <span>💾</span>
+                    <span>Guardar Trabajo</span>
+                </button>
+                <button class="btn-premium btn-primary" id="downloadBtn" onclick="exportCurrentWorkPdf()" style="background: linear-gradient(135deg, #059669, #047857);" title="Exportar documento PDF final para impresión o entrega">
                     <span>📥</span>
                     <span>Exportar PDF</span>
+                </button>
+                <button class="btn-premium btn-secondary" id="editorShareBtn" onclick="openSaveModal()" title="Compartir copia en la Comunidad">
+                    <span>☁️</span>
+                    <span>Compartir</span>
                 </button>
             </div>
 
             <div id="frameWrapper">
                 <div id="dashboardContainer" class="pdf-grid"></div>
-                <iframe id="plantillaFrame" src="about:blank"></iframe>
+                <div id="myWorksContainer"></div>
+                <div id="wordEditorStage">
+                    <div id="wordSheetCard" class="word-sheet-wrapper">
+                        <iframe id="plantillaFrame" src="about:blank"></iframe>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
 
 	    <!-- MODAL SUBIR PDF (se mantiene porque el dashboard lo usa internamente si lo ocupas) -->
+	    <!-- MODAL GUARDAR TRABAJO (EDITABLE) -->
+	    <div class="modal-overlay" id="workSaveModal">
+	        <div class="modal-content">
+	            <h2 class="modal-title">💾 Guardar Trabajo</h2>
+	            <div class="form-row">
+	                <div class="form-label">Nombre del Trabajo</div>
+	                <input class="form-input" id="workSaveModalTitle" type="text" placeholder="Ej. Tarea de Biología - Hoja 1" />
+	                <div class="form-help">Se guardará de forma editable en «Mis Trabajos» dentro de tu navegador para que puedas continuar editándolo en cualquier momento.</div>
+	            </div>
+	            <div class="modal-actions">
+	                <button class="btn-premium btn-secondary" onclick="closeWorkSaveModal()">Cancelar</button>
+	                <button class="btn-premium btn-primary" onclick="confirmSaveWorkModal()">
+	                    <span>💾</span>
+	                    <span>Guardar en Mis Trabajos</span>
+	                </button>
+	            </div>
+	        </div>
+	    </div>
+
 	    <div class="modal-overlay" id="uploadModal">
 	        <div class="modal-content">
 	            <h2 class="modal-title">📤 Subir Documento PDF</h2>
@@ -2018,9 +2068,16 @@
 
 	        function showDashboardView() {
 	            const dashboard = document.getElementById('dashboardContainer');
+	            const myWorks = document.getElementById('myWorksContainer');
+	            const editorStage = document.getElementById('wordEditorStage');
 	            const iframe = document.getElementById('plantillaFrame');
-	            dashboard.style.display = 'block';
-	            iframe.style.display = 'none';
+
+	            document.body.classList.remove('word-mode');
+	            if (myWorks) myWorks.style.display = 'none';
+	            if (editorStage) editorStage.style.display = 'none';
+	            if (iframe) iframe.style.display = 'none';
+	            if (dashboard) dashboard.style.display = 'block';
+
 	            setViewMode('catalog');
 	            renderDashboard();
 	        }
@@ -2515,21 +2572,52 @@
             }
         }
 
-        // ===== PLANTILLAS =====
-        function loadTemplate(target) {
+        // ===== PLANTILLAS & MODO WORD =====
+        function loadTemplate(target, restoreData = null) {
+            if (!target) return;
             currentTemplate = target;
+
             const frame = document.getElementById('plantillaFrame');
+            const dashboard = document.getElementById('dashboardContainer');
+            const myWorks = document.getElementById('myWorksContainer');
+            const editorStage = document.getElementById('wordEditorStage');
+            const sheetCard = document.getElementById('wordSheetCard');
+
+            // Adaptación de tamaño según tipo de plantilla
+            if (sheetCard) {
+                sheetCard.classList.remove('is-landscape', 'is-fluid');
+                if (target.includes('horizontal') || target.includes('paisaje')) {
+                    sheetCard.classList.add('is-landscape');
+                } else if (target.includes('tabla_periodica') || target.includes('croquis') || target.includes('milimetrica')) {
+                    sheetCard.classList.add('is-fluid');
+                }
+            }
+
             frame.src = target;
 
-            document.getElementById('dashboardContainer').style.display = 'none';
-            frame.style.display = 'block';
+            if (dashboard) dashboard.style.display = 'none';
+            if (myWorks) myWorks.style.display = 'none';
+            if (editorStage) editorStage.style.display = 'flex';
+            if (frame) frame.style.display = 'block';
+
+            document.body.classList.add('word-mode');
             setViewMode('working');
+
             const sel = document.getElementById('moduleSelect');
             if (sel && [...sel.options].some(o => o.value === target)) sel.value = target;
 
             document.querySelectorAll('.btn[data-target]').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.target === target);
             });
+
+            // Si vienen datos para restaurar (desde Mis Trabajos)
+            frame.onload = () => {
+                if (restoreData && window.ArkMyWorks) {
+                    setTimeout(() => {
+                        window.ArkMyWorks.restoreFrameData(frame, restoreData);
+                    }, 350);
+                }
+            };
 
             // Actualiza el escáner del Asistente IA
             setTimeout(() => {
@@ -2629,11 +2717,13 @@
 
         // ===== CONTROLES =====
         function updateZoom(value) {
-            const iframe = document.getElementById('plantillaFrame');
-            const display = document.getElementById('zoomValue');
-            iframe.style.transform = `scale(${value / 100})`;
-            iframe.style.transformOrigin = 'top center';
-            display.textContent = value + '%';
+            const sheet = document.getElementById("wordSheetCard") || document.getElementById("plantillaFrame");
+            const display = document.getElementById("zoomValue");
+            if (sheet) {
+                sheet.style.transform = `scale(${value / 100})`;
+                sheet.style.transformOrigin = "top center";
+            }
+            if (display) display.textContent = value + "%";
         }
 
         function toggleCompactMode() {
@@ -2747,6 +2837,292 @@
             // Mostrar el catálogo por defecto (salvo que se esté abriendo un material de la Comunidad)
             if (!new URLSearchParams(location.search).get('usar')) showDashboardView();
         };
+
+        
+        /* ========================================================
+           ARKAIOS EDU — GESTOR DE MODO WORD Y MIS TRABAJOS
+           ======================================================== */
+        let currentActiveWorkId = null;
+
+        function showMyWorksView() {
+            const dashboard = document.getElementById('dashboardContainer');
+            const myWorks = document.getElementById('myWorksContainer');
+            const editorStage = document.getElementById('wordEditorStage');
+            const iframe = document.getElementById('plantillaFrame');
+
+            document.body.classList.remove('word-mode');
+            if (dashboard) dashboard.style.display = 'none';
+            if (editorStage) editorStage.style.display = 'none';
+            if (iframe) iframe.style.display = 'none';
+            if (myWorks) myWorks.style.display = 'block';
+
+            setViewMode('catalog');
+            renderMyWorksView();
+        }
+
+        function renderMyWorksView() {
+            const container = document.getElementById('myWorksContainer');
+            if (!container) return;
+
+            const works = window.ArkMyWorks ? window.ArkMyWorks.getWorks() : [];
+
+            if (works.length === 0) {
+                container.innerHTML = `
+                    <div class="my-works-header">
+                        <div class="my-works-title-area">
+                            <h2>📁 Mis Trabajos Guardados <span class="my-works-counter">0</span></h2>
+                            <p>Tus documentos y tareas editables se guardan aquí. Abre cualquier trabajo para seguir editándolo o exportarlo a PDF.</p>
+                        </div>
+                        <div class="my-works-actions">
+                            <button class="btn-premium btn-secondary" onclick="document.getElementById('importWorkFileInput').click()">
+                                <span>📥</span><span>Importar .arkwork</span>
+                            </button>
+                            <input type="file" id="importWorkFileInput" accept=".json,.arkwork.json" style="display:none;" onchange="handleImportWorkFile(event)" />
+                            <button class="btn-premium btn-primary" onclick="showDashboardView()">
+                                <span>+</span><span>Nueva Plantilla</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="my-works-empty">
+                        <div class="my-works-empty-icon">📂</div>
+                        <h3>Aún no tienes trabajos guardados</h3>
+                        <p>Elige una plantilla de la galería, rellena tus textos e imágenes directamente sobre la hoja carta, y haz clic en <b>«Guardar Trabajo»</b> para continuar editándola cuando quieras.</p>
+                        <button class="btn-premium btn-primary" onclick="showDashboardView()" style="font-size:15px; padding:12px 24px;">
+                            <span>🖼️</span><span>Explorar Plantillas</span>
+                        </button>
+                    </div>`;
+                return;
+            }
+
+            let cardsHtml = '';
+            works.forEach((w) => {
+                const formattedDate = window.ArkMyWorks ? window.ArkMyWorks.formatDate(w.updatedAt) : '';
+                const templateName = w.templateLabel || prettifyTargetName(w.template);
+                cardsHtml += `
+                    <div class="work-card" data-work-id="${w.id}">
+                        <div class="work-card-preview" onclick="openSavedWork('${w.id}')" title="Haz clic para abrir y editar">
+                            <div class="work-card-preview-sheet">
+                                <div class="work-card-sheet-line title"></div>
+                                <div class="work-card-sheet-line" style="width:90%"></div>
+                                <div class="work-card-sheet-line" style="width:75%"></div>
+                                <div class="work-card-sheet-line" style="width:85%"></div>
+                                <div class="work-card-sheet-line" style="width:60%"></div>
+                            </div>
+                            <span class="work-card-badge">Editable</span>
+                        </div>
+                        <div class="work-card-body">
+                            <div class="work-card-title" onclick="openSavedWork('${w.id}')" title="Abrir y editar">${escapeHTML(w.title)}</div>
+                            <div class="work-card-template">📄 ${escapeHTML(templateName)}</div>
+                            <div class="work-card-date">Modificado: ${formattedDate}</div>
+                            <div class="work-card-footer">
+                                <button class="work-action-btn primary" onclick="openSavedWork('${w.id}')" title="Abrir trabajo en hoja carta para seguir editando">
+                                    <span>✏️</span><span>Editar</span>
+                                </button>
+                                <button class="work-action-btn" onclick="exportSavedWorkPdf('${w.id}')" title="Exportar directamente a PDF final">
+                                    <span>📄</span><span>PDF</span>
+                                </button>
+                                <button class="work-action-btn" onclick="duplicateSavedWork('${w.id}')" title="Crear una copia independiente">
+                                    <span>📋</span><span>Duplicar</span>
+                                </button>
+                                <button class="work-action-btn" onclick="window.ArkMyWorks.exportWorkJson('${w.id}')" title="Descargar archivo portable .arkwork.json">
+                                    <span>💾</span><span>Archivo</span>
+                                </button>
+                                <button class="work-action-btn danger" onclick="deleteSavedWork('${w.id}')" title="Eliminar este trabajo">
+                                    <span>🗑️</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+
+            container.innerHTML = `
+                <div class="my-works-header">
+                    <div class="my-works-title-area">
+                        <h2>📁 Mis Trabajos Guardados <span class="my-works-counter">${works.length}</span></h2>
+                        <p>Tus documentos y tareas editables. Haz clic en <b>Editar</b> para abrirlos en primer plano o en <b>PDF</b> para tu entrega final.</p>
+                    </div>
+                    <div class="my-works-actions">
+                        <button class="btn-premium btn-secondary" onclick="document.getElementById('importWorkFileInput').click()">
+                            <span>📥</span><span>Importar .arkwork</span>
+                        </button>
+                        <input type="file" id="importWorkFileInput" accept=".json,.arkwork.json" style="display:none;" onchange="handleImportWorkFile(event)" />
+                        <button class="btn-premium btn-primary" onclick="showDashboardView()">
+                            <span>+</span><span>Nueva Plantilla</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="my-works-grid">${cardsHtml}</div>`;
+        }
+
+        function handleImportWorkFile(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            if (window.ArkMyWorks) {
+                window.ArkMyWorks.importWorkJson(file).then((saved) => {
+                    showIndicator('✓ Trabajo importado correctamente');
+                    renderMyWorksView();
+                }).catch((err) => {
+                    alert('Error al importar: ' + err.message);
+                });
+            }
+        }
+
+        function openSavedWork(id) {
+            if (!window.ArkMyWorks) return;
+            const work = window.ArkMyWorks.getWork(id);
+            if (!work) {
+                alert('No se encontró el trabajo');
+                return;
+            }
+
+            currentActiveWorkId = work.id;
+            const titleInput = document.getElementById('activeWorkTitleInput');
+            if (titleInput) titleInput.value = work.title;
+
+            loadTemplate(work.template, work.data);
+            showIndicator('✓ Abriendo «' + work.title + '» en Modo Word');
+        }
+
+        function duplicateSavedWork(id) {
+            if (!window.ArkMyWorks) return;
+            window.ArkMyWorks.duplicateWork(id);
+            showIndicator('✓ Trabajo duplicado');
+            renderMyWorksView();
+        }
+
+        function deleteSavedWork(id) {
+            if (!confirm('¿Seguro que deseas eliminar este trabajo guardado?')) return;
+            if (window.ArkMyWorks) {
+                window.ArkMyWorks.deleteWork(id);
+                if (currentActiveWorkId === id) currentActiveWorkId = null;
+                showIndicator('✓ Trabajo eliminado');
+                renderMyWorksView();
+            }
+        }
+
+        function saveCurrentWork() {
+            const frame = document.getElementById('plantillaFrame');
+            if (!frame || frame.style.display === 'none' || !currentTemplate) {
+                showIndicator('Abre una plantilla antes de guardar');
+                return;
+            }
+
+            const titleInput = document.getElementById('activeWorkTitleInput');
+            const currentTitle = titleInput ? titleInput.value.trim() : '';
+
+            // Si ya existe un trabajo activo con ID, actualizarlo silenciosamente
+            if (currentActiveWorkId && window.ArkMyWorks) {
+                const work = window.ArkMyWorks.getWork(currentActiveWorkId);
+                if (work) {
+                    const data = window.ArkMyWorks.captureFrameData(frame);
+                    work.title = currentTitle || work.title;
+                    work.data = data;
+                    window.ArkMyWorks.saveWork(work);
+                    showIndicator('✓ Guardado en Mis Trabajos (' + work.title + ')');
+                    return;
+                }
+            }
+
+            // Si es un trabajo nuevo, abrir modal de título
+            const modal = document.getElementById('workSaveModal');
+            const modalTitle = document.getElementById('workSaveModalTitle');
+            if (modal && modalTitle) {
+                modalTitle.value = currentTitle && currentTitle !== 'Documento sin título' 
+                    ? currentTitle 
+                    : prettifyTargetName(currentTemplate) + ' - ' + new Date().toLocaleDateString();
+                modal.classList.add('active');
+                setTimeout(() => modalTitle.focus(), 50);
+            }
+        }
+
+        function closeWorkSaveModal() {
+            const modal = document.getElementById('workSaveModal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        function confirmSaveWorkModal() {
+            const modalTitle = document.getElementById('workSaveModalTitle');
+            const title = (modalTitle && modalTitle.value.trim()) || 'Trabajo ' + new Date().toLocaleDateString();
+            const frame = document.getElementById('plantillaFrame');
+
+            if (!frame || !window.ArkMyWorks) {
+                closeWorkSaveModal();
+                return;
+            }
+
+            const data = window.ArkMyWorks.captureFrameData(frame);
+            const saved = window.ArkMyWorks.saveWork({
+                title: title,
+                template: currentTemplate,
+                templateLabel: prettifyTargetName(currentTemplate),
+                data: data
+            });
+
+            currentActiveWorkId = saved.id;
+            const titleInput = document.getElementById('activeWorkTitleInput');
+            if (titleInput) titleInput.value = saved.title;
+
+            closeWorkSaveModal();
+            showIndicator('✓ ¡Guardado en Mis Trabajos!');
+        }
+
+        async function exportCurrentWorkPdf() {
+            showIndicator('⏳ Generando PDF...');
+            const iframe = document.getElementById('plantillaFrame');
+            const titleInput = document.getElementById('activeWorkTitleInput');
+            const filename = (titleInput && titleInput.value.trim() ? titleInput.value.trim() : 'ARKAIOS_Trabajo')
+                .replace(/[/\\?%*:|"<>]/g, '_') + '.pdf';
+
+            try {
+                if (iframe && iframe.contentWindow) {
+                    // Si el iframe tiene su propio botón interno de PDF
+                    const innerExportBtn = iframe.contentDocument && iframe.contentDocument.querySelector('#downloadPdfBtn, #btnPdf, .btn-download-pdf');
+                    if (innerExportBtn) {
+                        innerExportBtn.click();
+                        showIndicator('✓ Descargando PDF...');
+                        return;
+                    }
+                }
+
+                const doc = iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document);
+                if (!doc || !doc.body) throw new Error('No se puede acceder al documento');
+
+                const canvas = await html2canvas(doc.body, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false
+                });
+
+                const imgData = canvas.toDataURL('image/png');
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'letter'
+                });
+
+                const imgWidth = 215.9;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+                pdf.save(filename);
+                showIndicator('✓ PDF exportado exitosamente');
+            } catch (err) {
+                console.warn('Fallo generación canvas, intentando print nativo:', err);
+                if (iframe.contentWindow && iframe.contentWindow.print) {
+                    iframe.contentWindow.print();
+                    showIndicator('✓ Abriendo diálogo de impresión');
+                } else {
+                    alert('No se pudo generar el PDF: ' + err.message);
+                }
+            }
+        }
+
+        async function exportSavedWorkPdf(id) {
+            openSavedWork(id);
+            setTimeout(() => {
+                exportCurrentWorkPdf();
+            }, 1200);
+        }
 
         // ===== ASISTENTE IA GLOBAL (PUTER / CLAUDE) =====
         // Modelo preferido con fallback automático si el principal está deprecado
