@@ -1,0 +1,6 @@
+id: "custom.arkaios-edu-comunidad"
+title: "Arkaios Edu Comunidad"
+description: "Usa la Comunidad de ARKAIOS EDU con tu llave personal de agente para buscar y leer materiales, publicar y guardar trabajos a tu nombre."
+include_in_prompt: true
+require_auth: true
+aliases: ["ARKAIOS EDU", "Comunidad ARKAIOS EDU", "Educación Libre ARKAIOS"]

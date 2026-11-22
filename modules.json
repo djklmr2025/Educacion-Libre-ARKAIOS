@@ -5,7 +5,7 @@
       "icon": "⚛️",
       "items": [
         {
-          "label": "Tabla Periódica Interactiva",
+          "label": "Tabla Periodica Interactiva",
           "icon": "⚛️",
           "target": "tabla_periodica_interactiva.html"
         }
@@ -17,17 +17,7 @@
       "makeFirstActive": true,
       "items": [
         {
-          "label": "Carta MX - Índice + Texto",
-          "icon": "📄",
-          "target": "plantilla_escolar_carta_mx_autoajuste_y_areas_editables.html"
-        },
-        {
-          "label": "Hoja Milimétrica",
-          "icon": "📐",
-          "target": "hoja_milimetrica_interactiva.html"
-        },
-        {
-          "label": "Biografía Profesional",
+          "label": "Biografia Profesional",
           "icon": "👤",
           "target": "biografia_profesional.html"
         },
@@ -35,67 +25,98 @@
           "label": "Croquis Animado Casa ⇄ Escuela",
           "icon": "🗺️",
           "target": "croquis_animado_v3.html"
+        },
+        {
+          "label": "Hoja Milimetrica Interactiva",
+          "icon": "📐",
+          "target": "hoja_milimetrica_interactiva.html"
+        },
+        {
+          "label": "Plantilla Escolar Carta Mx Autoajuste Y Areas Editables",
+          "icon": "📄",
+          "target": "plantilla_escolar_carta_mx_autoajuste_y_areas_editables.html"
+        },
+        {
+          "label": "Plantilla Carta 1a5 Imagenes",
+          "icon": "📄",
+          "target": "plantilla-carta-1a5-imagenes.html"
+        },
+        {
+          "label": "Plantilla Carta Horizontal 1grande 3",
+          "icon": "📄",
+          "target": "plantilla-carta-horizontal-1grande-3.html"
         }
       ]
     },
     {
-      "title": "Plantillas de Imagen para Imprimir",
-      "icon": "🖨️",
+      "title": "Módulos de Imagen",
+      "icon": "📸",
       "items": [
         {
-          "label": "20 Instituciones (logos editables)",
-          "icon": "🏛️",
-          "target": "plantilla_20_instituciones_editable.html"
-        },
-        {
-          "label": "Cuadros Imágenes v2",
-          "icon": "🖼️",
-          "target": "plantilla-cuadros-imagenes-v2.html"
-        },
-        {
-          "label": "Plantilla Imágenes v2",
-          "icon": "🎨",
-          "target": "plantilla-imagenes-v2.html"
-        },
-        {
-          "label": "Carta 1 a 5 Imágenes (16:9)",
-          "icon": "🖨️",
-          "target": "plantilla-carta-1a5-imagenes.html"
-        },
-        {
-          "label": "Carta Horizontal 1 Grande + 3",
-          "icon": "🖼️",
-          "target": "plantilla-carta-horizontal-1grande-3.html"
-        },
-        {
-          "label": "Frutas Kínder (tarjetas)",
-          "icon": "🍎",
-          "target": "plantilla-cuadros-frutas-kinder.html"
-        },
-        {
-          "label": "Círculos Jack Skellington",
-          "icon": "⭕",
-          "target": "plantilla_circulos_jack.html"
-        },
-        {
-          "label": "Fotos Infantiles 2.5×3 cm",
-          "icon": "👶",
-          "target": "generador-fotos-infantiles.html"
-        },
-        {
-          "label": "Etiquetas para Libretas",
+          "label": "Etiquetas Libretas",
           "icon": "🏷️",
           "target": "etiquetas-libretas.html"
         },
         {
-          "label": "Tiras de Calcomanías para Lápiz",
-          "icon": "✏️",
-          "target": "tiras-calcomanias-lapiz.html"
+          "label": "Generador Fotos Infantiles",
+          "icon": "👶",
+          "target": "generador-fotos-infantiles.html"
         },
         {
-          "label": "Gestión de Espacios y Planificación (20 imgs 5×5)",
-          "icon": "🏠",
+          "label": "Plantilla 20 Instituciones Editable",
+          "icon": "🏛️",
+          "target": "plantilla_20_instituciones_editable.html"
+        },
+        {
+          "label": "Plantilla Circulos Jack",
+          "icon": "⭕",
+          "target": "plantilla_circulos_jack.html"
+        },
+        {
+          "label": "Plantilla Cuadros Frutas Kinder",
+          "icon": "🖼️",
+          "target": "plantilla-cuadros-frutas-kinder.html"
+        },
+        {
+          "label": "Plantilla Cuadros Imagenes V2",
+          "icon": "🖼️",
+          "target": "plantilla-cuadros-imagenes-v2.html"
+        },
+        {
+          "label": "Plantilla Gestion Espacios Planificacion 20 Imagenes 5x5",
+          "icon": "🎨",
           "target": "plantilla-gestion-espacios-planificacion-20-imagenes-5x5.html"
+        },
+        {
+          "label": "Plantilla Imagenes V2",
+          "icon": "🎨",
+          "target": "plantilla-imagenes-v2.html"
+        },
+        {
+          "label": "Plantilla Tarea Arietty 20 Imagenes 5x5",
+          "icon": "🎨",
+          "target": "plantilla-tarea-arietty-20-imagenes-5x5.html"
+        },
+        {
+          "label": "Tiras Calcomanias Lapiz",
+          "icon": "✏️",
+          "target": "tiras-calcomanias-lapiz.html"
+        }
+      ]
+    },
+    {
+      "title": "Otros",
+      "icon": "🧩",
+      "items": [
+        {
+          "label": "Conectar Agente",
+          "icon": "📄",
+          "target": "conectar-agente.html"
+        },
+        {
+          "label": "Plantilla Vida Libre Violencia Mexico 20 Logos",
+          "icon": "📄",
+          "target": "plantilla-vida-libre-violencia-mexico-20-logos.html"
         }
       ]
     }
