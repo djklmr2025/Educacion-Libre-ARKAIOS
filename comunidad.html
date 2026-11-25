@@ -211,7 +211,7 @@
     <button type="button" class="close" id="upClose" aria-label="Cerrar">✕</button>
     <h2 id="upTitle">📄 Subir trabajo o tarea en PDF</h2>
     <p>Comparte trabajos hechos en otras plataformas o fuentes para alimentar la biblioteca. Aparecerá en <b>Explorar</b> para todos y en <b>Mis materiales</b> para ti.</p>
-    <label class="drop" id="upDrop"><input type="file" id="upFile" accept="application/pdf,.pdf" hidden><span id="upDropText"><b>Elige o arrastra tu PDF aquí</b><br>Máximo 3.8 MB</span></label>
+    <label class="drop" id="upDrop"><input type="file" id="upFile" accept="application/pdf,.pdf" hidden><span id="upDropText"><b>Elige o arrastra tu PDF aquí</b><br>Máximo 2 GB por archivo</span></label>
     <label class="field">Título<input id="upName" maxlength="120" required placeholder="Ej. Ensayo: el ciclo del agua"></label>
     <div class="two">
       <label class="field">Nivel educativo
@@ -401,15 +401,15 @@
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeModal(); closeUpload(); } });
 
   // ---------- Subir PDF ----------
-  const MAX_PDF = 3.8 * 1024 * 1024;
+  const MAX_PDF = 2 * 1024 * 1024 * 1024; // 2 GB por archivo; el tope del hub es 1 TB en total
   const up = { file: null, busy: false };
   const upEl = (id) => document.getElementById(id);
-  const DROP_EMPTY = '<b>Elige o arrastra tu PDF aquí</b><br>Máximo 3.8 MB';
+  const DROP_EMPTY = '<b>Elige o arrastra tu PDF aquí</b><br>Máximo 2 GB por archivo · tope del hub 1 TB';
   function upMsg(text, cls) { const m = upEl('upMsg'); m.textContent = text; m.className = 'up-msg' + (cls ? ' ' + cls : ''); }
   function pickPdf(file) {
     if (!file) return;
     if (file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name)) { upMsg('Ese archivo no es un PDF.', 'err'); return; }
-    if (file.size > MAX_PDF) { upMsg(`Tu PDF pesa ${sizeLabel(file.size)}; el máximo es 3.8 MB. Comprímelo (ej. ilovepdf.com) e inténtalo de nuevo.`, 'err'); return; }
+    if (file.size > MAX_PDF) { upMsg(`Tu PDF pesa ${sizeLabel(file.size)}; el máximo es 2 GB por archivo.`, 'err'); return; }
     up.file = file;
     upEl('upDropText').innerHTML = `<b>${esc(file.name)}</b><br>${sizeLabel(file.size)} · toca para cambiar`;
     if (!upEl('upName').value.trim()) upEl('upName').value = file.name.replace(/\.pdf$/i, '').replace(/[-_]+/g, ' ').trim().slice(0, 120);
@@ -443,7 +443,7 @@
       await ArkComunidad.uploadPdf(up.file, {
         title, grade: upEl('upGrade').value, subject: upEl('upSubject').value.trim(),
         tags: upEl('upTags').value, description: upEl('upDesc').value.trim()
-      });
+      }, (p) => upMsg(`⏳ Subiendo a la biblioteca… ${Math.round(p * 100)}%`));
       upMsg('✅ ¡Listo! Tu trabajo ya está en la biblioteca.', 'ok');
       up.file = null;
       upEl('upForm').reset();

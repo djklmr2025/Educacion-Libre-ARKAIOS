@@ -144,20 +144,36 @@
     }
   }
 
-  // Sube un PDF crudo (application/octet-stream) para no pasar el límite de 4.5 MB de Vercel.
-  async function uploadPdf(file, meta) {
-    const token = await idToken();
-    if (!token) throw new Error("Inicia sesión con tu cuenta de Google para subir trabajos.");
-    const qs = new URLSearchParams({ action: "upload-pdf", ...meta });
-    const r = await fetch(`${API}?${qs}`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/octet-stream" },
-      body: file
-    });
-    const j = await r.json().catch(() => ({}));
-    if (r.status === 413 && !j.error) throw new Error("El PDF es demasiado grande (máx. 4 MB).");
-    if (!r.ok || !j.ok) throw new Error(j.error || `Error al subir (${r.status}).`);
-    return j;
+  // Sube un PDF directo a Drive con sesión reanudable y por trozos: el archivo ya no
+  // pasa por Vercel (su cuerpo está topado a 4.5 MB). Máximo 2 GB por archivo, tope
+  // del hub 1 TB. onProgress recibe el avance de 0 a 1.
+  const UPLOAD_CHUNK = 8 * 1024 * 1024; // múltiplo de 256 KB, como exige Drive
+  async function uploadPdf(file, meta, onProgress) {
+    const init = await call("upload-pdf-init", { method: "POST", body: { ...meta, size: file.size, name: file.name }, auth: true });
+    if (!init.sessionUri) throw new Error("No se pudo preparar la subida en la nube.");
+    let start = 0;
+    let fileId = null;
+    while (start < file.size) {
+      const end = Math.min(start + UPLOAD_CHUNK, file.size);
+      const r = await fetch(init.sessionUri, {
+        method: "PUT",
+        headers: { "Content-Range": `bytes ${start}-${end - 1}/${file.size}` },
+        body: file.slice(start, end)
+      });
+      if (r.status === 308) {
+        const m = /bytes=0-(\d+)/.exec(r.headers.get("Range") || "");
+        start = m ? Number(m[1]) + 1 : end;
+      } else if (r.ok) {
+        const j = await r.json().catch(() => ({}));
+        fileId = j.id || null;
+        start = file.size;
+      } else {
+        throw new Error(`La subida se interrumpió (${r.status}). Inténtalo de nuevo.`);
+      }
+      if (typeof onProgress === "function") onProgress(start / file.size);
+    }
+    if (!fileId) throw new Error("La subida no devolvió el archivo. Inténtalo de nuevo.");
+    return call("upload-pdf-finish", { method: "POST", body: { fileId, ...meta }, auth: true });
   }
 
   window.ArkComunidad = {

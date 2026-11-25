@@ -21,8 +21,10 @@ const MAX_THUMB_BYTES = 700_000;
 const PAGE_SIZE = 30;
 const PUBLISH_LIMIT_PER_HOUR = 20;
 const MAT_FIELDS = "id,name,description,appProperties,createdTime,parents,mimeType,size";
-// Biblioteca de PDF: el límite de cuerpo de Vercel es 4.5 MB, así que el PDF va crudo (octet-stream).
-const MAX_PDF_BYTES = 4_000_000; // el cliente limita a 3.8 MB
+// Biblioteca de PDF: el archivo ya NO pasa por Vercel (su cuerpo está topado a 4.5 MB).
+// El navegador sube directo a Drive con una sesión reanudable creada por el servidor.
+const MAX_PDF_BYTES = 2 * 1024 * 1024 * 1024; // 2 GB por archivo
+const HUB_MAX_BYTES = 1_099_511_627_776; // 1 TB de tope total del hub (todos los PDF juntos)
 const GRADES = ["preescolar", "primaria", "secundaria", "preparatoria", "universidad", "adultos", "otro"];
 
 class HttpError extends Error {
@@ -442,10 +444,94 @@ function readPdf(req) {
   return { buffer: Buffer.from(b64, "base64"), meta: body };
 }
 
+function cleanPdfMeta(body) {
+  const title = cleanText(body.title, 120);
+  if (!title) throw new HttpError(400, "Escribe un título.");
+  const grade = GRADES.includes(String(body.grade)) ? String(body.grade) : "otro";
+  const subject = cleanText(body.subject, 40);
+  const tagList = Array.isArray(body.tags) ? body.tags : String(body.tags || "").split(",");
+  const tags = tagList.map((t) => cleanText(t, 24).toLowerCase().replace(/[,]/g, "")).filter(Boolean).slice(0, 8);
+  return { title, grade, subject, tags, description: cleanText(body.description, 1000) };
+}
+
+// Suma los bytes de todos los materiales del hub (solo los registrados con k=edu_mat).
+async function hubTotalBytes() {
+  const q = encodeURIComponent(`${quote(FOLDERS.materiales)} in parents and trashed=false and appProperties has { key='k' and value='edu_mat' }`);
+  let total = 0;
+  let pageToken = "";
+  do {
+    const l = await drive(`/files?q=${q}&fields=nextPageToken,files(size)&pageSize=1000${pageToken ? `&pageToken=${pageToken}` : ""}`);
+    for (const f of l.files || []) total += Number(f.size) || 0;
+    pageToken = l.nextPageToken || "";
+  } while (pageToken);
+  return total;
+}
+
+function checkHubCap(used, size) {
+  if (used + size > HUB_MAX_BYTES) throw new HttpError(413, "La biblioteca llegó a su tope de 1 TB. No cabe este archivo.");
+}
+
+// Paso 1 de la subida reanudable: valida metadatos y topes y crea la sesión en Drive.
+// El navegador sube los bytes directo a esa sesión (Vercel nunca los toca).
+async function initPdfUpload(body, user) {
+  const meta = cleanPdfMeta(body);
+  const size = Number(body.size);
+  if (!Number.isFinite(size) || size <= 0) throw new HttpError(400, "Falta el tamaño del PDF.");
+  if (size > MAX_PDF_BYTES) throw new HttpError(413, "El PDF pesa más de 2 GB por archivo.");
+  checkHubCap(await hubTotalBytes(), size);
+  checkPublishRate(user.uid);
+  const r = await fetch(`${UPLOAD}?uploadType=resumable`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${await driveToken()}`,
+      "Content-Type": "application/json; charset=UTF-8",
+      "X-Upload-Content-Type": "application/pdf",
+      "X-Upload-Content-Length": String(size)
+    },
+    body: JSON.stringify({ name: `${meta.title}.pdf`, parents: [FOLDERS.materiales], mimeType: "application/pdf" })
+  });
+  const sessionUri = r.headers.get("location");
+  if (!r.ok || !sessionUri) throw new HttpError(502, "No se pudo preparar la subida en la nube.");
+  return { sessionUri, name: `${meta.title}.pdf` };
+}
+
+// Paso 3: el navegador terminó de subir; verifica el archivo y lo registra en la biblioteca.
+async function finishPdfUpload(body, user) {
+  const meta = cleanPdfMeta(body);
+  const fileId = String(body.fileId || "");
+  if (!/^[\w-]{10,80}$/.test(fileId)) throw new HttpError(400, "Identificador inválido.");
+  const f = await drive(`/files/${fileId}?fields=${MAT_FIELDS},trashed`);
+  if (f.trashed || !f.parents?.includes(FOLDERS.materiales)) throw new HttpError(404, "El archivo subido no está en la biblioteca.");
+  if (f.mimeType !== "application/pdf") throw new HttpError(400, "El archivo subido no es un PDF.");
+  if (f.appProperties?.k === "edu_mat") throw new HttpError(409, "Este archivo ya está registrado en la biblioteca.");
+  const size = Number(f.size) || 0;
+  if (size > MAX_PDF_BYTES) throw new HttpError(413, "El PDF pesa más de 2 GB por archivo.");
+  checkHubCap(await hubTotalBytes(), size);
+  const updated = await drive(`/files/${fileId}?fields=${MAT_FIELDS}`, {
+    method: "PATCH",
+    body: {
+      description: meta.description,
+      appProperties: {
+        k: "edu_mat",
+        kind: "pdf",
+        owner: user.uid,
+        ownerName: fitAppProp("ownerName", user.name),
+        tags: fitAppProp("tags", meta.tags.join(",")),
+        grade: meta.grade,
+        subj: fitAppProp("subj", meta.subject),
+        thumb: "",
+        saves: "0"
+      }
+    }
+  });
+  return { item: toCard(updated) };
+}
+
 async function uploadPdf(req, user) {
   const { buffer, meta } = readPdf(req);
   if (!buffer.length) throw new HttpError(400, "No llegó ningún archivo.");
-  if (buffer.length > MAX_PDF_BYTES) throw new HttpError(413, "El PDF pesa más de 3.8 MB. Comprímelo (ej. ilovepdf.com) e inténtalo de nuevo.");
+  // Ruta directa heredada: Vercel corta el cuerpo a 4.5 MB, así que aquí el tope real es 4 MB.
+  if (buffer.length > 4_000_000) throw new HttpError(413, "La subida directa admite hasta 4 MB (límite de Vercel). Usa la subida reanudable de la Comunidad.");
   if (buffer.subarray(0, 5).toString("latin1") !== "%PDF-") throw new HttpError(400, "El archivo no es un PDF válido.");
   const title = cleanText(meta.title, 120);
   if (!title) throw new HttpError(400, "Escribe un título.");
@@ -520,6 +606,8 @@ export default async function handler(req, res) {
       const user = await requireUser(req);
       if (action === "upload-pdf") return res.status(200).json({ ok: true, ...(await uploadPdf(req, user)) });
       const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+      if (action === "upload-pdf-init") return res.status(200).json({ ok: true, ...(await initPdfUpload(body, user)) });
+      if (action === "upload-pdf-finish") return res.status(200).json({ ok: true, ...(await finishPdfUpload(body, user)) });
       if (action === "publish") return res.status(200).json({ ok: true, ...(await publish(body, user)) });
       if (action === "save") return res.status(200).json({ ok: true, ...(await toggleSave(body, user)) });
       if (action === "delete") return res.status(200).json({ ok: true, ...(await removeMaterial(body, user)) });
