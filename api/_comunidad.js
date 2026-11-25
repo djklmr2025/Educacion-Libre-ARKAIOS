@@ -25,6 +25,7 @@ const MAT_FIELDS = "id,name,description,appProperties,createdTime,parents,mimeTy
 // El navegador sube directo a Drive con una sesión reanudable creada por el servidor.
 const MAX_PDF_BYTES = 2 * 1024 * 1024 * 1024; // 2 GB por archivo
 const HUB_MAX_BYTES = 1_099_511_627_776; // 1 TB de tope total del hub (todos los PDF juntos)
+const UPLOAD_SESSION_TTL_MS = 6 * 60 * 60 * 1000;
 const GRADES = ["preescolar", "primaria", "secundaria", "preparatoria", "universidad", "adultos", "otro"];
 
 class HttpError extends Error {
@@ -104,6 +105,32 @@ const AGENT_ROLES = new Set(["builder", "platform", "coordinator", "custodian", 
 let agentsCache = { at: 0, fileId: null, agents: [] };
 
 const sha256 = (s) => crypto.createHash("sha256").update(s).digest("hex");
+
+function uploadSessionSecret() {
+  const secret = process.env.EDU_UPLOAD_SESSION_SIGNING_KEY || process.env.EDU_DRIVE_CLIENT_SECRET;
+  if (!secret) throw new HttpError(503, "La sesión de subida no está configurada en el servidor.");
+  return secret;
+}
+
+function signUploadSession(payload) {
+  const encoded = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const signature = crypto.createHmac("sha256", uploadSessionSecret()).update(encoded).digest("base64url");
+  return `${encoded}.${signature}`;
+}
+
+function readUploadSession(token, user) {
+  const [encoded, signature, extra] = String(token || "").split(".");
+  if (!encoded || !signature || extra) throw new HttpError(400, "Sesión de subida inválida.");
+  const expected = crypto.createHmac("sha256", uploadSessionSecret()).update(encoded).digest("base64url");
+  if (signature.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) throw new HttpError(403, "Sesión de subida inválida.");
+  let payload;
+  try { payload = JSON.parse(Buffer.from(encoded, "base64url").toString("utf8")); } catch { throw new HttpError(400, "Sesión de subida inválida."); }
+  if (payload.uid !== user.uid || !Number.isFinite(payload.exp) || payload.exp < Date.now()) throw new HttpError(403, "La sesión de subida expiró. Inicia de nuevo la carga.");
+  let url;
+  try { url = new URL(payload.uri); } catch { throw new HttpError(400, "Sesión de subida inválida."); }
+  if (url.protocol !== "https:" || url.hostname !== "www.googleapis.com" || !url.pathname.startsWith("/upload/drive/v3/files")) throw new HttpError(400, "Sesión de subida inválida.");
+  return payload;
+}
 
 async function loadAgents(force = false) {
   if (!force && Date.now() - agentsCache.at < 60_000) return agentsCache;
@@ -492,7 +519,25 @@ async function initPdfUpload(body, user) {
   });
   const sessionUri = r.headers.get("location");
   if (!r.ok || !sessionUri) throw new HttpError(502, "No se pudo preparar la subida en la nube.");
-  return { sessionUri, name: `${meta.title}.pdf` };
+  return { sessionUri, resumeToken: signUploadSession({ uri: sessionUri, uid: user.uid, exp: Date.now() + UPLOAD_SESSION_TTL_MS }), name: `${meta.title}.pdf` };
+}
+
+async function pdfUploadStatus(body, user) {
+  const total = Number(body.total);
+  if (!Number.isFinite(total) || total <= 0 || total > MAX_PDF_BYTES) throw new HttpError(400, "Tamaño de PDF inválido.");
+  const { uri } = readUploadSession(body.resumeToken, user);
+  const r = await fetch(uri, { method: "PUT", headers: { "Content-Range": `bytes */${total}` } });
+  if (r.status === 308) {
+    const match = /bytes=0-(\d+)/.exec(r.headers.get("Range") || "");
+    return { received: match ? Number(match[1]) + 1 : 0, completed: false };
+  }
+  if (r.ok) {
+    const completed = await r.json().catch(() => ({}));
+    if (!completed.id) throw new HttpError(502, "La nube no confirmó el archivo terminado.");
+    return { received: total, completed: true, fileId: completed.id };
+  }
+  if (r.status === 404 || r.status === 410) throw new HttpError(409, "La sesión de subida expiró. Inicia de nuevo la carga.");
+  throw new HttpError(502, `No se pudo consultar la subida (${r.status}).`);
 }
 
 // Paso 3: el navegador terminó de subir; verifica el archivo y lo registra en la biblioteca.
@@ -503,7 +548,10 @@ async function finishPdfUpload(body, user) {
   const f = await drive(`/files/${fileId}?fields=${MAT_FIELDS},trashed`);
   if (f.trashed || !f.parents?.includes(FOLDERS.materiales)) throw new HttpError(404, "El archivo subido no está en la biblioteca.");
   if (f.mimeType !== "application/pdf") throw new HttpError(400, "El archivo subido no es un PDF.");
-  if (f.appProperties?.k === "edu_mat") throw new HttpError(409, "Este archivo ya está registrado en la biblioteca.");
+  if (f.appProperties?.k === "edu_mat") {
+    if (f.appProperties.owner === user.uid) return { item: toCard(f), alreadyRegistered: true };
+    throw new HttpError(409, "Este archivo ya está registrado por otra persona.");
+  }
   const size = Number(f.size) || 0;
   if (size > MAX_PDF_BYTES) throw new HttpError(413, "El PDF pesa más de 2 GB por archivo.");
   checkHubCap(await hubTotalBytes(), size);
@@ -525,6 +573,20 @@ async function finishPdfUpload(body, user) {
     }
   });
   return { item: toCard(updated) };
+}
+
+async function transferPdfOwner(body, admin) {
+  const fileId = String(body.fileId || "");
+  const ownerUid = cleanText(body.ownerUid, 128);
+  const ownerName = cleanText(body.ownerName, 80);
+  if (!/^[\w-]{10,80}$/.test(fileId) || !ownerUid || !ownerName) throw new HttpError(400, "Datos de transferencia inválidos.");
+  const f = await drive(`/files/${fileId}?fields=${MAT_FIELDS},trashed`);
+  if (f.trashed || !f.parents?.includes(FOLDERS.materiales) || f.appProperties?.k !== "edu_mat" || f.appProperties?.kind !== "pdf") throw new HttpError(404, "PDF de biblioteca no encontrado.");
+  const updated = await drive(`/files/${fileId}?fields=${MAT_FIELDS}`, {
+    method: "PATCH",
+    body: { appProperties: { ...f.appProperties, owner: ownerUid, ownerName: fitAppProp("ownerName", ownerName), transferredBy: admin.email, transferredAt: new Date().toISOString() } }
+  });
+  return { item: toCard(updated), transferred: true };
 }
 
 async function uploadPdf(req, user) {
@@ -607,7 +669,9 @@ export default async function handler(req, res) {
       if (action === "upload-pdf") return res.status(200).json({ ok: true, ...(await uploadPdf(req, user)) });
       const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
       if (action === "upload-pdf-init") return res.status(200).json({ ok: true, ...(await initPdfUpload(body, user)) });
+      if (action === "upload-pdf-status") return res.status(200).json({ ok: true, ...(await pdfUploadStatus(body, user)) });
       if (action === "upload-pdf-finish") return res.status(200).json({ ok: true, ...(await finishPdfUpload(body, user)) });
+      if (action === "upload-pdf-transfer-owner") return res.status(200).json({ ok: true, ...(await transferPdfOwner(body, requireHumanAdmin(user))) });
       if (action === "publish") return res.status(200).json({ ok: true, ...(await publish(body, user)) });
       if (action === "save") return res.status(200).json({ ok: true, ...(await toggleSave(body, user)) });
       if (action === "delete") return res.status(200).json({ ok: true, ...(await removeMaterial(body, user)) });

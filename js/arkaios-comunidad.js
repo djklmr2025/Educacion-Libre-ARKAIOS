@@ -149,22 +149,13 @@
   // del hub 1 TB. onProgress recibe el avance de 0 a 1. Si la red se corta, pregunta
   // a Google cuánto recibió y reanuda desde ahí en vez de empezar de cero.
   const UPLOAD_CHUNK = 8 * 1024 * 1024; // múltiplo de 256 KB, como exige Drive
-  async function uploadSessionStatus(sessionUri, total) {
-    const r = await fetch(sessionUri, { method: "PUT", headers: { "Content-Range": `bytes */${total}` } });
-    if (r.status === 308) {
-      const m = /bytes=0-(\d+)/.exec(r.headers.get("Range") || "");
-      return { received: m ? Number(m[1]) + 1 : 0 };
-    }
-    if (r.ok) {
-      const j = await r.json().catch(() => ({}));
-      return { received: total, fileId: j.id || null };
-    }
-    throw new Error(`Google devolvió ${r.status} al consultar la subida.`);
+  async function uploadSessionStatus(resumeToken, total) {
+    return call("upload-pdf-status", { method: "POST", body: { resumeToken, total }, auth: true });
   }
   const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
   async function uploadPdf(file, meta, onProgress) {
     const init = await call("upload-pdf-init", { method: "POST", body: { ...meta, size: file.size, name: file.name }, auth: true });
-    if (!init.sessionUri) throw new Error("No se pudo preparar la subida en la nube.");
+    if (!init.sessionUri || !init.resumeToken) throw new Error("No se pudo preparar la subida en la nube.");
     let start = 0;
     let fileId = null;
     let failures = 0;
@@ -177,8 +168,9 @@
           body: file.slice(start, end)
         });
         if (r.status === 308) {
-          const m = /bytes=0-(\d+)/.exec(r.headers.get("Range") || "");
-          start = m ? Number(m[1]) + 1 : end;
+          const st = await uploadSessionStatus(init.resumeToken, file.size);
+          if (st.fileId) { fileId = st.fileId; start = file.size; break; }
+          start = st.received;
         } else if (r.ok) {
           const j = await r.json().catch(() => ({}));
           fileId = j.id || null;
@@ -191,7 +183,7 @@
       } catch (err) {
         failures++;
         try {
-          const st = await uploadSessionStatus(init.sessionUri, file.size);
+          const st = await uploadSessionStatus(init.resumeToken, file.size);
           if (st.fileId) { fileId = st.fileId; start = file.size; break; }
           start = Math.max(start, st.received);
           failures = 0;
@@ -203,7 +195,7 @@
       }
     }
     if (!fileId) {
-      const st = await uploadSessionStatus(init.sessionUri, file.size).catch(() => null);
+      const st = await uploadSessionStatus(init.resumeToken, file.size).catch(() => null);
       if (st && st.fileId) fileId = st.fileId;
     }
     if (!fileId) throw new Error("No se pudo confirmar la subida en Google. Inténtalo de nuevo.");
@@ -232,6 +224,7 @@
     agents: () => call("agents", { auth: true }),
     createAgent: (name, description) => call("agent-create", { method: "POST", body: { name, description }, auth: true }),
     revokeAgent: (id) => call("agent-revoke", { method: "POST", body: { id }, auth: true }),
+    transferPdfOwner: (fileId, ownerUid, ownerName) => call("upload-pdf-transfer-owner", { method: "POST", body: { fileId, ownerUid, ownerName }, auth: true }),
     thumbUrl: (thumbId) => (thumbId ? `${API}?action=thumb&id=${encodeURIComponent(thumbId)}` : ""),
     captureFrame,
     restoreFrame,
