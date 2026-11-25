@@ -80,6 +80,10 @@
       "destination": "/api/bridges?__op=comunidad"
     },
     {
+      "source": "/api/agent-enroll",
+      "destination": "/api/bridges?__op=agent-enroll"
+    },
+    {
       "source": "/api/task-inbox",
       "destination": "/api/bridges?__op=task-inbox"
     },

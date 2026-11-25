@@ -5,7 +5,7 @@ import bridge from "./_bridge.js";
 import elemiaBridge from "./_elemia-bridge.js";
 import arkaiosFeed from "./_arkaios-feed.js";
 import forumBridge from "./_forum.js";
-import comunidad from "./_comunidad.js";
+import comunidad, { enrollAgent } from "./_comunidad.js";
 import taskInbox from "./_task-inbox.js";
 
 const routes = {
@@ -14,7 +14,8 @@ const routes = {
   "arkaios-feed": arkaiosFeed,
   forum: forumBridge,
   comunidad,
-  "task-inbox": taskInbox
+  "task-inbox": taskInbox,
+  "agent-enroll": enrollAgent
 };
 
 export default async function handler(req, res) {

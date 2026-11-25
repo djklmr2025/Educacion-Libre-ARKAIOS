@@ -98,6 +98,7 @@ const quote = (s) => `'${String(s).replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'
 const AGENT_PREFIX = "arkedu_ag_";
 const AGENTS_FILE = "agentes.json";
 const MAX_AGENTS = 50;
+const AGENT_ROLES = new Set(["builder", "platform", "coordinator", "custodian", "research", "legacy"]);
 let agentsCache = { at: 0, fileId: null, agents: [] };
 
 const sha256 = (s) => crypto.createHash("sha256").update(s).digest("hex");
@@ -144,13 +145,30 @@ async function listAgents() {
 async function createAgent(body, admin) {
   const name = cleanText(body.name, 40);
   if (!name) throw new HttpError(400, "Ponle un nombre al agente.");
+  const agentId = cleanText(body.agentId, 64);
+  if (agentId && !/^[A-Za-z0-9:_-]+$/.test(agentId)) {
+    throw new HttpError(400, "El identificador del agente solo admite letras, números, dos puntos, guiones y guiones bajos.");
+  }
+  const role = AGENT_ROLES.has(String(body.role || "").toLowerCase())
+    ? String(body.role).toLowerCase()
+    : "legacy";
+  const capabilities = Array.isArray(body.capabilities)
+    ? body.capabilities.map((item) => cleanText(item, 40).toLowerCase())
+      .filter((item) => /^[a-z0-9:_-]+$/.test(item)).slice(0, 8)
+    : [];
   const { agents } = await loadAgents(true);
   if (agents.filter((a) => !a.revoked).length >= MAX_AGENTS) throw new HttpError(400, "Límite de agentes activos alcanzado.");
+  if (agentId && agents.some((a) => !a.revoked && a.agentId === agentId)) {
+    throw new HttpError(409, "Ya existe un agente activo con ese identificador.");
+  }
   const key = AGENT_PREFIX + crypto.randomBytes(24).toString("hex");
   const agent = {
     id: crypto.randomBytes(6).toString("hex"),
+    ...(agentId ? { agentId } : {}),
     name,
     description: cleanText(body.description, 200),
+    role,
+    capabilities,
     hash: sha256(key),
     createdBy: admin.email,
     createdAt: new Date().toISOString(),
@@ -171,6 +189,45 @@ async function revokeAgent(body) {
 function requireHumanAdmin(user) {
   if (user.isAgent || !user.isAdmin) throw new HttpError(403, "Solo un administrador humano puede gestionar agentes.");
   return user;
+}
+
+function requireEnrollmentRoot(req) {
+  // Only the hash is deployed. The root credential itself remains in the operator's
+  // secret store and is never emitted, persisted in Drive, or accepted as an agent key.
+  const expected = String(process.env.EDU_AGENT_ENROLLMENT_ROOT_SHA256 || "").toLowerCase();
+  const provided = String(req.headers["x-arkaios-root-key"] || "");
+  if (!/^[a-f0-9]{64}$/.test(expected)) {
+    throw new HttpError(503, "El alta de agentes aún no está configurada en el servidor.");
+  }
+  const actual = sha256(provided);
+  if (!provided || !crypto.timingSafeEqual(Buffer.from(actual), Buffer.from(expected))) {
+    throw new HttpError(401, "Credencial de alta inválida.");
+  }
+}
+
+// This is intentionally exported through api/bridges.js instead of becoming a new
+// Vercel function. A caller with the root credential gets one unique agent key once.
+// The normal human-admin flow remains available at /api/comunidad?action=agent-create.
+export async function enrollAgent(req, res) {
+  try {
+    if (req.method === "OPTIONS") {
+      res.setHeader("Allow", "POST, OPTIONS");
+      return res.status(204).end();
+    }
+    if (req.method !== "POST") {
+      res.setHeader("Allow", "POST, OPTIONS");
+      return res.status(405).json({ ok: false, error: "Método no permitido." });
+    }
+    requireEnrollmentRoot(req);
+    const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
+    const result = await createAgent(body, { email: "root-enrollment" });
+    res.setHeader("Cache-Control", "no-store");
+    return res.status(201).json({ ok: true, ...result });
+  } catch (err) {
+    const status = err instanceof HttpError ? err.status : 500;
+    if (status >= 500) console.error("[agent-enroll]", err);
+    return res.status(status).json({ ok: false, error: err instanceof HttpError ? err.message : "Error interno al registrar el agente." });
+  }
 }
 
 // ---------- Usuarios (Firebase Auth, validado por Google) ----------
