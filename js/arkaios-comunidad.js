@@ -146,34 +146,77 @@
 
   // Sube un PDF directo a Drive con sesión reanudable y por trozos: el archivo ya no
   // pasa por Vercel (su cuerpo está topado a 4.5 MB). Máximo 2 GB por archivo, tope
-  // del hub 1 TB. onProgress recibe el avance de 0 a 1.
+  // del hub 1 TB. onProgress recibe el avance de 0 a 1. Si la red se corta, pregunta
+  // a Google cuánto recibió y reanuda desde ahí en vez de empezar de cero.
   const UPLOAD_CHUNK = 8 * 1024 * 1024; // múltiplo de 256 KB, como exige Drive
+  async function uploadSessionStatus(sessionUri, total) {
+    const r = await fetch(sessionUri, { method: "PUT", headers: { "Content-Range": `bytes */${total}` } });
+    if (r.status === 308) {
+      const m = /bytes=0-(\d+)/.exec(r.headers.get("Range") || "");
+      return { received: m ? Number(m[1]) + 1 : 0 };
+    }
+    if (r.ok) {
+      const j = await r.json().catch(() => ({}));
+      return { received: total, fileId: j.id || null };
+    }
+    throw new Error(`Google devolvió ${r.status} al consultar la subida.`);
+  }
+  const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
   async function uploadPdf(file, meta, onProgress) {
     const init = await call("upload-pdf-init", { method: "POST", body: { ...meta, size: file.size, name: file.name }, auth: true });
     if (!init.sessionUri) throw new Error("No se pudo preparar la subida en la nube.");
     let start = 0;
     let fileId = null;
+    let failures = 0;
     while (start < file.size) {
-      const end = Math.min(start + UPLOAD_CHUNK, file.size);
-      const r = await fetch(init.sessionUri, {
-        method: "PUT",
-        headers: { "Content-Range": `bytes ${start}-${end - 1}/${file.size}` },
-        body: file.slice(start, end)
-      });
-      if (r.status === 308) {
-        const m = /bytes=0-(\d+)/.exec(r.headers.get("Range") || "");
-        start = m ? Number(m[1]) + 1 : end;
-      } else if (r.ok) {
-        const j = await r.json().catch(() => ({}));
-        fileId = j.id || null;
-        start = file.size;
-      } else {
-        throw new Error(`La subida se interrumpió (${r.status}). Inténtalo de nuevo.`);
+      try {
+        const end = Math.min(start + UPLOAD_CHUNK, file.size);
+        const r = await fetch(init.sessionUri, {
+          method: "PUT",
+          headers: { "Content-Range": `bytes ${start}-${end - 1}/${file.size}` },
+          body: file.slice(start, end)
+        });
+        if (r.status === 308) {
+          const m = /bytes=0-(\d+)/.exec(r.headers.get("Range") || "");
+          start = m ? Number(m[1]) + 1 : end;
+        } else if (r.ok) {
+          const j = await r.json().catch(() => ({}));
+          fileId = j.id || null;
+          start = file.size;
+        } else {
+          throw new Error(`Google devolvió ${r.status} al subir.`);
+        }
+        failures = 0;
+        if (typeof onProgress === "function") onProgress(start / file.size);
+      } catch (err) {
+        failures++;
+        try {
+          const st = await uploadSessionStatus(init.sessionUri, file.size);
+          if (st.fileId) { fileId = st.fileId; start = file.size; break; }
+          start = Math.max(start, st.received);
+          failures = 0;
+          if (typeof onProgress === "function") onProgress(start / file.size);
+        } catch {
+          if (failures >= 5) throw new Error("Se cortó la subida a Google varias veces. Revisa tu conexión e inténtalo de nuevo.");
+          await sleep(2000);
+        }
       }
-      if (typeof onProgress === "function") onProgress(start / file.size);
     }
-    if (!fileId) throw new Error("La subida no devolvió el archivo. Inténtalo de nuevo.");
-    return call("upload-pdf-finish", { method: "POST", body: { fileId, ...meta }, auth: true });
+    if (!fileId) {
+      const st = await uploadSessionStatus(init.sessionUri, file.size).catch(() => null);
+      if (st && st.fileId) fileId = st.fileId;
+    }
+    if (!fileId) throw new Error("No se pudo confirmar la subida en Google. Inténtalo de nuevo.");
+    let lastErr = null;
+    for (let i = 0; i < 3; i++) {
+      try {
+        return await call("upload-pdf-finish", { method: "POST", body: { fileId, ...meta }, auth: true });
+      } catch (err) {
+        lastErr = err;
+        await sleep(1500);
+      }
+    }
+    throw new Error(`El archivo llegó a Drive pero no se pudo registrar en la biblioteca (${lastErr ? lastErr.message : "error desconocido"}). Avísame y lo registro yo.`);
   }
 
   window.ArkComunidad = {
